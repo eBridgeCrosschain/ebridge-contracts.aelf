@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+import "aelf/core.proto";
+import "aelf/options.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+import "receipt_maker.proto";
+
+option csharp_namespace = "AElf.Contracts.ReceiptMakerContract";
+
+service ReceiptMakerContractImpl {
+  option (aelf.csharp_state) = "AElf.Contracts.ReceiptMakerContract.ReceiptMakerContractState";
+  option (aelf.base) = "receipt_maker.proto";
+  rpc CreateReceipt(CreateReceiptInput) returns(google.protobuf.Empty){
+  }
+  rpc CreateReceiptMax(CreateReceiptInput) returns(google.protobuf.Empty){
+  }
+  rpc CreateReceiptDiy(CreateReceiptDiyInput) returns(google.protobuf.Empty){
+  }
+}
+message CreateReceiptInput{
+  aelf.Hash recorder_id = 1;
+}
+message CreateReceiptDiyInput{
+  aelf.Hash recorder_id = 1;
+  HashList receipt_hash = 2;
+}
+message HashList{
+  repeated aelf.Hash value = 1;
+}
+
+message Receipt{
+  aelf.Address sender = 1;
+  aelf.Address target_address = 2;
+  int64 amount = 3;
+}
+message ReceiptList{
+  repeated Receipt value = 1;
+}
+message ReceiptIdArray{
+  repeated int64 receiptId = 1;
+}
