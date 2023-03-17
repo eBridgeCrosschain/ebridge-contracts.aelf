@@ -35,12 +35,9 @@ namespace AElf.Contracts.Report
 
         private List<byte> GenerateConfigText(Report report)
         {
-            long round = report.RoundId;
-            byte validBytesCount = (byte) report.AggregatedData.Length;
-            if (round < 0)
-            {
-                throw new AssertionException("invalid round");
-            }
+            var round = report.RoundId;
+            var validBytesCount = (byte) report.AggregatedData.Length;
+            Assert(round >= 0,"Invalid round.");
 
             // configText consists of:
             // 6-byte zero padding
@@ -89,10 +86,7 @@ namespace AElf.Contracts.Report
 
         private long GetReceiptIndex(string receipt)
         {
-            if (!long.TryParse(receipt.Split(".").Last(), out var receiptIndex))
-            {
-                throw new AssertionException("Incorrect receipt index.");
-            }
+            Assert(long.TryParse(receipt.Split(".").Last(), out var receiptIndex),"Incorrect receipt index.");
             return receiptIndex;
         }
 
@@ -124,12 +118,11 @@ namespace AElf.Contracts.Report
         private List<byte> SerializeReport(List<object> data, params string[] dataType)
         {
             var dataLength = (long) dataType.Length;
-            if (dataLength != data.Count)
-                throw new AssertionException("invalid data length");
+            Assert(dataLength == data.Count,"Invalid data length.");
             var result = new List<byte>();
-            long currentIndex = dataLength;
+            var currentIndex = dataLength;
             var lazyData = new List<byte>();
-            for (int i = 0; i < dataLength; i++)
+            for (var i = 0; i < dataLength; i++)
             {
                 var typeStrLen = dataType[i].Length;
                 if (string.CompareOrdinal(dataType[i].Substring(typeStrLen.Sub(2), 2), ArraySuffix) == 0)
@@ -224,10 +217,7 @@ namespace AElf.Contracts.Report
         private List<byte> ConvertBytes32(object data)
         {
             var dataBytes = data as List<byte>;
-            if (dataBytes.Count != SlotByteSize)
-            {
-                throw new AssertionException("invalid bytes32 data");
-            }
+            Assert(dataBytes.Count == SlotByteSize,"Invalid bytes32 data.");
 
             return dataBytes;
         }

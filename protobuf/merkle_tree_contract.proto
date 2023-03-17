@@ -56,9 +56,6 @@ service MerkleTreeContract {
   rpc GetRegimentSpaceCount(aelf.Hash) returns(google.protobuf.Int64Value){
     option (aelf.is_view) = true;
   }
-  rpc GetRegimentSpaceIdList(aelf.Hash) returns(HashList){
-    option (aelf.is_view) = true;
-  }
   rpc GetSpaceInfo(aelf.Hash) returns(SpaceInfo){
     option(aelf.is_view) = true;
   }

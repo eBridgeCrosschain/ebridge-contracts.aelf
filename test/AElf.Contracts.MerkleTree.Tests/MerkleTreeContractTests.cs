@@ -1,8 +1,8 @@
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AElf.Contracts.ReceiptMakerContract;
 using AElf.Contracts.Regiment;
+using AElf.Contracts.TestContract.ReceiptMaker;
 using AElf.Types;
 using Google.Protobuf.WellKnownTypes;
 using Shouldly;
@@ -10,7 +10,7 @@ using Xunit;
 
 namespace AElf.Contracts.MerkleTreeContract;
 
-public class MerkleTreeContractTests : MerkleTreeContractTestBase
+public partial class MerkleTreeContractTests : MerkleTreeContractTestBase
 {
     private Hash _regimentId;
 
@@ -107,9 +107,6 @@ public class MerkleTreeContractTests : MerkleTreeContractTestBase
 
             var spaceCount = await MerkleTreeContractStub.GetRegimentSpaceCount.CallAsync(_regimentId);
             spaceCount.Value.ShouldBe(1);
-
-            var spaceIdList = await MerkleTreeContractStub.GetRegimentSpaceIdList.CallAsync(_regimentId);
-            spaceIdList.Value.First().ShouldBe(spaceId);
         }
         return spaceId;
     }
@@ -198,9 +195,6 @@ public class MerkleTreeContractTests : MerkleTreeContractTestBase
         {
             var spaceCount = await MerkleTreeContractStub.GetRegimentSpaceCount.CallAsync(_regimentId);
             spaceCount.Value.ShouldBe(3);
-            var spaceIdList = await MerkleTreeContractStub.GetRegimentSpaceIdList.CallAsync(_regimentId);
-            spaceIdList.Value.Count.ShouldBe(3);
-            spaceIdList.Value[1].ShouldBe(spaceId);
             var spaceInfo = await MerkleTreeContractStub.GetSpaceInfo.CallAsync(spaceId);
             spaceInfo.MaxLeafCount.ShouldBe(8);
         }
@@ -360,7 +354,7 @@ public class MerkleTreeContractTests : MerkleTreeContractTestBase
         await ReceiptMakerContractImplStub.CreateReceiptDiy.SendAsync(new CreateReceiptDiyInput
         {
             RecorderId = spaceId,
-            ReceiptHash = new ReceiptMakerContract.HashList
+            ReceiptHash = new TestContract.ReceiptMaker.HashList
             {
                 Value =
                 {
@@ -425,7 +419,7 @@ public class MerkleTreeContractTests : MerkleTreeContractTestBase
         await ReceiptMakerContractImplStub.CreateReceiptDiy.SendAsync(new CreateReceiptDiyInput
         {
             RecorderId = spaceId,
-            ReceiptHash = new ReceiptMakerContract.HashList
+            ReceiptHash = new TestContract.ReceiptMaker.HashList
             {
                 Value =
                 {

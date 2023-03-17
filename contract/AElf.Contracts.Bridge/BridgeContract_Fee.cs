@@ -7,11 +7,7 @@ public partial class BridgeContract
 {
     public override Empty SetFeeFloatingRatio(SetRatioInput input)
     {
-        if (State.FeeRatioController.Value == null)
-        {
-            throw new AssertionException("Controller not set.");
-        }
-
+        Assert(State.FeeRatioController.Value != null,"Controller not set.");
         Assert(Context.Sender == State.FeeRatioController.Value.OwnerAddress, "No permission.");
         foreach (var feeRatio in input.Value)
         {

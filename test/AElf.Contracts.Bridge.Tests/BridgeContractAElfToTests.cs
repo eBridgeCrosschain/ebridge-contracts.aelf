@@ -124,19 +124,12 @@ public partial class BridgeContractTests
             var receiptId = receiptCreated.ReceiptId;
 
             {
-                var receiptInfo = await BridgeContractStub.GetReceiptInfo.CallAsync(new GetReceiptInfoInput
+                var receiptInfo = await BridgeContractStub.GetReceiptInfo.CallAsync(new StringValue
                 {
-                    ReceiptId = receiptId
+                    Value = receiptId
                 });
                 receiptInfo.Owner.ShouldBe(DefaultSenderAddress);
                 receiptInfo.Symbol.ShouldBe("ELF");
-            }
-            {
-                var lockToken = await BridgeContractStub.GetLockTokens.CallAsync(new GetLockTokensInput
-                {
-                    Owner = DefaultSenderAddress
-                });
-                lockToken.Value.ShouldBe(100_00000000);
             }
 
             var actualFee = (await BridgeContractStub.GetFeeByChainId.CallAsync(new StringValue
@@ -146,12 +139,6 @@ public partial class BridgeContractTests
             actualFee.ShouldBe(31_00000000);
             await CheckBalanceAsync(BridgeContractAddress, "ELF", 100_00000000 + actualFee);
             await CheckBalanceAsync(DefaultSenderAddress, "ELF", balance - 100_00000000 - actualFee);
-
-            var myReceipt = await BridgeContractStub.GetOwnerLockReceipt.CallAsync(new GetOwnerLockReceiptInput
-            {
-                Owner = DefaultSenderAddress
-            });
-            myReceipt.Value.Count.ShouldBe(1);
 
             var reportProposed = ReportProposed.Parser.ParseFrom(executionResult.TransactionResult.Logs
                 .First(l => l.Name == nameof(ReportProposed)).NonIndexed);
@@ -213,12 +200,6 @@ public partial class BridgeContractTests
             var receiptCreated = ReceiptCreated.Parser.ParseFrom(executionResult.TransactionResult.Logs
                 .First(l => l.Name == nameof(ReceiptCreated)).NonIndexed);
             var receiptId = receiptCreated.ReceiptId;
-
-            var myReceipt = await BridgeContractStub.GetOwnerLockReceipt.CallAsync(new GetOwnerLockReceiptInput
-            {
-                Owner = DefaultSenderAddress
-            });
-            myReceipt.Value.Count.ShouldBe(2);
 
             var reportProposed = ReportProposed.Parser.ParseFrom(executionResult.TransactionResult.Logs
                 .First(l => l.Name == nameof(ReportProposed)).NonIndexed);
@@ -1126,13 +1107,6 @@ public partial class BridgeContractTests
             TargetAddress = "0x643C7DCAd9321b36de85FEaC19763BE492dB5a04",
             TargetChainId = "Ethereum"
         });
-        {
-            var lockToken = await BridgeContractStub.GetLockTokens.CallAsync(new GetLockTokensInput
-            {
-                Owner = DefaultSenderAddress
-            });
-            lockToken.Value.ShouldBe(100_00000000);
-        }
     }
 
     [Fact]

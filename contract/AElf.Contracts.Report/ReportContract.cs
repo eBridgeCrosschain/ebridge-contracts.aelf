@@ -18,6 +18,7 @@ namespace AElf.Contracts.Report
         public override Empty Initialize(InitializeInput input)
         {
             Assert(!State.IsInitialized.Value, "Already initialized.");
+            State.Owner.Value = input.OwnerAddress;
             State.OracleContract.Value = input.OracleContractAddress;
             State.RegimentContract.Value = input.RegimentContractAddress;
             State.OracleTokenSymbol.Value = State.OracleContract.GetOracleTokenSymbol.Call(new Empty()).Value;
@@ -25,8 +26,6 @@ namespace AElf.Contracts.Report
                 Context.GetContractAddressByName(SmartContractConstants.TokenContractSystemName);
             State.ParliamentContract.Value =
                 Context.GetContractAddressByName(SmartContractConstants.ParliamentContractSystemName);
-            State.ConsensusContract.Value =
-                Context.GetContractAddressByName(SmartContractConstants.ConsensusContractSystemName);
             State.ReportFee.Value = input.ReportFee;
             State.ApplyObserverFee.Value = input.ApplyObserverFee;
             State.TokenContract.Approve.Send(new ApproveInput
@@ -47,51 +46,19 @@ namespace AElf.Contracts.Report
         public override Hash QueryOracle(QueryOracleInput input)
         {
             var token = string.IsNullOrEmpty(input.Token) ? State.TargetChainAddressMap[input.ChainId] : input.Token;
-            if (string.IsNullOrEmpty(token))
-            {
-                throw new AssertionException($"Token is null. ChainId:{input.ChainId}");
-            }
+            Assert(!string.IsNullOrEmpty(token), "Token is null. ChainId:{input.ChainId}");
             var offChainAggregationInfo = State.OffChainAggregationInfoMap[input.ChainId][token];
-            if (offChainAggregationInfo == null)
-            {
-                throw new AssertionException("Off chain aggregation info not exists.");
-            }
-            
-            // Pay oracle tokens to this contract, amount: report fee + oracle nodes payment.
-            var totalPayment = State.ReportFee.Value.Add(input.Payment);
-            if (totalPayment > 0)
-            {
-                State.TokenContract.TransferFrom.Send(new TransferFromInput
-                {
-                    From = Context.Sender,
-                    To = Context.Self,
-                    Symbol = State.OracleTokenSymbol.Value,
-                    Amount = totalPayment
-                });
-            }
+            Assert(offChainAggregationInfo != null, "Off chain aggregation info not exists.");
 
-            var queryInfo = new OffChainQueryInfo();
-            if (input.QueryInfo == null)
-            {
-                Assert(offChainAggregationInfo.OffChainQueryInfoList.Value.Count > input.NodeIndex,
-                    "Invalid node index.");
-                Assert(offChainAggregationInfo.RoundIds[input.NodeIndex] != -1,
-                    $"Query info of index {input.NodeIndex} already removed.");
-                queryInfo.Title = offChainAggregationInfo.OffChainQueryInfoList.Value[input.NodeIndex].Title;
-                queryInfo.Options.Add(
-                    offChainAggregationInfo.OffChainQueryInfoList.Value[input.NodeIndex].Options);
-            }
-            else
-            {
-                queryInfo.Title = input.QueryInfo.Title;
-                queryInfo.Options.Add(input.QueryInfo.Options);
-            }
+            // Pay oracle tokens to this contract, amount: report fee + oracle nodes payment.
+            PayToTheContract(input.Payment);
+            var queryInfo = GetOffChainQueryInfo(input.QueryInfo, input.NodeIndex, offChainAggregationInfo);
 
             //Title -> data on chain.
             var predicate = IfDataOnChain;
             if (predicate(queryInfo))
             {
-                ProposeReport(input.ChainId,token, queryInfo, offChainAggregationInfo);
+                ProposeReport(input.ChainId, token, queryInfo, offChainAggregationInfo);
                 return Hash.Empty;
             }
 
@@ -119,9 +86,7 @@ namespace AElf.Contracts.Report
                 },
                 Token = input.Token
             };
-
             State.OracleContract.Query.Send(queryInput);
-
             var queryId = Context.GenerateId(State.OracleContract.Value, HashHelper.ComputeFrom(queryInput));
             State.ReportQueryRecordMap[queryId] = new ReportQueryRecord
             {
@@ -134,14 +99,48 @@ namespace AElf.Contracts.Report
             return queryId;
         }
 
+        private void PayToTheContract(long payment)
+        {
+            var totalPayment = State.ReportFee.Value.Add(payment);
+            if (totalPayment > 0)
+            {
+                State.TokenContract.TransferFrom.Send(new TransferFromInput
+                {
+                    From = Context.Sender,
+                    To = Context.Self,
+                    Symbol = State.OracleTokenSymbol.Value,
+                    Amount = totalPayment
+                });
+            }
+        }
+
+        private OffChainQueryInfo GetOffChainQueryInfo(OffChainQueryInfo queryInfo, int nodeIndex,
+            OffChainAggregationInfo offChainAggregationInfo)
+        {
+            var result = new OffChainQueryInfo();
+            if (queryInfo == null)
+            {
+                Assert(offChainAggregationInfo.OffChainQueryInfoList.Value.Count > nodeIndex,
+                    "Invalid node index.");
+                Assert(offChainAggregationInfo.RoundIds[nodeIndex] != -1,
+                    $"Query info of index {nodeIndex} already removed.");
+                result.Title = offChainAggregationInfo.OffChainQueryInfoList.Value[nodeIndex].Title;
+                result.Options.Add(
+                    offChainAggregationInfo.OffChainQueryInfoList.Value[nodeIndex].Options);
+            }
+            else
+            {
+                result.Title = queryInfo.Title;
+                result.Options.Add(queryInfo.Options);
+            }
+
+            return result;
+        }
+
         public override Empty CancelQueryOracle(Hash input)
         {
             var reportQueryRecord = State.ReportQueryRecordMap[input];
-            if (reportQueryRecord == null)
-            {
-                throw new AssertionException("Query not exists or not delegated by Report Contract.");
-            }
-
+            Assert(reportQueryRecord != null, "Query not exists or not delegated by Report Contract.");
             Assert(reportQueryRecord.OriginQuerySender == Context.Sender, "No permission.");
 
             // Return report fee and payment
@@ -166,42 +165,112 @@ namespace AElf.Contracts.Report
                 "Only Oracle Contract can propose report.");
             Assert(State.ReportQueryRecordMap[input.QueryId] != null,
                 "This query is not initialed by Report Contract.");
-        
+
             var plainResult = new PlainResult();
             plainResult.MergeFrom(input.Result);
-            
+
             var queryRecord = State.ReportQueryRecordMap[input.QueryId];
-        
+
             var currentRoundId = State.CurrentRoundIdMap[queryRecord.TargetChainId][plainResult.Token];
 
-            
             var offChainAggregationInfo =
                 State.OffChainAggregationInfoMap[queryRecord.TargetChainId][plainResult.Token];
-        
+
             Report report;
             if (offChainAggregationInfo.OffChainQueryInfoList.Value.Count == 1)
             {
-                var originObservations = new Observations
+                report = ProposeReportWithNormalStyle(plainResult, input.QueryId, currentRoundId,
+                    offChainAggregationInfo, queryRecord.TargetChainId);
+            }
+            else
+            {
+                report = ProposeReportWithMerkleStyle(plainResult, input.QueryId, offChainAggregationInfo,
+                    currentRoundId, queryRecord.TargetChainId);
+            }
+
+            return report;
+        }
+
+        private Report ProposeReportWithNormalStyle(PlainResult plainResult, Hash queryId, long currentRoundId,
+            OffChainAggregationInfo offChainAggregationInfo, string targetChainId)
+        {
+            var originObservations = new Observations
+            {
+                Value =
                 {
-                    Value =
+                    plainResult.DataRecords.Value.Select(d => new Observation
                     {
-                        plainResult.DataRecords.Value.Select(d => new Observation
-                        {
-                            Key = d.Address.ToByteArray().ToHex(),
-                            Data = d.Data
-                        })
-                    }
-                };
-                report = new Report
+                        Key = d.Address.ToByteArray().ToHex(),
+                        Data = d.Data
+                    })
+                }
+            };
+            var report = new Report
+            {
+                QueryId = queryId,
+                RoundId = currentRoundId,
+                Observations = originObservations,
+                AggregatedData =
+                    ByteString.CopyFrom(GetAggregatedData(offChainAggregationInfo, plainResult).GetBytes())
+            };
+            State.ReportMap[targetChainId][plainResult.Token][currentRoundId] = report;
+            State.CurrentRoundIdMap[targetChainId][plainResult.Token] = currentRoundId.Add(1);
+            var regimentId = State.RegimentContract.GetRegimentId.Call(plainResult.RegimentAddress);
+            Context.Fire(new ReportProposed
+            {
+                RegimentId = regimentId,
+                Token = plainResult.Token,
+                RoundId = currentRoundId,
+                RawReport = GenerateEvmRawReport(report)
+            });
+            return report;
+        }
+
+        private Report ProposeReportWithMerkleStyle(PlainResult plainResult, Hash queryId,
+            OffChainAggregationInfo offChainAggregationInfo, long currentRoundId, string targetChainId)
+        {
+            var offChainQueryInfo = new OffChainQueryInfo
+            {
+                Title = plainResult.QueryInfo.Title,
+                Options = {plainResult.QueryInfo.Options}
+            };
+            var nodeIndex = offChainAggregationInfo.OffChainQueryInfoList.Value.IndexOf(offChainQueryInfo);
+            var nodeRoundId = offChainAggregationInfo.RoundIds[nodeIndex];
+            Assert(nodeRoundId != -1, $"Query info of index {nodeIndex} already removed.");
+            Assert(nodeRoundId.Add(1) == currentRoundId,
+                $"Data of {offChainQueryInfo} already revealed.{nodeIndex}\n{offChainAggregationInfo}");
+            offChainAggregationInfo.RoundIds[nodeIndex] = nodeRoundId.Add(1);
+            var aggregatedData = GetAggregatedData(offChainAggregationInfo, plainResult);
+            var report = State.ReportMap[targetChainId][plainResult.Token][currentRoundId] ?? new Report
+            {
+                QueryId = queryId,
+                RoundId = currentRoundId,
+                Observations = new Observations()
+            };
+            report.Observations.Value.Add(new Observation
+            {
+                Key = nodeIndex.ToString(),
+                Data = aggregatedData
+            });
+            State.NodeObserverListMap[plainResult.Token][currentRoundId][nodeIndex] = new ObserverList
+            {
+                Value = {plainResult.DataRecords.Value.Select(d => d.Address)}
+            };
+            Context.Fire(new MerkleReportNodeAdded
+            {
+                Token = plainResult.Token,
+                NodeIndex = nodeIndex,
+                NodeRoundId = nodeRoundId,
+                AggregatedData = aggregatedData
+            });
+            if (offChainAggregationInfo.RoundIds.All(i => i >= currentRoundId || i == -1))
+            {
+                // Time to generate merkle tree.
+                report.AggregatedData = GenerateMerkleTree(report, offChainAggregationInfo, plainResult.Token, currentRoundId);
+                for (var i = 0; i < offChainAggregationInfo.OffChainQueryInfoList.Value.Count; i++)
                 {
-                    QueryId = input.QueryId,
-                    RoundId = currentRoundId,
-                    Observations = originObservations,
-                    AggregatedData =
-                        ByteString.CopyFrom(GetAggregatedData(offChainAggregationInfo, plainResult).GetBytes())
-                };
-                State.ReportMap[queryRecord.TargetChainId][plainResult.Token][currentRoundId] = report;
-                State.CurrentRoundIdMap[queryRecord.TargetChainId][plainResult.Token] = currentRoundId.Add(1);
+                    State.NodeObserverListMap[plainResult.Token][currentRoundId].Remove(i);
+                }
                 var regimentId = State.RegimentContract.GetRegimentId.Call(plainResult.RegimentAddress);
                 Context.Fire(new ReportProposed
                 {
@@ -210,81 +279,30 @@ namespace AElf.Contracts.Report
                     RoundId = currentRoundId,
                     RawReport = GenerateEvmRawReport(report)
                 });
+                State.CurrentRoundIdMap[targetChainId][plainResult.Token] = currentRoundId.Add(1);
             }
-            else
-            {
-                var offChainQueryInfo = new OffChainQueryInfo
-                {
-                    Title = plainResult.QueryInfo.Title,
-                    Options = {plainResult.QueryInfo.Options}
-                };
-                var nodeIndex = offChainAggregationInfo.OffChainQueryInfoList.Value.IndexOf(offChainQueryInfo);
-                var nodeRoundId = offChainAggregationInfo.RoundIds[nodeIndex];
-                Assert(nodeRoundId != -1, $"Query info of index {nodeIndex} already removed.");
-                Assert(nodeRoundId.Add(1) == currentRoundId,
-                    $"Data of {offChainQueryInfo} already revealed.{nodeIndex}\n{offChainAggregationInfo}");
-                offChainAggregationInfo.RoundIds[nodeIndex] = nodeRoundId.Add(1);
-                var aggregatedData = GetAggregatedData(offChainAggregationInfo, plainResult);
-                report = State.ReportMap[queryRecord.TargetChainId][plainResult.Token][currentRoundId] ?? new Report
-                {
-                    QueryId = input.QueryId,
-                    RoundId = currentRoundId,
-                    Observations = new Observations()
-                };
-                report.Observations.Value.Add(new Observation
-                {
-                    Key = nodeIndex.ToString(),
-                    Data = aggregatedData
-                });
-                State.NodeObserverListMap[plainResult.Token][currentRoundId][nodeIndex] = new ObserverList
-                {
-                    Value = {plainResult.DataRecords.Value.Select(d => d.Address)}
-                };
-                Context.Fire(new MerkleReportNodeAdded
-                {
-                    Token = plainResult.Token,
-                    NodeIndex = nodeIndex,
-                    NodeRoundId = nodeRoundId,
-                    AggregatedData = aggregatedData
-                });
-                if (offChainAggregationInfo.RoundIds.All(i => i >= currentRoundId || i == -1))
-                {
-                    // Time to generate merkle tree.
-                    var merkleNodes = new List<Hash>();
-                    for (var i = 0; i < offChainAggregationInfo.OffChainQueryInfoList.Value.Count; i++)
-                    {
-                        var node = report.Observations.Value.FirstOrDefault(o => o.Key == i.ToString());
-                        var nodeHash = node == null ? Hash.Empty : HashHelper.ComputeFrom(node.Data);
-                        merkleNodes.Add(nodeHash);
-                    }
-        
-                    var merkleTree = BinaryMerkleTree.FromLeafNodes(merkleNodes);
-                    State.BinaryMerkleTreeMap[plainResult.Token][currentRoundId] = merkleTree;
-                    report.AggregatedData = merkleTree.Root.Value;
-        
-                    for (var i = 0; i < offChainAggregationInfo.OffChainQueryInfoList.Value.Count; i++)
-                    {
-                        State.NodeObserverListMap[plainResult.Token][currentRoundId].Remove(i);
-                    }
-        
-                    var regimentId = State.RegimentContract.GetRegimentId.Call(plainResult.RegimentAddress);
-                    Context.Fire(new ReportProposed
-                    {
-                        RegimentId = regimentId,
-                        Token = plainResult.Token,
-                        RoundId = currentRoundId,
-                        RawReport = GenerateEvmRawReport(report)
-                    });
-                    State.CurrentRoundIdMap[queryRecord.TargetChainId][plainResult.Token] = currentRoundId.Add(1);
-                }
-        
-                State.ReportMap[queryRecord.TargetChainId][plainResult.Token][currentRoundId] = report;
-            }
-        
+
+            State.ReportMap[targetChainId][plainResult.Token][currentRoundId] = report;
             return report;
         }
 
-        private Report ProposeReport(string chainId,string token, OffChainQueryInfo queryInfo, OffChainAggregationInfo info)
+        private ByteString GenerateMerkleTree(Report report,OffChainAggregationInfo offChainAggregationInfo,string token,long currentRoundId)
+        {
+            var merkleNodes = new List<Hash>();
+            for (var i = 0; i < offChainAggregationInfo.OffChainQueryInfoList.Value.Count; i++)
+            {
+                var node = report.Observations.Value.FirstOrDefault(o => o.Key == i.ToString());
+                var nodeHash = node == null ? Hash.Empty : HashHelper.ComputeFrom(node.Data);
+                merkleNodes.Add(nodeHash);
+            }
+
+            var merkleTree = BinaryMerkleTree.FromLeafNodes(merkleNodes);
+            State.BinaryMerkleTreeMap[token][currentRoundId] = merkleTree;
+            return merkleTree.Root.Value;
+        }
+
+        private Report ProposeReport(string chainId, string token, OffChainQueryInfo queryInfo,
+            OffChainAggregationInfo info)
         {
             var currentRoundId = State.CurrentRoundIdMap[chainId][token];
             var report = new Report
@@ -372,21 +390,14 @@ namespace AElf.Contracts.Report
         {
             // Assert Sender is from certain Observer Association.
             var offChainAggregationInfo = State.OffChainAggregationInfoMap[input.ChainId][input.Token];
-            if (offChainAggregationInfo == null)
-            {
-                throw new AssertionException("Off chain aggregation info not exists.");
-            }
-
+            Assert(offChainAggregationInfo != null, "Off chain aggregation info not exists.");
             var report = State.ReportMap[input.ChainId][input.Token][input.RoundId];
-            if (report == null)
-            {
-                throw new AssertionException($"Report of round {input.RoundId} not proposed.");
-            }
+            Assert(report != null, $"Report of round {input.RoundId} not proposed.");
 
             var reportRecord = report.QueryId == null
                 ? State.ReportRecordMap[input.ChainId][input.Token][input.RoundId]
                 : State.ReportQueryRecordMap[report.QueryId];
-            
+
             Assert(!reportRecord.IsRejected, "This report is already rejected.");
             Assert(!reportRecord.IsAllNodeConfirmed, "This report is already confirmed by all nodes.");
 
@@ -397,12 +408,13 @@ namespace AElf.Contracts.Report
 
             Assert(IsRegimentMember(Context.Sender, regimentAddress),
                 "Sender isn't a member of certain regiment.");
-            
+
             var skipList = State.SkipMemberListMap[input.ChainId][input.Token]?.Value;
             Assert(skipList != null && !skipList.Contains(Context.Sender), "Sender is in the skip list.");
 
             State.ObserverSignatureMap[input.ChainId][input.Token][input.RoundId][Context.Sender] =
                 input.Signature;
+            var address = Context.RecoverPublicKey();
             if (!reportRecord.ConfirmedNodeList.Contains(Context.Sender))
             {
                 reportRecord.ConfirmedNodeList.Add(Context.Sender);
@@ -421,7 +433,7 @@ namespace AElf.Contracts.Report
             {
                 State.ReportQueryRecordMap[report.QueryId] = reportRecord;
             }
-            
+
             Context.Fire(new ReportConfirmed
             {
                 Token = input.Token,
@@ -437,11 +449,7 @@ namespace AElf.Contracts.Report
         public override Empty RejectReport(RejectReportInput input)
         {
             var offChainAggregationInfo = State.OffChainAggregationInfoMap[input.ChainId][input.Token];
-            if (offChainAggregationInfo == null)
-            {
-                throw new AssertionException("Off chain aggregation info not exists.");
-            }
-
+            Assert(offChainAggregationInfo != null, "Off chain aggregation info not exists.");
             var regimentAddress = State.RegimentContract.GetRegimentAddress.Call(offChainAggregationInfo.RegimentId);
 
             Assert(offChainAggregationInfo.OffChainQueryInfoList.Value.Count == 1,
@@ -498,7 +506,7 @@ namespace AElf.Contracts.Report
             var regimentId = State.OffChainAggregationInfoMap[input.ChainId][input.Token].RegimentId;
             var regimentAddress = State.RegimentContract.GetRegimentAddress.Call(regimentId);
             var regimentManager = State.RegimentContract.GetRegimentInfo.Call(regimentAddress).Manager;
-            Assert(Context.Sender == regimentManager,"No permission.");
+            Assert(Context.Sender == regimentManager, "No permission.");
             var memberList = State.SkipMemberListMap[input.ChainId][input.Token] ?? new MemberList();
             memberList.Value.AddRange(input.Value.Value);
             State.SkipMemberListMap[input.ChainId][input.Token] = memberList;

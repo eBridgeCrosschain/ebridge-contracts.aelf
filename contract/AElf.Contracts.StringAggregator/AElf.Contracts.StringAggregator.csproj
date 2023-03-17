@@ -12,8 +12,23 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <CommonMessage Include="..\..\protobuf\authority_info.proto">
+            <Link>Protobuf\Proto\authority_info.proto</Link>
+        </CommonMessage>
+        <ContractReference Include="..\..\protobuf\acs3.proto">
+            <Link>Protobuf\Proto\referece\acs3.proto</Link>
+        </ContractReference>
+        <ContractReference Include="..\..\protobuf\token_contract.proto">
+            <Link>Protobuf\Proto\referece\token_contract.proto</Link>
+        </ContractReference>
+    </ItemGroup>
+    
+    <ItemGroup>
         <ContractBase Include="..\..\protobuf\acs13.proto">
             <Link>Protobuf\Proto\acs13.proto</Link>
+        </ContractBase>
+        <ContractBase Include="..\..\protobuf\acs1.proto">
+            <Link>Protobuf\Proto\acs1.proto</Link>
         </ContractBase>
     </ItemGroup>
 
@@ -23,7 +38,4 @@
         </ContractCode>
     </ItemGroup>
 
-    <ItemGroup>
-        <ProjectReference Include="..\AElf.Contracts.Bridge\AElf.Contracts.Bridge.csproj" />
-    </ItemGroup>
 </Project>

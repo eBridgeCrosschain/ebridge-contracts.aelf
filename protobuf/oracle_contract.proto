@@ -5,11 +5,13 @@ import "aelf/options.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
+import "acs1.proto";
 
 option csharp_namespace = "AElf.Contracts.Oracle";
 
 service OracleContract {
     option (aelf.csharp_state) = "AElf.Contracts.Oracle.OracleContractState";
+    option (aelf.base) = "acs1.proto";
     
     rpc Initialize (InitializeInput) returns (google.protobuf.Empty) {}
     rpc InitializeAndCreateToken (InitializeInput) returns (google.protobuf.Empty) {}

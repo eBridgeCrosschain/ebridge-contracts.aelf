@@ -69,47 +69,9 @@ public partial class BridgeContract
         return State.Ledger[input.SwapId][input.ReceiptId];
     }
 
-    public override ReceiptIdList GetSwappedReceiptIdList(GetSwappedReceiptIdListInput input)
+    public override SwappedReceiptInfo GetSwappedReceiptInfo(GetSwappedReceiptInfoInput input)
     {
-        return State.SwappedReceiptIdListMap[input.SwapId][input.ReceiverAddress];
-    }
-
-    public override ReceiptInfoList GetSwappedReceiptInfoList(GetSwappedReceiptInfoListInput input)
-    {
-        var receiptInfoList = new ReceiptInfoList();
-        var receiptIdList = State.SwappedReceiptIdListMap[input.SwapId][input.ReceiverAddress];
-        if (receiptIdList == null)
-        {
-            return receiptInfoList;
-        }
-
-        foreach (var receiptId in receiptIdList.Value)
-        {
-            var receiptInfo = GetReceiptInfo(input.SwapId, receiptId);
-            if (receiptInfo != null)
-            {
-                receiptInfoList.Value.Add(receiptInfo);
-            }
-            else
-            {
-                receiptInfoList.Value.Add(new ReceiptInfo
-                {
-                    ReceiptId = receiptId
-                });
-            }
-        }
-
-        return receiptInfoList;
-    }
-
-    public override Hash GetRegimentIdBySpaceId(Hash input)
-    {
-        return State.SpaceRegimentIdMap[input];
-    }
-
-    private ReceiptInfo GetReceiptInfo(Hash swapId, string receiptId)
-    {
-        return State.RecorderReceiptInfoMap[swapId][receiptId];
+        return State.RecorderReceiptInfoMap[input.SwapId][input.ReceiptId];
     }
 
     public override Hash GetSpaceIdBySwapId(Hash input)
@@ -206,28 +168,9 @@ public partial class BridgeContract
 
     #region AElf to others
 
-    public override Receipt GetReceiptInfo(GetReceiptInfoInput input)
+    public override Receipt GetReceiptInfo(StringValue input)
     {
-        return State.ReceiptMap[input.ReceiptId];
-    }
-
-    public override ReceiptIdList GetOwnerLockReceipt(GetOwnerLockReceiptInput input)
-    {
-        return State.OwnerTokenReceiptIdList[input.Owner];
-    }
-
-    public override Int64Value GetLockTokens(GetLockTokensInput input)
-    {
-        var receiptIdList = State.OwnerTokenReceiptIdList[input.Owner];
-        var amount = receiptIdList.Value.Select(receiptId =>
-        {
-            var receipt = State.ReceiptMap[receiptId];
-            return receipt.Amount;
-        }).Sum();
-        return new Int64Value
-        {
-            Value = amount
-        };
+        return State.ReceiptMap[input.Value];
     }
 
     public override ReceiptIdInfo GetReceiptIdInfo(Hash input)

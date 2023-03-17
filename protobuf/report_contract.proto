@@ -6,12 +6,14 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
 import "callback_input.proto";
+import "acs1.proto";
 
 option csharp_namespace = "AElf.Contracts.Report";
 
 // the contract definition: a gRPC service definition.
 service ReportContract {
   option (aelf.csharp_state) = "AElf.Contracts.Report.ReportContractState";
+  option (aelf.base) = "acs1.proto"; 
 
   rpc Initialize (InitializeInput) returns (google.protobuf.Empty) {}
 
@@ -116,6 +118,7 @@ message InitializeInput {
   int64 apply_observer_fee = 3;
   repeated aelf.Address initial_register_white_list = 4;
   aelf.Address regiment_contract_address = 5;
+  aelf.Address owner_address = 6;
 }
 
 message QueryOracleInput {

@@ -7,9 +7,9 @@ using AElf.Contracts.MerkleTreeContract;
 using AElf.Contracts.MultiToken;
 using AElf.Contracts.Oracle;
 using AElf.Contracts.Parliament;
-using AElf.Contracts.ReceiptMakerContract;
 using AElf.Contracts.Regiment;
 using AElf.Contracts.Report;
+using AElf.Contracts.TestContract.ReceiptMaker;
 using AElf.ContractTestBase.ContractTestKit;
 using AElf.Cryptography.ECDSA;
 using AElf.Kernel.Proposal;
@@ -42,6 +42,11 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
     internal AssociationContractImplContainer.AssociationContractImplStub AssociationContractImplStub { get; set; }
     
     internal BridgeContractContainer.BridgeContractStub BridgeContractStub { get; set; }
+    
+    internal BridgeContractImplContainer.BridgeContractImplStub BridgeContractImplStub { get; set; }
+    
+    internal BridgeContractImplContainer.BridgeContractImplStub BridgeContractImplUserStub { get; set; }
+
 
     internal BridgeContractContainer.BridgeContractStub BridgeContractSetFeeRatioStub { get; set; }
 
@@ -100,6 +105,10 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
         DefaultSenderAddress = SampleAccount.Accounts.First().Address;
         TransactionFeeRatioAddress = SampleAccount.Accounts[14].Address;
         BridgeContractStub = GetBridgeContractStub(DefaultKeypair);
+        BridgeContractImplStub = GetBridgeContractImplStub(DefaultKeypair);
+        BridgeContractImplUserStub = GetTester<BridgeContractImplContainer.BridgeContractImplStub>(
+            BridgeContractAddress,
+            TransactionFeeRatio);
         BridgeContractSetFeeRatioStub = GetBridgeContractStub(TransactionFeeRatio);
         ReportContractStub = GetReportContractStub(DefaultKeypair);
         OracleContractStub = GetOracleContractStub(DefaultKeypair);
@@ -152,6 +161,15 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
             ECKeyPair senderKeyPair)
     {
         return GetTester<BridgeContractContainer.BridgeContractStub>(
+            BridgeContractAddress,
+            senderKeyPair);
+    }
+    
+    internal BridgeContractImplContainer.BridgeContractImplStub
+        GetBridgeContractImplStub(
+            ECKeyPair senderKeyPair)
+    {
+        return GetTester<BridgeContractImplContainer.BridgeContractImplStub>(
             BridgeContractAddress,
             senderKeyPair);
     }

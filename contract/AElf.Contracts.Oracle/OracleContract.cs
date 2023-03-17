@@ -58,12 +58,12 @@ namespace AElf.Contracts.Oracle
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
-        public override Empty InitializeAndCreateToken(InitializeInput input)
-        {
-            Initialize(input);
-            CreateToken();
-            return new Empty();
-        }
+        // public override Empty InitializeAndCreateToken(InitializeInput input)
+        // {
+        //     Initialize(input);
+        //     CreateToken();
+        //     return new Empty();
+        // }
 
         public override Hash Query(QueryInput input)
         {
@@ -185,11 +185,7 @@ namespace AElf.Contracts.Oracle
         public override Empty CompleteQueryTask(CompleteQueryTaskInput input)
         {
             var queryTask = State.QueryTaskMap[input.TaskId];
-            if (queryTask == null)
-            {
-                throw new AssertionException("Query task not found.");
-            }
-
+            Assert(queryTask != null,"Query task not found.");
             Assert(queryTask.DesignatedNodeList == null, "Designated node list already assigned.");
             Assert(Context.Sender == queryTask.Creator, "No permission.");
 
@@ -207,13 +203,9 @@ namespace AElf.Contracts.Oracle
         public override Hash TaskQuery(TaskQueryInput input)
         {
             var queryTask = State.QueryTaskMap[input.TaskId];
-            if (queryTask == null)
-            {
-                throw new AssertionException("Query task not found.");
-            }
-
+            Assert(queryTask != null,"Query task not found.");
             Assert(Context.Sender == queryTask.Creator, "No permission.");
-            Assert(queryTask.OnGoing == false, "Previous query not finished.");
+            Assert(queryTask.OnGoing, "Previous query not finished.");
             Assert(queryTask.ActualQueriedTimes < queryTask.SupposedQueryTimes, "Query times exceeded.");
 
             queryTask.OnGoing = true;
@@ -253,12 +245,7 @@ namespace AElf.Contracts.Oracle
         public override Empty Commit(CommitInput input)
         {
             var queryRecord = State.QueryRecords[input.QueryId];
-
-            if (queryRecord == null)
-            {
-                throw new AssertionException("Query id not exists.");
-            }
-
+            Assert(queryRecord != null,"Query id not exists.");
             Assert(queryRecord.ExpirationTimestamp > Context.CurrentBlockTime, "Query expired.");
             Assert(!queryRecord.IsCancelled, "Query already cancelled.");
 
@@ -307,11 +294,7 @@ namespace AElf.Contracts.Oracle
 
         public override Empty Reveal(RevealInput input)
         {
-            if (input.Data == null || input.Salt == null)
-            {
-                throw new AssertionException($"Invalid input: {input}");
-            }
-
+            Assert(input.Data != null && input.Salt != null, $"Invalid input: {input}");
             var queryRecord = State.QueryRecords[input.QueryId];
 
             Assert(queryRecord.ExpirationTimestamp > Context.CurrentBlockTime, "Query expired.");
@@ -321,11 +304,7 @@ namespace AElf.Contracts.Oracle
             Assert(queryRecord.IsSufficientCommitmentsCollected, "This query hasn't collected sufficient commitments.");
             Assert(!queryRecord.IsSufficientDataCollected, "Query already finished.");
             var commitment = State.CommitmentMap[input.QueryId][Context.Sender];
-            if (commitment == null)
-            {
-                throw new AssertionException(
-                    "No permission to reveal for this query. Sender hasn't submit commitment.");
-            }
+            Assert(commitment != null,"No permission to reveal for this query. Sender hasn't submit commitment.");
 
             // Permission check.
             var actualDesignatedNodeList = GetActualDesignatedNodeList(queryRecord.DesignatedNodeList);
@@ -371,46 +350,16 @@ namespace AElf.Contracts.Oracle
             // No need to count responses.
             State.ResponseCount.Remove(queryRecord.QueryId);
 
-            var helpfulNodeList = State.HelpfulNodeListMap[input.QueryId] ?? new AddressList();
-            Assert(!helpfulNodeList.Value.Contains(Context.Sender), "Sender already revealed commitment.");
-            helpfulNodeList.Value.Add(Context.Sender);
-            State.HelpfulNodeListMap[input.QueryId] = helpfulNodeList;
+            var helpfulNodeList = GetActualHelpfulNodeList(input.QueryId, actualDesignatedNodeList);
 
-            // Reorg helpful nodes list.
-            helpfulNodeList = new AddressList
-            {
-                Value = {helpfulNodeList.Value.Where(a => actualDesignatedNodeList.Value.Contains(a))}
-            };
-
+            //Record data.
             if (queryRecord.AggregatorContractAddress != null)
             {
-                // Record data to result list.
-                var resultList = State.ResultListMap[input.QueryId] ?? new ResultList();
-                if (resultList.Results.Contains(input.Data))
-                {
-                    var index = resultList.Results.IndexOf(input.Data);
-                    resultList.Frequencies[index] = resultList.Frequencies[index].Add(1);
-                }
-                else
-                {
-                    resultList.Results.Add(input.Data);
-                    resultList.Frequencies.Add(1);
-                }
-
-                State.ResultListMap[input.QueryId] = resultList;
+                RecordDataAfterAggregation(input.QueryId, input.Data);
             }
             else
             {
-                // Record data to node data list.
-                var nodeDataList = State.PlainResultMap[input.QueryId] ?? new PlainResult
-                {
-                    RegimentAddress = queryRecord.DesignatedNodeList.Value.First(),
-                    QueryInfo = queryRecord.QueryInfo,
-                    Token = queryRecord.Token,
-                    DataRecords = new DataRecords()
-                };
-                nodeDataList.DataRecords.Value.Add(new DataRecord {Address = Context.Sender, Data = input.Data});
-                State.PlainResultMap[input.QueryId] = nodeDataList;
+                RecordDataWithoutAggregation(input.QueryId, input.Data, queryRecord);
             }
 
             if (helpfulNodeList.Value.Count >= queryRecord.AggregateThreshold)
@@ -420,6 +369,53 @@ namespace AElf.Contracts.Oracle
             }
 
             return new Empty();
+        }
+
+        private AddressList GetActualHelpfulNodeList(Hash queryId,AddressList actualDesignatedNodeList)
+        {
+            var helpfulNodeList = State.HelpfulNodeListMap[queryId] ?? new AddressList();
+            Assert(!helpfulNodeList.Value.Contains(Context.Sender), "Sender already revealed commitment.");
+            helpfulNodeList.Value.Add(Context.Sender);
+            State.HelpfulNodeListMap[queryId] = helpfulNodeList;
+
+            // Reorg helpful nodes list.
+            helpfulNodeList = new AddressList
+            {
+                Value = {helpfulNodeList.Value.Where(a => actualDesignatedNodeList.Value.Contains(a))}
+            };
+            return helpfulNodeList;
+        }
+        
+        private void RecordDataAfterAggregation(Hash queryId,string data)
+        {
+            // Record data to result list.
+            var resultList = State.ResultListMap[queryId] ?? new ResultList();
+            if (resultList.Results.Contains(data))
+            {
+                var index = resultList.Results.IndexOf(data);
+                resultList.Frequencies[index] = resultList.Frequencies[index].Add(1);
+            }
+            else
+            {
+                resultList.Results.Add(data);
+                resultList.Frequencies.Add(1);
+            }
+
+            State.ResultListMap[queryId] = resultList;
+        }
+
+        private void RecordDataWithoutAggregation(Hash queryId,string data,QueryRecord queryRecord)
+        {
+            // Record data to node data list.
+            var nodeDataList = State.PlainResultMap[queryId] ?? new PlainResult
+            {
+                RegimentAddress = queryRecord.DesignatedNodeList.Value.First(),
+                QueryInfo = queryRecord.QueryInfo,
+                Token = queryRecord.Token,
+                DataRecords = new DataRecords()
+            };
+            nodeDataList.DataRecords.Value.Add(new DataRecord {Address = Context.Sender, Data = data});
+            State.PlainResultMap[queryId] = nodeDataList;
         }
 
         private void PayToNodesAndAggregateResults(QueryRecord queryRecord, AddressList helpfulNodeList)
@@ -439,42 +435,14 @@ namespace AElf.Contracts.Oracle
 
             queryRecord.IsSufficientDataCollected = true;
             // Distributed rewards to oracle nodes.
-            foreach (var helpfulNode in helpfulNodeList.Value)
-            {
-                var paymentToEachNode = queryRecord.Payment.Div(helpfulNodeList.Value.Count);
-                if (paymentToEachNode > 0)
-                {
-                    Context.SendVirtualInline(queryRecord.QueryId, State.TokenContract.Value,
-                        nameof(State.TokenContract.Transfer), new TransferInput
-                        {
-                            To = helpfulNode,
-                            Symbol = TokenSymbol,
-                            Amount = paymentToEachNode
-                        });
-                }
-            }
+            DistributeRewardToOracleNode(helpfulNodeList, queryRecord);
 
             var aggregatorContractAddress = queryRecord.AggregatorContractAddress;
             BytesValue finalResult;
             if (aggregatorContractAddress != null)
             {
                 // Call Aggregator plugin contract.
-                State.OracleAggregatorContract.Value = queryRecord.AggregatorContractAddress;
-                var resultList = State.ResultListMap[queryRecord.QueryId];
-                var finalResultStr = State.OracleAggregatorContract.Aggregate.Call(new AggregateInput
-                {
-                    Results = {resultList.Results},
-                    Frequencies = {resultList.Frequencies},
-                    AggregateOption = queryRecord.AggregateOption
-                }).Value;
-                finalResult = new StringValue {Value = finalResultStr}.ToBytesValue();
-                queryRecord.FinalResult = finalResultStr;
-
-                Context.Fire(new QueryCompletedWithAggregation
-                {
-                    QueryId = queryRecord.QueryId,
-                    Result = finalResultStr
-                });
+                finalResult = AggregateDataResult(ref queryRecord);
             }
             else
             {
@@ -504,23 +472,56 @@ namespace AElf.Contracts.Oracle
             }
 
             // If this query is from a query task.
-            if (queryRecord.TaskId != Hash.Empty)
+            if (queryRecord.TaskId == Hash.Empty) return;
+            var queryTask = State.QueryTaskMap[queryRecord.TaskId];
+            queryTask.OnGoing = false;
+            queryTask.ActualQueriedTimes = queryTask.ActualQueriedTimes.Add(1);
+            State.QueryTaskMap[queryRecord.TaskId] = queryTask;
+        }
+
+        private BytesValue AggregateDataResult(ref QueryRecord queryRecord)
+        {
+            State.OracleAggregatorContract.Value = queryRecord.AggregatorContractAddress;
+            var resultList = State.ResultListMap[queryRecord.QueryId];
+            var finalResultStr = State.OracleAggregatorContract.Aggregate.Call(new AggregateInput
             {
-                var queryTask = State.QueryTaskMap[queryRecord.TaskId];
-                queryTask.OnGoing = false;
-                queryTask.ActualQueriedTimes = queryTask.ActualQueriedTimes.Add(1);
-                State.QueryTaskMap[queryRecord.TaskId] = queryTask;
+                Results = {resultList.Results},
+                Frequencies = {resultList.Frequencies},
+                AggregateOption = queryRecord.AggregateOption
+            }).Value;
+            var finalResult = new StringValue {Value = finalResultStr}.ToBytesValue();
+            queryRecord.FinalResult = finalResultStr;
+
+            Context.Fire(new QueryCompletedWithAggregation
+            {
+                QueryId = queryRecord.QueryId,
+                Result = finalResultStr
+            });
+            return finalResult;
+        }
+
+        private void DistributeRewardToOracleNode(AddressList helpfulNodeList, QueryRecord queryRecord)
+        {
+            foreach (var helpfulNode in helpfulNodeList.Value)
+            {
+                var paymentToEachNode = queryRecord.Payment.Div(helpfulNodeList.Value.Count);
+                if (paymentToEachNode > 0)
+                {
+                    Context.SendVirtualInline(queryRecord.QueryId, State.TokenContract.Value,
+                        nameof(State.TokenContract.Transfer), new TransferInput
+                        {
+                            To = helpfulNode,
+                            Symbol = TokenSymbol,
+                            Amount = paymentToEachNode
+                        });
+                }
             }
         }
 
         public override Empty CancelQuery(Hash input)
         {
             var queryRecord = State.QueryRecords[input];
-            if (queryRecord == null)
-            {
-                throw new AssertionException("Query not exists.");
-            }
-
+            Assert(queryRecord != null,"Query not exists.");
             Assert(queryRecord.QuerySender == Context.Sender, "No permission to cancel this query.");
             Assert(queryRecord.ExpirationTimestamp <= Context.CurrentBlockTime, "Query not expired.");
             Assert(

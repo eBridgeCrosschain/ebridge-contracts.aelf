@@ -11,9 +11,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AElf.Contracts.MultiToken" Version="1.2.0" />
-        <PackageReference Include="AElf.EconomicSystem" Version="1.2.0" />
-        <PackageReference Include="AElf.GovernmentSystem" Version="1.2.0" />
+        <PackageReference Include="AElf.Contracts.MultiToken" Version="1.2.3" />
+        <PackageReference Include="AElf.EconomicSystem" Version="1.2.3" />
+        <PackageReference Include="AElf.GovernmentSystem" Version="1.2.3" />
         <PackageReference Include="coverlet.collector" Version="3.1.2">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -30,8 +30,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="AElf.ContractTestKit" Version="1.2.0" />
-        <PackageReference Include="AElf.ContractTestBase" Version="1.2.0" />
+        <PackageReference Include="AElf.ContractTestKit" Version="1.2.3" />
+        <PackageReference Include="AElf.ContractTestBase" Version="1.2.3" />
     </ItemGroup>
     <ItemGroup>
         <ContractMessage Include="..\..\protobuf\authority_info.proto">
@@ -45,9 +45,6 @@
         </ContractMessage>
         <CommonMessage Include="..\..\protobuf\callback_input.proto">
             <Link>Protobuf\Proto\callback_input.proto</Link>
-        </CommonMessage>
-        <CommonMessage Include="..\..\protobuf\receipt_maker.proto">
-            <Link>Protobuf\Proto\receipt_maker.proto</Link>
         </CommonMessage>
     </ItemGroup>
     <ItemGroup>
@@ -78,6 +75,9 @@
         <ContractStub Include="..\..\protobuf\bridge_contract.proto">
             <Link>Protobuf\Proto\bridge_contract.proto</Link>
         </ContractStub>
+        <ContractStub Include="..\..\protobuf\bridge_contract_impl.proto">
+            <Link>Protobuf\Proto\bridge_contract_impl.proto</Link>
+        </ContractStub>
         <ContractStub Include="..\..\protobuf\receipt_maker.proto">
             <Link>Protobuf\Proto\receipt_maker.proto</Link>
         </ContractStub>
@@ -102,6 +102,7 @@
         <ProjectReference Include="..\..\contract\AElf.Contracts.Report\AElf.Contracts.Report.csproj" />
         <ProjectReference Include="..\..\src\AElf.Boilerplate.TestBase\AElf.Boilerplate.TestBase.csproj" />
         <ProjectReference Include="..\AElf.Contracts.MerkleTree.Tests\AElf.Contracts.MerkleTree.Tests.csproj" />
+        <ProjectReference Include="..\AElf.Contracts.TestContract.ReceiptMaker\AElf.Contracts.TestContract.ReceiptMaker.csproj" />
     </ItemGroup>
 
 </Project>

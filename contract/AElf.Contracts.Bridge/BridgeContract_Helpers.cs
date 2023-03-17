@@ -229,10 +229,7 @@ namespace AElf.Contracts.Bridge
 
         private void TransferDepositTo(string symbol, long amount, Address from)
         {
-            if (amount <= 0)
-            {
-                throw new AssertionException($"Insufficient lock amount {amount}.");
-            }
+            Assert(amount > 0,$"Insufficient lock amount {amount}.");
 
             RequireTokenContractStateSet();
             State.TokenContract.TransferFrom.Send(new TransferFromInput

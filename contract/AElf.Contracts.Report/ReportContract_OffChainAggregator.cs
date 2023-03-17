@@ -76,10 +76,7 @@ namespace AElf.Contracts.Report
         public override Empty AddOffChainQueryInfo(AddOffChainQueryInfoInput input)
         {
             var offChainAggregationInfo = State.OffChainAggregationInfoMap[input.ChainId][input.Token];
-            if (offChainAggregationInfo == null)
-            {
-                throw new AssertionException($"Token {input.Token} not registered.");
-            }
+            Assert(offChainAggregationInfo != null,$"Token {input.Token} not registered.");
             Assert(offChainAggregationInfo.Register == Context.Sender, "No permission.");
             Assert(offChainAggregationInfo.OffChainQueryInfoList.Value.Count > 1,
                 "Only merkle style aggregation can manage off chain query info.");
@@ -94,10 +91,7 @@ namespace AElf.Contracts.Report
         public override Empty RemoveOffChainQueryInfo(RemoveOffChainQueryInfoInput input)
         {
             var offChainAggregationInfo = State.OffChainAggregationInfoMap[input.ChainId][input.Token];
-            if (offChainAggregationInfo == null)
-            {
-                throw new AssertionException($"Token {input.Token} not registered.");
-            }
+            Assert(offChainAggregationInfo != null,$"Token {input.Token} not registered.");
             Assert(offChainAggregationInfo.Register == Context.Sender, "No permission.");
             Assert(offChainAggregationInfo.OffChainQueryInfoList.Value.Count > 1,
                 "Only merkle style aggregation can manage off chain query info.");
@@ -115,10 +109,7 @@ namespace AElf.Contracts.Report
         public override Empty ChangeOffChainQueryInfo(ChangeOffChainQueryInfoInput input)
         {
             var offChainAggregationInfo = State.OffChainAggregationInfoMap[input.ChainId][input.Token];
-            if (offChainAggregationInfo == null)
-            {
-                throw new AssertionException($"Token {input.Token} not registered.");
-            }
+            Assert(offChainAggregationInfo != null,$"Token {input.Token} not registered.");
             Assert(offChainAggregationInfo.Register == Context.Sender, "No permission.");
             Assert(offChainAggregationInfo.OffChainQueryInfoList.Value.Count == 1,
                 "Only single style aggregation can change off chain query info.");

@@ -1,4 +1,5 @@
 using AElf.Sdk.CSharp.State;
+using AElf.Standards.ACS1;
 using AElf.Types;
 
 namespace AElf.Contracts.Oracle
@@ -8,6 +9,9 @@ namespace AElf.Contracts.Oracle
     /// </summary>
     public partial class OracleContractState : ContractState
     {
+        public MappedState<string, MethodFees> TransactionFees { get; set; }
+        public SingletonState<AuthorityInfo> MethodFeeController { get; set; }
+        
         public SingletonState<bool> Initialized { get; set; }
 
         public SingletonState<int> DefaultExpirationSeconds { get; set; }

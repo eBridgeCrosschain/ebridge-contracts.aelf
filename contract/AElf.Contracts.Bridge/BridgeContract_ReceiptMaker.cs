@@ -21,10 +21,7 @@ public partial class BridgeContract
         Assert(!string.IsNullOrEmpty(receiptHashMap.SwapId), "Swap id is null.");
         var swapId = Hash.LoadFromHex(receiptHashMap.SwapId);
         var spaceId = GetSpaceIdBySwapId(swapId);
-        if (spaceId == null)
-        {
-            throw new AssertionException($"Space id is null.SwapId : {swapId}");
-        }
+        Assert(spaceId != null,$"Space id is null.SwapId : {swapId}");
 
         foreach (var (receiptId, receiptHash) in receiptHashMap.Value)
         {

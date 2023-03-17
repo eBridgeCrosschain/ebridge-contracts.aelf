@@ -3,6 +3,7 @@ using System.IO;
 using AElf.Boilerplate.TestBase;
 using AElf.Boilerplate.TestBase.SmartContractNameProviders;
 using AElf.Contracts.Regiment;
+using AElf.Contracts.TestContract.ReceiptMaker;
 using AElf.ContractTestBase;
 using AElf.ContractTestBase.ContractTestKit;
 using AElf.Kernel.SmartContract.Application;
@@ -38,7 +39,7 @@ public class MerkleTreeContractTestModule : MainChainDAppContractTestModule
             },
             {
                 new ReceiptMakerContractInitializationProvider().ContractCodeName,
-                File.ReadAllBytes(typeof(ReceiptMakerContract.ReceiptMakerContract).Assembly.Location)
+                File.ReadAllBytes(typeof(TestContract.ReceiptMaker.ReceiptMakerContract).Assembly.Location)
             }
         };
         contractCodeProvider.Codes = contractCodes;

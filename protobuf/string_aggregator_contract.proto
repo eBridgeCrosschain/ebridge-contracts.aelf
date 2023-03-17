@@ -3,6 +3,7 @@ syntax = "proto3";
 import "aelf/options.proto";
 import "aelf/core.proto";
 import "acs13.proto";
+import "acs1.proto";
 
 option csharp_namespace = "AElf.Contracts.StringAggregator";
 
@@ -10,6 +11,7 @@ option csharp_namespace = "AElf.Contracts.StringAggregator";
 service StringAggregatorContract {
   option (aelf.csharp_state) = "AElf.Contracts.StringAggregator.StringAggregatorContractState";
   option (aelf.base) = "acs13.proto";
+  option (aelf.base) = "acs1.proto";
 }
 
 message AggregateDataReceived {

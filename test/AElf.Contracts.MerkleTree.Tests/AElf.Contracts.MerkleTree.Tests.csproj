@@ -11,8 +11,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AElf.EconomicSystem" Version="1.2.0" />
-        <PackageReference Include="AElf.GovernmentSystem" Version="1.2.0" />
+        <PackageReference Include="AElf.EconomicSystem" Version="1.2.3" />
+        <PackageReference Include="AElf.GovernmentSystem" Version="1.2.3" />
         <PackageReference Include="coverlet.collector" Version="3.1.2">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -29,8 +29,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="AElf.ContractTestKit" Version="1.2.0" />
-        <PackageReference Include="AElf.ContractTestBase" Version="1.2.0" />
+        <PackageReference Include="AElf.ContractTestKit" Version="1.2.3" />
+        <PackageReference Include="AElf.ContractTestBase" Version="1.2.3" />
     </ItemGroup>
     <ItemGroup>
         <ContractMessage Include="..\..\protobuf\authority_info.proto">
@@ -56,6 +56,9 @@
         <ContractStub Include="..\..\protobuf\association_contract.proto">
             <Link>Protobuf\Proto\association_contract.proto</Link>
         </ContractStub>
+        <ContractStub Include="..\..\protobuf\association_contract_impl.proto">
+            <Link>Protobuf\Proto\association_contract_impl.proto</Link>
+        </ContractStub>
         <ContractStub Include="..\..\protobuf\regiment_contract.proto">
             <Link>Protobuf\Proto\regiment_contract.proto</Link>
         </ContractStub>
@@ -65,7 +68,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\contract\AElf.Contracts.ReceiptMaker\AElf.Contracts.ReceiptMaker.csproj" />
+        <ProjectReference Include="..\AElf.Contracts.TestContract.ReceiptMaker\AElf.Contracts.TestContract.ReceiptMaker.csproj" />
         <ProjectReference Include="..\..\contract\AElf.Contracts.Regiment\AElf.Contracts.Regiment.csproj" />
         <ProjectReference Include="..\..\contract\AElf.Contracts.MerkleTree\AElf.Contracts.MerkleTree.csproj" />
         <ProjectReference Include="..\..\src\AElf.Boilerplate.TestBase\AElf.Boilerplate.TestBase.csproj" />

@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
 using AElf.Boilerplate.TestBase;
-using AElf.Boilerplate.TestBase.SmartContractNameProviders;
 using AElf.Contracts.MerkleTreeContract;
 using AElf.Contracts.Oracle;
 using AElf.Contracts.Regiment;
@@ -50,7 +49,7 @@ public class BridgeContractTestModule : MainChainDAppContractTestModule
             },
             {
                 new ReceiptMakerContractInitializationProvider().ContractCodeName,
-                File.ReadAllBytes(typeof(ReceiptMakerContract.ReceiptMakerContract).Assembly.Location)
+                File.ReadAllBytes(typeof(TestContract.ReceiptMaker.ReceiptMakerContract).Assembly.Location)
             },
             {
                 new OracleContractInitializationProvider().ContractCodeName,

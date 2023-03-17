@@ -1,4 +1,5 @@
 using AElf.Sdk.CSharp.State;
+using AElf.Standards.ACS1;
 using AElf.Types;
 
 namespace AElf.Contracts.Bridge;
@@ -6,17 +7,22 @@ namespace AElf.Contracts.Bridge;
 public partial class BridgeContractState : ContractState
 {
     /// <summary>
-    /// Contract Controller
+    /// Contract Controller.
     /// </summary>
     public SingletonState<Address> Controller { get; set; }
 
     /// <summary>
-    /// Contract admin
+    /// Contract admin.
     /// </summary>
     public SingletonState<Address> Admin { get; set; }
     
     /// <summary>
-    /// Is contract pause (true->pause/false=>start)
+    /// Method fee controller.
+    /// </summary>
+    public SingletonState<AuthorityInfo> MethodFeeController { get; set; }
+    
+    /// <summary>
+    /// Is contract pause (true->pause/false=>start).
     /// </summary>
     public SingletonState<bool> IsContractPause { get; set; }
     
@@ -31,17 +37,17 @@ public partial class BridgeContractState : ContractState
     public SingletonState<Address> PauseController { get; set; }
 
     /// <summary>
-    /// The maximum amount of transfers per token
+    /// The maximum amount of transfers per token.
     /// </summary>
     public MappedState<string, long> TokenMaximumAmount { get; set; }
+    
+    /// <summary>
+    /// Contract method name -> MethodFees
+    /// </summary>
+    internal MappedState<string, MethodFees> TransactionFees { get; set; }
 
     #region Others to AElf.
 
-    /// <summary>
-    /// Space Id -> Regiment Id
-    /// </summary>
-    public MappedState<Hash,Hash> SpaceRegimentIdMap { get; set; }
-    
     /// <summary>
     /// Space Id -> Receipt Id -> Receipt Hash
     /// </summary>
@@ -72,15 +78,11 @@ public partial class BridgeContractState : ContractState
     /// </summary>
     public MappedState<Hash, string, SwapAmounts> Ledger { get; set; }
     
-    /// <summary>
-    /// Swap Id -> Receiver Address -> Swapped Receipt Id List
-    /// </summary>
-    public MappedState<Hash, Address, ReceiptIdList> SwappedReceiptIdListMap { get; set; }
     
     /// <summary>
     /// Swap Id -> Receipt Id -> Receipt Info
     /// </summary>
-    public MappedState<Hash, string, ReceiptInfo> RecorderReceiptInfoMap { get; set; }
+    public MappedState<Hash, string, SwappedReceiptInfo> RecorderReceiptInfoMap { get; set; }
 
     /// <summary>
     /// Swap Id -> Symbol -> SwapPairInfo
@@ -121,11 +123,6 @@ public partial class BridgeContractState : ContractState
     /// </summary>
     public MappedState<Hash,long> ReceiptCountMap { get; set; }
 
-    /// <summary>
-    /// Owner -> lock ReceiptIdList
-    /// </summary>
-    public MappedState<Address, ReceiptIdList> OwnerTokenReceiptIdList { get; set; }
-    
     /// <summary>
     /// Receipt Id -> Receipt
     /// </summary>

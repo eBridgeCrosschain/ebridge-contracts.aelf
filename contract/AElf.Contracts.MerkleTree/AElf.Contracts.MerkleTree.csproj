@@ -17,11 +17,17 @@
         </CommonMessage>
     </ItemGroup>
     <ItemGroup>
+        <ContractReference Include="..\..\protobuf\acs3.proto">
+            <Link>Protobuf\Proto\reference\acs3.proto</Link>
+        </ContractReference>
         <ContractReference Include="..\..\protobuf\regiment_contract.proto">
-            <Link>Protobuf\Proto\regiment_contract.proto</Link>
+            <Link>Protobuf\Proto\reference\regiment_contract.proto</Link>
+        </ContractReference>
+        <ContractReference Include="..\..\protobuf\token_contract.proto">
+            <Link>Protobuf\Proto\reference\token_contract.proto</Link>
         </ContractReference>
         <ContractReference Include="..\..\protobuf\receipt_maker.proto">
-            <Link>Protobuf\Proto\receipt_maker.proto</Link>
+            <Link>Protobuf\Proto\reference\receipt_maker.proto</Link>
         </ContractReference>
     </ItemGroup>
     <ItemGroup>

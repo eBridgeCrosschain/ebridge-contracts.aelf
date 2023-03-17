@@ -1,11 +1,15 @@
 using AElf.Contracts.Oracle;
 using AElf.Sdk.CSharp.State;
+using AElf.Standards.ACS1;
 using AElf.Types;
 
 namespace AElf.Contracts.Report
 {
     public partial class ReportContractState : ContractState
     {
+        public SingletonState<Address> Owner { get; set; }
+        public MappedState<string, MethodFees> TransactionFees { get; set; }
+        public SingletonState<AuthorityInfo> MethodFeeController { get; set; }
         public SingletonState<string> OracleTokenSymbol { get; set; }
         
         public SingletonState<string> ObserverMortgageTokenSymbol { get; set; }

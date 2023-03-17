@@ -12,9 +12,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ContractMessage Include="..\..\protobuf\acs3.proto">
-            <Link>Protobuf\Proto\acs3.proto</Link>
-        </ContractMessage>
         <CommonMessage Include="..\..\protobuf\callback_input.proto">
             <Link>Protobuf\Proto\callback_input.proto</Link>
         </CommonMessage>
@@ -24,27 +21,33 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ContractReference Include="..\..\protobuf\acs3.proto">
+            <Link>Protobuf\Proto\reference\acs3.proto</Link>
+        </ContractReference>
         <ContractReference Include="..\..\protobuf\acs13.proto">
-            <Link>Protobuf\Proto\acs13.proto</Link>
+            <Link>Protobuf\Proto\reference\acs13.proto</Link>
         </ContractReference>
         <ContractReference Include="..\..\protobuf\token_contract.proto">
-            <Link>Protobuf\Proto\token_contract.proto</Link>
+            <Link>Protobuf\Proto\reference\token_contract.proto</Link>
         </ContractReference>
         <ContractReference Include="..\..\protobuf\parliament_contract.proto">
-            <Link>Protobuf\Proto\parliament_contract.proto</Link>
+            <Link>Protobuf\Proto\reference\parliament_contract.proto</Link>
         </ContractReference>
         <ContractReference Include="..\..\protobuf\aedpos_contract.proto">
-            <Link>Protobuf\Proto\aedpos_contract.proto</Link>
+            <Link>Protobuf\Proto\reference\aedpos_contract.proto</Link>
         </ContractReference>
         <ContractReference Include="..\..\protobuf\profit_contract.proto">
-            <Link>Protobuf\Proto\profit_contract.proto</Link>
+            <Link>Protobuf\Proto\reference\profit_contract.proto</Link>
         </ContractReference>
         <ContractReference Include="..\..\protobuf\regiment_contract.proto">
-            <Link>Protobuf\Proto\regiment_contract.proto</Link>
+            <Link>Protobuf\Proto\reference\regiment_contract.proto</Link>
         </ContractReference>
     </ItemGroup>
 
     <ItemGroup>
+        <ContractBase Include="..\..\protobuf\acs1.proto">
+            <Link>Protobuf\Proto\acs1.proto</Link>
+        </ContractBase>
         <ContractCode Include="..\..\protobuf\oracle_contract.proto">
             <Link>Protobuf\Proto\oracle_contract.proto</Link>
         </ContractCode>

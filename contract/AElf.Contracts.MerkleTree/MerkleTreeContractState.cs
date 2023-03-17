@@ -19,7 +19,7 @@ public partial class MerkleTreeContractState : ContractState
     /// <summary>
     /// regiment id -> space id list
     /// </summary>
-    public MappedState<Hash, HashList> RegimentSpaceIdListMap { get; set; }
+    //public MappedState<Hash, HashList> RegimentSpaceIdListMap { get; set; }
 
     /// <summary>
     /// Space id -> SpaceInfo
