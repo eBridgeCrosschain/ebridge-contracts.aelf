@@ -135,10 +135,13 @@ public partial class BridgeContract
         var swapInfo = GetTokenSwapInfo(swapId);
         var tokenSymbol = swapInfo.SwapTargetToken.Symbol;
         var maximumAmount = State.TokenMaximumAmount[tokenSymbol];
-        if (amount > maximumAmount)
+        if (amount <= maximumAmount) return;
+        if (!State.NeedApproveReceiptIdList.Value.Value.Contains(receiptId))
         {
-            Assert(State.ApproveTransfer[receiptId],$"{tokenSymbol} swap amount higher than maximum amount. Waiting for admin authorization. ReceiptId:{receiptId}");
+            State.NeedApproveReceiptIdList.Value.Value.Add(receiptId);
         }
+        Assert(State.ApproveTransfer[receiptId],
+            $"{tokenSymbol} swap amount higher than maximum amount. Waiting for admin authorization. ReceiptId:{receiptId}");
     }
 
     private void PerformTransferToken(Hash swapId, Address receiverAddress, decimal amount, string receiptId)
