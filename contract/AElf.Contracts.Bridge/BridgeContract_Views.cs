@@ -49,12 +49,7 @@ public partial class BridgeContract
     {
         return new Int64Value { Value = State.TokenMaximumAmount[input.Value] };
     }
-
-    public override ReceiptIdList GetApproveReceiptIdList(Empty input)
-    {
-        return State.NeedApproveReceiptIdList.Value;
-    }
-
+    
     #endregion
 
     #region Others to aelf

@@ -129,12 +129,9 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
     public override Empty ApproveTransfer(ApproveTransferInput input)
     {
         Assert(Context.Sender == State.Admin.Value, "No permission.");
-        Assert(State.NeedApproveReceiptIdList.Value.Value.Contains(input.ReceiptId),
-            "The receipt is not contain in the list.");
         Assert(!State.ApproveTransfer[input.ReceiptId],
             "The receipt has been approved");
         State.ApproveTransfer[input.ReceiptId] = true;
-        State.NeedApproveReceiptIdList.Value.Value.Remove(input.ReceiptId);
         return new Empty();
     }
 

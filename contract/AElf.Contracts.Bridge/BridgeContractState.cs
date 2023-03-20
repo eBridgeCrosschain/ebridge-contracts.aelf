@@ -99,11 +99,6 @@ public partial class BridgeContractState : ContractState
     /// </summary>
     public MappedState<string, bool> ApproveTransfer { get; set; }
 
-    /// <summary>
-    /// The receiptId list need to be approved.
-    /// </summary>
-    public SingletonState<ReceiptIdList> NeedApproveReceiptIdList { get; set; }
-    
     #endregion
 
     #region AElf to others.
