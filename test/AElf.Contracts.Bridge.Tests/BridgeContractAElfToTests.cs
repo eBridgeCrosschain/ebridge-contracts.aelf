@@ -1,10 +1,8 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AElf.Contracts.Bridge.Helpers;
 using AElf.Contracts.MultiToken;
-using AElf.Contracts.Parliament;
 using AElf.Contracts.Report;
 using AElf.CSharp.Core;
 using AElf.Types;
@@ -17,7 +15,7 @@ namespace AElf.Contracts.Bridge;
 public partial class BridgeContractTests
 {
     [Fact]
-    public async Task<(Address,Address)> InitialAElfTo()
+    public async Task<(Address, Address)> InitialAElfTo()
     {
         await InitialOracleContractAsync();
         var organization = await InitialBridgeContractAsync();
@@ -98,7 +96,7 @@ public partial class BridgeContractTests
         });
         return organization;
     }
-    
+
     [Fact]
     public async Task AElfToPipelineTest()
     {
@@ -671,7 +669,7 @@ public partial class BridgeContractTests
             result.TransactionResult.Error.ShouldContain("Incorrect fee floating ratio.");
         }
     }
-    
+
 
     [Fact]
     public async Task AElfToSetFeeTest()
@@ -806,7 +804,7 @@ public partial class BridgeContractTests
         var transactionFeeAfter = await BridgeContractStub.GetCurrentTransactionFee.CallAsync(new Empty());
         transactionFeeAfter.Value.ShouldBe(32_00000000);
     }
-    
+
     [Fact]
     public async Task WithdrawTransactionFee_Test_InsufficientAmount()
     {
@@ -831,7 +829,7 @@ public partial class BridgeContractTests
         var transactionFeeAfter = await BridgeContractStub.GetCurrentTransactionFee.CallAsync(new Empty());
         transactionFeeAfter.Value.ShouldBe(62_00000000);
     }
-    
+
     [Fact]
     public async Task WithdrawTransactionFee_Test_InvalidAmount()
     {
@@ -959,7 +957,7 @@ public partial class BridgeContractTests
     #endregion
 
     #region Lock
-    
+
     [Fact]
     public async Task CreateReceiptTest_PriceRatioFluctuation()
     {
@@ -989,13 +987,14 @@ public partial class BridgeContractTests
                 }
             });
             {
-                var executionResult = await BridgeContractStub.CreateReceipt.SendWithExceptionAsync(new CreateReceiptInput
-                {
-                    Symbol = "ELF",
-                    Amount = 100_00000000,
-                    TargetAddress = "0x643C7DCAd9321b36de85FEaC19763BE492dB5a04",
-                    TargetChainId = "Ethereum"
-                });
+                var executionResult = await BridgeContractStub.CreateReceipt.SendWithExceptionAsync(
+                    new CreateReceiptInput
+                    {
+                        Symbol = "ELF",
+                        Amount = 100_00000000,
+                        TargetAddress = "0x643C7DCAd9321b36de85FEaC19763BE492dB5a04",
+                        TargetChainId = "Ethereum"
+                    });
                 executionResult.TransactionResult.Error.ShouldContain("Price fluctuation higher than 20 percent.");
             }
             {
@@ -1021,9 +1020,8 @@ public partial class BridgeContractTests
                 });
             }
         }
-
     }
-    
+
     [Fact]
     public async Task CreateReceiptTest_LockAmountIsZero()
     {
@@ -1070,7 +1068,7 @@ public partial class BridgeContractTests
     }
 
     [Fact]
-    public async Task<(Address,Address)> CreateReceiptTest_Pause()
+    public async Task<(Address, Address)> CreateReceiptTest_Pause()
     {
         var organization = await PauseContract_Test();
         var executionResult = await BridgeContractStub.CreateReceipt.SendWithExceptionAsync(new CreateReceiptInput
@@ -1083,7 +1081,7 @@ public partial class BridgeContractTests
         executionResult.TransactionResult.Error.ShouldContain("Contract is paused.");
         return organization;
     }
-    
+
     [Fact]
     public async Task CreateReceiptTest_Restart()
     {
@@ -1123,7 +1121,7 @@ public partial class BridgeContractTests
         });
         executionResult.TransactionResult.Error.ShouldContain("No symbol list under the chain id Ploygon.");
     }
-    
+
     [Fact]
     public async Task ConfirmReport_NotProposed()
     {
@@ -1142,7 +1140,7 @@ public partial class BridgeContractTests
             executionResult.TransactionResult.Error.ShouldContain("Report of round 1 not proposed.");
         }
     }
-    
+
     [Fact]
     public async Task ConfirmReport_Duplicate()
     {
@@ -1161,6 +1159,7 @@ public partial class BridgeContractTests
             executionResult.TransactionResult.Error.ShouldContain("This report is already confirmed by all nodes.");
         }
     }
+
     [Fact]
     public async Task AElfToSetFeeTest_NotSetPriceRatio()
     {
@@ -1244,6 +1243,7 @@ public partial class BridgeContractTests
         await CheckBalanceAsync(BridgeContractAddress, "ELF", 100_00000000);
         await CheckBalanceAsync(DefaultSenderAddress, "ELF", balance - 100_00000000);
     }
+
     [Fact]
     public async Task AElfToSetFeeTest_GasPriceIsZero()
     {
@@ -1311,7 +1311,7 @@ public partial class BridgeContractTests
         await CheckBalanceAsync(BridgeContractAddress, "ELF", 100_00000000);
         await CheckBalanceAsync(DefaultSenderAddress, "ELF", balance - 100_00000000);
     }
-    
+
     [Fact]
     public Task LeafReceiptHashTest()
     {
@@ -1371,5 +1371,4 @@ public partial class BridgeContractTests
     }
 
     #endregion
-
 }

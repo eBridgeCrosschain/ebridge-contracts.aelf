@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using AElf.Contracts.MerkleTreeContract;
 using AElf.CSharp.Core;
 using AElf.Sdk.CSharp;

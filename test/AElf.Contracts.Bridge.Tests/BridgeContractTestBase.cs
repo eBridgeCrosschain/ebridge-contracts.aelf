@@ -22,9 +22,9 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
 {
     protected Address DefaultSenderAddress { get; set; }
     protected ECKeyPair DefaultKeypair => SampleAccount.Accounts.First().KeyPair;
-    
+
     internal List<Account> Transmitters => SampleAccount.Accounts.Skip(1).Take(5).ToList();
-    
+
     internal List<Account> Receivers => SampleAccount.Accounts.Skip(6).Take(5).ToList();
 
     internal List<Account> Lockers => SampleAccount.Accounts.Skip(11).Take(3).ToList();
@@ -36,34 +36,34 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
 
     protected IBlockTimeProvider BlockTimeProvider =>
         Application.ServiceProvider.GetRequiredService<IBlockTimeProvider>();
-    
+
     internal AssociationContractContainer.AssociationContractStub AssociationContractStub { get; set; }
-    
+
     internal AssociationContractImplContainer.AssociationContractImplStub AssociationContractImplStub { get; set; }
-    
+
     internal BridgeContractContainer.BridgeContractStub BridgeContractStub { get; set; }
-    
+
     internal BridgeContractImplContainer.BridgeContractImplStub BridgeContractImplStub { get; set; }
-    
+
     internal BridgeContractImplContainer.BridgeContractImplStub BridgeContractImplUserStub { get; set; }
 
 
     internal BridgeContractContainer.BridgeContractStub BridgeContractSetFeeRatioStub { get; set; }
 
-    internal ReportContractContainer.ReportContractStub ReportContractStub { get; set; } 
+    internal ReportContractContainer.ReportContractStub ReportContractStub { get; set; }
     internal OracleContractContainer.OracleContractStub OracleContractStub { get; set; }
-    
+
     internal TokenContractContainer.TokenContractStub TokenContractStub { get; set; }
     internal TokenContractContainer.TokenContractStub TokenContractStub2 { get; set; }
     internal RegimentContractContainer.RegimentContractStub RegimentContractStub { get; set; }
-    
+
     internal ParliamentContractContainer.ParliamentContractStub ParliamentContractStub { get; set; }
 
     internal MerkleTreeContractContainer.MerkleTreeContractStub MerkleTreeContractStub { get; set; }
-    
+
     internal List<OracleContractContainer.OracleContractStub> TransmittersOracleContractStubs { get; set; } =
         new List<OracleContractContainer.OracleContractStub>();
-    
+
     internal List<ReportContractContainer.ReportContractStub> TransmittersReportContractStubs { get; set; } =
         new List<ReportContractContainer.ReportContractStub>();
 
@@ -77,22 +77,24 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
     internal List<AssociationContractImplContainer.AssociationContractImplStub>
         AssociationContractImplStubs { get; set; } =
         new List<AssociationContractImplContainer.AssociationContractImplStub>();
+
     internal ReceiptMakerContractImplContainer.ReceiptMakerContractImplStub ReceiptMakerContractImplStub { get; set; }
 
     internal Address BridgeContractAddress => GetAddress(BridgeSmartContractAddressNameProvider.StringName);
-    
+
     internal Address ReportContractAddress => GetAddress(ReportSmartContractAddressNameProvider.StringName);
 
     internal Address OracleContractAddress => GetAddress(OracleSmartContractAddressNameProvider.StringName);
-    
+
     internal Address StringAggregatorContractAddress =>
-            GetAddress(StringAggregatorSmartContractAddressNameProvider.StringName);
+        GetAddress(StringAggregatorSmartContractAddressNameProvider.StringName);
+
     internal Address MerkleTreeContractAddress =>
         GetAddress(MerkleTreeSmartContractAddressNameProvider.StringName);
 
     internal Address RegimentContractAddress =>
         GetAddress(RegimentSmartContractAddressNameProvider.StringName);
-    
+
     internal Address ParliamentContractAddress =>
         GetAddress(ParliamentSmartContractAddressNameProvider.StringName);
 
@@ -164,7 +166,7 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
             BridgeContractAddress,
             senderKeyPair);
     }
-    
+
     internal BridgeContractImplContainer.BridgeContractImplStub
         GetBridgeContractImplStub(
             ECKeyPair senderKeyPair)
@@ -173,7 +175,7 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
             BridgeContractAddress,
             senderKeyPair);
     }
-    
+
     internal ReportContractContainer.ReportContractStub
         GetReportContractStub(
             ECKeyPair senderKeyPair)
@@ -182,7 +184,7 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
             ReportContractAddress,
             senderKeyPair);
     }
-    
+
     internal OracleContractContainer.OracleContractStub
         GetOracleContractStub(
             ECKeyPair senderKeyPair)
@@ -191,7 +193,7 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
             OracleContractAddress,
             senderKeyPair);
     }
-    
+
     internal TokenContractContainer.TokenContractStub
         GetTokenContractStub(
             ECKeyPair senderKeyPair)
@@ -208,7 +210,7 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
             RegimentContractAddress,
             senderKeyPair);
     }
-    
+
     internal ParliamentContractContainer.ParliamentContractStub
         GetParliamentContractStub(ECKeyPair senderKeyPair)
     {
@@ -216,7 +218,7 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
             ParliamentContractAddress,
             senderKeyPair);
     }
-    
+
     internal AssociationContractContainer.AssociationContractStub
         GetAssociationContractStub(ECKeyPair senderKeyPair)
     {
@@ -224,7 +226,7 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
             AssociationContractAddress,
             senderKeyPair);
     }
-    
+
     internal AssociationContractImplContainer.AssociationContractImplStub
         GetAssociationContractImplStub(ECKeyPair senderKeyPair)
     {

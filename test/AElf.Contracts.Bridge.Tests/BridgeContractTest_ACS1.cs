@@ -1,6 +1,5 @@
 using System.Linq;
 using System.Threading.Tasks;
-using AElf.Contracts.MultiToken;
 using AElf.Standards.ACS1;
 using Google.Protobuf.WellKnownTypes;
 using Shouldly;
@@ -95,11 +94,12 @@ public partial class BridgeContractTests
     {
         var organizationAddress = await InitialBridgeContractAsync();
         {
-            var executionResult = await BridgeContractImplStub.ChangeMethodFeeController.SendWithExceptionAsync(new AuthorityInfo
-            {
-                ContractAddress = AssociationContractAddress,
-                OwnerAddress = DefaultSenderAddress
-            });
+            var executionResult = await BridgeContractImplStub.ChangeMethodFeeController.SendWithExceptionAsync(
+                new AuthorityInfo
+                {
+                    ContractAddress = AssociationContractAddress,
+                    OwnerAddress = DefaultSenderAddress
+                });
             executionResult.TransactionResult.Error.ShouldContain("Invalid authority input.");
         }
         await BridgeContractImplStub.ChangeMethodFeeController.SendAsync(new AuthorityInfo
@@ -110,11 +110,12 @@ public partial class BridgeContractTests
         var controller = await BridgeContractImplStub.GetMethodFeeController.CallAsync(new Empty());
         controller.OwnerAddress.ShouldBe(organizationAddress.Item1);
         {
-            var executionResult = await BridgeContractImplStub.ChangeMethodFeeController.SendWithExceptionAsync(new AuthorityInfo
-            {
-                ContractAddress = AssociationContractAddress,
-                OwnerAddress = organizationAddress.Item1
-            });
+            var executionResult = await BridgeContractImplStub.ChangeMethodFeeController.SendWithExceptionAsync(
+                new AuthorityInfo
+                {
+                    ContractAddress = AssociationContractAddress,
+                    OwnerAddress = organizationAddress.Item1
+                });
             executionResult.TransactionResult.Error.ShouldContain("No permission.");
         }
     }

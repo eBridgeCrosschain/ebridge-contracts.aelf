@@ -228,10 +228,10 @@ public partial class MerkleTreeContractTests : MerkleTreeContractTestBase
             });
         executionResult.TransactionResult.Error.ShouldContain("No permission.");
     }
-    
+
     [Fact]
     public async Task RecordMerkleTreeTest_SpaceIdIsNull()
-    { 
+    {
         await InitialRegiment();
         var executionResult = await UserMerkleTreeContractStub.RecordMerkleTree.SendWithExceptionAsync(
             new RecordMerkleTreeInput
@@ -244,7 +244,7 @@ public partial class MerkleTreeContractTests : MerkleTreeContractTestBase
             });
         executionResult.TransactionResult.Error.ShouldContain("Incorrect space id.");
     }
-    
+
     [Fact]
     public async Task<Hash> RecordedMerkleTreeTest_NotFull()
     {
@@ -777,7 +777,7 @@ public partial class MerkleTreeContractTests : MerkleTreeContractTestBase
             merkleTree.IsFullTree.ShouldBe(false);
         }
     }
-    
+
     [Fact]
     public async Task ConstructMerkleTreeTest()
     {
@@ -829,7 +829,7 @@ public partial class MerkleTreeContractTests : MerkleTreeContractTestBase
         });
         ifProof.Value.ShouldBe(true);
     }
-    
+
     [Fact]
     public async Task MerkleProofTest_Failed()
     {
@@ -904,6 +904,7 @@ public partial class MerkleTreeContractTests : MerkleTreeContractTestBase
         });
         ifProof.Value.ShouldBe(true);
     }
+
     [Fact]
     public async Task MerkleProofTest_FirstTreeLastIndex()
     {
@@ -928,6 +929,7 @@ public partial class MerkleTreeContractTests : MerkleTreeContractTestBase
         });
         ifProof.Value.ShouldBe(true);
     }
+
     [Fact]
     public async Task MerkleProofTest_SecondTreeFirstIndex()
     {

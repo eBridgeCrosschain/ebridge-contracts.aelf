@@ -266,11 +266,13 @@ namespace AElf.Contracts.Report
             if (offChainAggregationInfo.RoundIds.All(i => i >= currentRoundId || i == -1))
             {
                 // Time to generate merkle tree.
-                report.AggregatedData = GenerateMerkleTree(report, offChainAggregationInfo, plainResult.Token, currentRoundId);
+                report.AggregatedData =
+                    GenerateMerkleTree(report, offChainAggregationInfo, plainResult.Token, currentRoundId);
                 for (var i = 0; i < offChainAggregationInfo.OffChainQueryInfoList.Value.Count; i++)
                 {
                     State.NodeObserverListMap[plainResult.Token][currentRoundId].Remove(i);
                 }
+
                 var regimentId = State.RegimentContract.GetRegimentId.Call(plainResult.RegimentAddress);
                 Context.Fire(new ReportProposed
                 {
@@ -286,7 +288,8 @@ namespace AElf.Contracts.Report
             return report;
         }
 
-        private ByteString GenerateMerkleTree(Report report,OffChainAggregationInfo offChainAggregationInfo,string token,long currentRoundId)
+        private ByteString GenerateMerkleTree(Report report, OffChainAggregationInfo offChainAggregationInfo,
+            string token, long currentRoundId)
         {
             var merkleNodes = new List<Hash>();
             for (var i = 0; i < offChainAggregationInfo.OffChainQueryInfoList.Value.Count; i++)
@@ -414,7 +417,6 @@ namespace AElf.Contracts.Report
 
             State.ObserverSignatureMap[input.ChainId][input.Token][input.RoundId][Context.Sender] =
                 input.Signature;
-            var address = Context.RecoverPublicKey();
             if (!reportRecord.ConfirmedNodeList.Contains(Context.Sender))
             {
                 reportRecord.ConfirmedNodeList.Add(Context.Sender);

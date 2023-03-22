@@ -1,4 +1,3 @@
-using AElf.Sdk.CSharp;
 using AElf.Types;
 using Google.Protobuf.WellKnownTypes;
 
@@ -58,7 +57,7 @@ namespace AElf.Contracts.Report
         public override StringValue GetRawReport(GetRawReportInput input)
         {
             var offChainAggregationInfo = State.OffChainAggregationInfoMap[input.ChainId][input.Token];
-            Assert(offChainAggregationInfo != null,$"token: [{input.Token}] info does not exist.");
+            Assert(offChainAggregationInfo != null, $"token: [{input.Token}] info does not exist.");
             var roundReport = State.ReportMap[input.ChainId][input.Token][input.RoundId];
             Assert(roundReport != null,
                 $"contract: [{input.Token}]: round: [{input.RoundId}] info does not exist");
@@ -72,7 +71,7 @@ namespace AElf.Contracts.Report
         public override SignatureMap GetSignatureMap(GetSignatureMapInput input)
         {
             var offChainAggregationInfo = State.OffChainAggregationInfoMap[input.ChainId][input.Token];
-            Assert(offChainAggregationInfo != null,"Report not exists.");
+            Assert(offChainAggregationInfo != null, "Report not exists.");
 
             var signatureMap = new SignatureMap();
             var regimentAddress = State.RegimentContract.GetRegimentAddress.Call(offChainAggregationInfo.RegimentId);

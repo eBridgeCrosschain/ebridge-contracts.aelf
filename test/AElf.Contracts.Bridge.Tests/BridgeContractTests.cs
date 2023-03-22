@@ -25,8 +25,6 @@ public partial class BridgeContractTests : BridgeContractTestBase
 
     private Hash _swapHashOfElf;
     private Hash _swapHashOfUsdt;
-    private Hash _swapOfElfSpaceId;
-    private Hash _swapOfUsdtSpaceId;
 
     private Dictionary<string, Hash> _receiptDictionary;
 
@@ -47,7 +45,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
         });
         executionResult.TransactionResult.Error.ShouldContain("Already initialized.");
     }
-    
+
     [Fact]
     public async Task ChangeControllerTest()
     {
@@ -158,7 +156,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
     #endregion
 
     #region Regiment
-    
+
     [Fact]
     public async Task Regiment_AddAdminTest()
     {
@@ -195,7 +193,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
         regimentInfo.Admins.Count.ShouldBe(1);
         regimentInfo.Admins[0].ShouldBe(BridgeContractAddress);
     }
-    
+
     #endregion
 
     #region Pause/Restart
@@ -217,7 +215,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
         var execution = await BridgeContractStub.Pause.SendWithExceptionAsync(new Empty());
         execution.TransactionResult.Error.ShouldContain("Contract has already been paused.");
     }
-    
+
     [Fact]
     public async Task PauseContract_Test_NoPermission()
     {
@@ -245,7 +243,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
         }
     }
 
-    private async Task<Hash> ProposalToRestartContract((Address,Address) organizationAddress)
+    private async Task<Hash> ProposalToRestartContract((Address, Address) organizationAddress)
     {
         var executionResult = await AssociationContractImplStub.CreateProposal.SendAsync(new CreateProposalInput
         {
@@ -272,12 +270,12 @@ public partial class BridgeContractTests : BridgeContractTestBase
             {
                 await associationContractImplStub.Approve.SendAsync(proposalId1);
             }
+
             await AssociationContractImplStubs[0].Release.SendAsync(proposalId1);
         }
         await AssociationContractImplStub.Approve.SendAsync(proposalId);
         return proposalId;
     }
-    
 
     #endregion
 
@@ -373,7 +371,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
             .FirstOrDefault(e => e.Name == nameof(OrganizationCreated))?.NonIndexed)).OrganizationAddress;
         return (organizationAddress, organizationAddress1);
     }
-    
+
     private async Task<(Address, Address)> CreateOrganizationSecondTest()
     {
         var executionResult = await AssociationContractStub.CreateOrganization.SendAsync(new CreateOrganizationInput
@@ -447,7 +445,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
             RegimentContractAddress = RegimentContractAddress
         });
     }
-    
+
     private async Task<(Address, Address)> InitialBridgeContractAsync()
     {
         var organizationAddress = await CreateOrganizationTest();
@@ -484,7 +482,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
             InitialRegisterWhiteList = {DefaultSenderAddress}
         });
     }
-    
+
     private async Task CreateAndIssueUSDTAsync()
     {
         await TokenContractStub.Create.SendAsync(new CreateInput
@@ -642,5 +640,4 @@ public partial class BridgeContractTests : BridgeContractTestBase
     }
 
     #endregion
-    
 }

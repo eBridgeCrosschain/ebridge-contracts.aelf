@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using AElf.Sdk.CSharp.State;
 using AElf.Standards.ACS1;
 using AElf.Types;

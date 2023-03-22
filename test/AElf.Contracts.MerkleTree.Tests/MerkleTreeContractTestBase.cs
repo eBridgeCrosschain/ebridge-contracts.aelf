@@ -2,7 +2,6 @@ using System.Linq;
 using AElf.Boilerplate.TestBase;
 using AElf.Boilerplate.TestBase.SmartContractNameProviders;
 using AElf.Contracts.Association;
-using AElf.Contracts.ReceiptMakerContract;
 using AElf.Contracts.Regiment;
 using AElf.Contracts.TestContract.ReceiptMaker;
 using AElf.ContractTestBase.ContractTestKit;
@@ -28,9 +27,9 @@ public class MerkleTreeContractTestBase : DAppContractTestBase<MerkleTreeContrac
 
     internal ReceiptMakerContractImplContainer.ReceiptMakerContractImplStub ReceiptMakerContractImplStub { get; set; }
     internal AssociationContractContainer.AssociationContractStub AssociationContractStub { get; set; }
-    
+
     internal AssociationContractImplContainer.AssociationContractImplStub AssociationContractImplStub { get; set; }
-    
+
 
     internal Address MerkleTreeContractAddress =>
         GetAddress(MerkleTreeSmartContractAddressNameProvider.StringName);
@@ -60,7 +59,7 @@ public class MerkleTreeContractTestBase : DAppContractTestBase<MerkleTreeContrac
             AssociationContractAddress,
             senderKeyPair);
     }
-    
+
     internal AssociationContractImplContainer.AssociationContractImplStub
         GetAssociationContractImplStub(ECKeyPair senderKeyPair)
     {
@@ -68,7 +67,7 @@ public class MerkleTreeContractTestBase : DAppContractTestBase<MerkleTreeContrac
             AssociationContractAddress,
             senderKeyPair);
     }
-    
+
     internal MerkleTreeContractContainer.MerkleTreeContractStub
         GetMerkleTreeContractStub(
             ECKeyPair senderKeyPair)

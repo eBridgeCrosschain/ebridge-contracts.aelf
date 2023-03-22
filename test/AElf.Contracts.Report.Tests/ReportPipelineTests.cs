@@ -1,21 +1,7 @@
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using AElf.Contracts.MultiToken;
-using AElf.Contracts.Oracle;
-using AElf.Contracts.Regiment;
-using AElf.ContractTestKit;
-using AElf.Types;
-using Google.Protobuf.WellKnownTypes;
-using Shouldly;
-using Xunit;
-using CreateRegimentInput = AElf.Contracts.Oracle.CreateRegimentInput;
-
 namespace AElf.Contracts.Report;
 
 public class ReportPipelineTests : ReportContractTestBase
 {
-
     // private static readonly List<Account> ObserverAccounts = SampleAccount.Accounts.Skip(10).Take(5).ToList();
     // private readonly List<Address> _observerAddresses = ObserverAccounts.Select(a => a.Address).ToList();
     //
@@ -72,4 +58,3 @@ public class ReportPipelineTests : ReportContractTestBase
     //     _regimentId = logEvent.RegimentId;
     // }
 }
-

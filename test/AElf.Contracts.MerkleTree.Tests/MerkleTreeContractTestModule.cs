@@ -1,9 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using AElf.Boilerplate.TestBase;
-using AElf.Boilerplate.TestBase.SmartContractNameProviders;
 using AElf.Contracts.Regiment;
-using AElf.Contracts.TestContract.ReceiptMaker;
 using AElf.ContractTestBase;
 using AElf.ContractTestBase.ContractTestKit;
 using AElf.Kernel.SmartContract.Application;

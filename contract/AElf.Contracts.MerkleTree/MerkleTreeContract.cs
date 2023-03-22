@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using AElf.CSharp.Core;
 using AElf.Sdk.CSharp;

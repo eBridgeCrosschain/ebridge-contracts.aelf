@@ -124,11 +124,12 @@ public partial class MerkleTreeContractTests
         var organizationAddress = (OrganizationCreated.Parser.ParseFrom(execution.TransactionResult.Logs
             .FirstOrDefault(e => e.Name == nameof(OrganizationCreated))?.NonIndexed)).OrganizationAddress;
         {
-            var executionResult = await MerkleTreeContractStub.ChangeMethodFeeController.SendWithExceptionAsync(new AuthorityInfo
-            {
-                ContractAddress = AssociationContractAddress,
-                OwnerAddress = DefaultSenderAddress
-            });
+            var executionResult = await MerkleTreeContractStub.ChangeMethodFeeController.SendWithExceptionAsync(
+                new AuthorityInfo
+                {
+                    ContractAddress = AssociationContractAddress,
+                    OwnerAddress = DefaultSenderAddress
+                });
             executionResult.TransactionResult.Error.ShouldContain("Invalid authority input.");
         }
         await MerkleTreeContractStub.ChangeMethodFeeController.SendAsync(new AuthorityInfo
@@ -139,11 +140,12 @@ public partial class MerkleTreeContractTests
         var controller = await MerkleTreeContractStub.GetMethodFeeController.CallAsync(new Empty());
         controller.OwnerAddress.ShouldBe(organizationAddress);
         {
-            var executionResult = await MerkleTreeContractStub.ChangeMethodFeeController.SendWithExceptionAsync(new AuthorityInfo
-            {
-                ContractAddress = AssociationContractAddress,
-                OwnerAddress = organizationAddress
-            });
+            var executionResult = await MerkleTreeContractStub.ChangeMethodFeeController.SendWithExceptionAsync(
+                new AuthorityInfo
+                {
+                    ContractAddress = AssociationContractAddress,
+                    OwnerAddress = organizationAddress
+                });
             executionResult.TransactionResult.Error.ShouldContain("No permission.");
         }
     }

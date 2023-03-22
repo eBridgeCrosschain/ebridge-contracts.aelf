@@ -7,7 +7,7 @@ namespace AElf.Contracts.Oracle;
 
 public partial class OracleContract
 {
-   public override Empty SetMethodFee(MethodFees input)
+    public override Empty SetMethodFee(MethodFees input)
     {
         foreach (var methodFee in input.Fees) AssertValidToken(methodFee.Symbol, methodFee.BasicFee);
         RequiredMethodFeeControllerSet();
@@ -21,7 +21,7 @@ public partial class OracleContract
     public override Empty ChangeMethodFeeController(AuthorityInfo input)
     {
         RequiredMethodFeeControllerSet();
-        Assert(Context.Sender == State.MethodFeeController.Value.OwnerAddress,"No permission.");
+        Assert(Context.Sender == State.MethodFeeController.Value.OwnerAddress, "No permission.");
         var organizationExist = CheckOrganizationExist(input);
         Assert(organizationExist, "Invalid authority input.");
 
@@ -39,7 +39,7 @@ public partial class OracleContract
         RequiredMethodFeeControllerSet();
         return State.MethodFeeController.Value;
     }
-    
+
     private void AssertValidToken(string symbol, long amount)
     {
         Assert(amount >= 0, "Invalid amount.");
@@ -47,9 +47,10 @@ public partial class OracleContract
             State.TokenContract.Value =
                 Context.GetContractAddressByName(SmartContractConstants.TokenContractSystemName);
 
-        Assert(State.TokenContract.IsTokenAvailableForMethodFee.Call(new StringValue { Value = symbol }).Value,
+        Assert(State.TokenContract.IsTokenAvailableForMethodFee.Call(new StringValue {Value = symbol}).Value,
             $"Token {symbol} cannot set as method fee.");
     }
+
     private void RequiredMethodFeeControllerSet()
     {
         if (State.MethodFeeController.Value != null) return;
@@ -61,6 +62,7 @@ public partial class OracleContract
 
         State.MethodFeeController.Value = defaultAuthority;
     }
+
     private bool CheckOrganizationExist(AuthorityInfo authorityInfo)
     {
         return Context.Call<BoolValue>(authorityInfo.ContractAddress,

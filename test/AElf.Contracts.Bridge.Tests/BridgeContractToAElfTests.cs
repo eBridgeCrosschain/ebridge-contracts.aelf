@@ -1,17 +1,13 @@
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using AElf.Contracts.Bridge.Tests;
 using AElf.Contracts.MultiToken;
 using AElf.Contracts.Oracle;
-using AElf.CSharp.Core;
 using AElf.Types;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
-using JetBrains.Annotations;
 using Shouldly;
 using Xunit;
+using CallbackInfo = AElf.Contracts.Oracle.CallbackInfo;
 
 namespace AElf.Contracts.Bridge;
 
@@ -590,7 +586,6 @@ public partial class BridgeContractTests
         {
             RegimentId = regimentId,
             SwapTargetToken =
-           
                 new SwapTargetToken
                 {
                     FromChainId = "Ethereum",
@@ -601,7 +596,6 @@ public partial class BridgeContractTests
                         TargetShare = 1
                     }
                 }
-            
         });
         executionResult.TransactionResult.Error.ShouldContain("Token not found.");
     }
@@ -616,7 +610,6 @@ public partial class BridgeContractTests
             MerkleTreeLeafLimit = 1024,
             RegimentId = regimentId,
             SwapTargetToken =
-            
                 new SwapTargetToken
                 {
                     FromChainId = "Ethereum",
@@ -648,7 +641,6 @@ public partial class BridgeContractTests
             MerkleTreeLeafLimit = 1024,
             RegimentId = regimentId,
             SwapTargetToken =
-            
                 new SwapTargetToken
                 {
                     FromChainId = "Ethereum",
@@ -659,7 +651,6 @@ public partial class BridgeContractTests
                         TargetShare = 1
                     }
                 }
-            
         });
         executionResult.TransactionResult.Error.ShouldContain("MerkleTree contract is not initialized.");
     }
@@ -978,7 +969,6 @@ public partial class BridgeContractTests
         {
             RegimentId = regimentId,
             SwapTargetToken =
-            
                 new SwapTargetToken
                 {
                     Symbol = "ELF",
@@ -1301,7 +1291,7 @@ public partial class BridgeContractTests
                 Options = {$"{from}", $"{end}"}
             },
             AggregatorContractAddress = StringAggregatorContractAddress,
-            CallbackInfo = new Oracle.CallbackInfo
+            CallbackInfo = new CallbackInfo
             {
                 ContractAddress = BridgeContractAddress,
                 MethodName = "RecordReceiptHash"

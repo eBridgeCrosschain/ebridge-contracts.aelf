@@ -2,11 +2,8 @@ using System.Collections.Generic;
 using System.Linq;
 using AElf.Boilerplate.TestBase;
 using AElf.Boilerplate.TestBase.SmartContractNameProviders;
-using AElf.Contracts.Bridge;
-using AElf.Contracts.MerkleTreeContract;
 using AElf.Contracts.MultiToken;
 using AElf.Contracts.Oracle;
-using AElf.Contracts.ReceiptMakerContract;
 using AElf.Contracts.Regiment;
 using AElf.ContractTestBase.ContractTestKit;
 using AElf.Cryptography.ECDSA;
@@ -16,15 +13,14 @@ namespace AElf.Contracts.Report;
 
 public class ReportContractTestBase : DAppContractTestBase<ReportContractTestModule>
 {
-     protected Address DefaultSenderAddress { get; set; }
+    protected Address DefaultSenderAddress { get; set; }
     protected ECKeyPair DefaultKeypair => SampleAccount.Accounts.First().KeyPair;
-    
+
     internal List<Account> Transmitters => SampleAccount.Accounts.Skip(1).Take(5).ToList();
-    
-    
+
 
     internal OracleContractContainer.OracleContractStub OracleContractStub { get; set; }
-    
+
     internal TokenContractContainer.TokenContractStub TokenContractStub { get; set; }
     internal RegimentContractContainer.RegimentContractStub RegimentContractStub { get; set; }
 
@@ -32,12 +28,12 @@ public class ReportContractTestBase : DAppContractTestBase<ReportContractTestMod
 
     internal List<OracleContractContainer.OracleContractStub> TransmittersOracleContractStubs { get; set; } =
         new List<OracleContractContainer.OracleContractStub>();
-    
+
 
     internal Address OracleContractAddress => GetAddress(OracleSmartContractAddressNameProvider.StringName);
-    
+
     internal Address StringAggregatorContractAddress =>
-            GetAddress(StringAggregatorSmartContractAddressNameProvider.StringName);
+        GetAddress(StringAggregatorSmartContractAddressNameProvider.StringName);
 
     internal Address RegimentContractAddress =>
         GetAddress(RegimentSmartContractAddressNameProvider.StringName);
@@ -58,10 +54,9 @@ public class ReportContractTestBase : DAppContractTestBase<ReportContractTestMod
         {
             TransmittersOracleContractStubs.Add(GetOracleContractStub(transmitter.KeyPair));
         }
-
     }
-    
-    
+
+
     internal OracleContractContainer.OracleContractStub
         GetOracleContractStub(
             ECKeyPair senderKeyPair)
@@ -70,7 +65,7 @@ public class ReportContractTestBase : DAppContractTestBase<ReportContractTestMod
             OracleContractAddress,
             senderKeyPair);
     }
-    
+
     internal TokenContractContainer.TokenContractStub
         GetTokenContractStub(
             ECKeyPair senderKeyPair)

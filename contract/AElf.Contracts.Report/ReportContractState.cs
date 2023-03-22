@@ -1,4 +1,3 @@
-using AElf.Contracts.Oracle;
 using AElf.Sdk.CSharp.State;
 using AElf.Standards.ACS1;
 using AElf.Types;
@@ -11,25 +10,26 @@ namespace AElf.Contracts.Report
         public MappedState<string, MethodFees> TransactionFees { get; set; }
         public SingletonState<AuthorityInfo> MethodFeeController { get; set; }
         public SingletonState<string> OracleTokenSymbol { get; set; }
-        
+
         public SingletonState<string> ObserverMortgageTokenSymbol { get; set; }
         public SingletonState<long> ReportFee { get; set; }
         public SingletonState<long> ApplyObserverFee { get; set; }
-        
+
         /// <summary>
         /// QueryId -> ReportQueryRecord
         /// </summary>
         public MappedState<Hash, ReportQueryRecord> ReportQueryRecordMap { get; set; }
-        
+
         /// <summary>
         /// Chain id -> Token(Contract address) -> round Id -> ReportQueryRecord
         /// </summary>
         public MappedState<string, string, long, ReportQueryRecord> ReportRecordMap { get; set; }
-        
+
         /// <summary>
         /// chain id -> token -> observer address -> signature
         /// </summary>
         public MappedState<string, string, long, Address, string> ObserverSignatureMap { get; set; }
+
         /// <summary>
         /// chain id -> token -> round id
         /// </summary>
@@ -38,7 +38,7 @@ namespace AElf.Contracts.Report
         /// <summary>
         /// ChainId -> Ethereum Contract Address -> Round Number (Round Id) -> Report.
         /// </summary>
-        public MappedState<string,string, long, Report> ReportMap { get; set; }
+        public MappedState<string, string, long, Report> ReportMap { get; set; }
 
         /// <summary>
         /// TargetChainId -> Target Contract address.
@@ -74,6 +74,6 @@ namespace AElf.Contracts.Report
         /// <summary>
         /// chain Id -> Token -> Skip confirm member list
         /// </summary>
-        public MappedState<string , string, MemberList> SkipMemberListMap { get; set; }
+        public MappedState<string, string, MemberList> SkipMemberListMap { get; set; }
     }
 }

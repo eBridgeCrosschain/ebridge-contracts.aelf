@@ -1,11 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using AElf.Contracts.Association;
 using AElf.CSharp.Core;
 using AElf.Sdk.CSharp;
-using AElf.Standards.ACS3;
 using AElf.Types;
 using Google.Protobuf.WellKnownTypes;
 
@@ -19,11 +13,11 @@ namespace AElf.Contracts.Report
             Assert(State.RegisterWhiteListMap[Context.Sender], "Sender not in register white list.");
             Assert(State.OffChainAggregationInfoMap[input.ChainId][input.Token] == null,
                 $"Off chain aggregation info of {input.Token} already registered.");
-            
+
             var regimentAddress = State.RegimentContract.GetRegimentAddress.Call(input.RegimentId);
             var regimentInfo = State.RegimentContract.GetRegimentInfo.Call(regimentAddress);
             Assert(regimentInfo.Manager != null, "Regiment not exists.");
-            
+
             var offChainAggregationInfo = new OffChainAggregationInfo
             {
                 Token = input.Token,
@@ -46,14 +40,15 @@ namespace AElf.Contracts.Report
                     Assert(input.AggregatorContractAddress != null,
                         "Merkle tree style aggregator must set aggregator contract address.");
                 }
+
                 for (var i = 0; i < input.OffChainQueryInfoList?.Value.Count; i++)
                 {
                     offChainAggregationInfo.RoundIds.Add(0);
                 }
             }
-            
+
             State.TargetChainAddressMap[input.ChainId] = input.Token;
-            
+
             State.OffChainAggregationInfoMap[input.ChainId][input.Token] = offChainAggregationInfo;
             State.CurrentRoundIdMap[input.ChainId][input.Token] = 1;
 
@@ -76,7 +71,7 @@ namespace AElf.Contracts.Report
         public override Empty AddOffChainQueryInfo(AddOffChainQueryInfoInput input)
         {
             var offChainAggregationInfo = State.OffChainAggregationInfoMap[input.ChainId][input.Token];
-            Assert(offChainAggregationInfo != null,$"Token {input.Token} not registered.");
+            Assert(offChainAggregationInfo != null, $"Token {input.Token} not registered.");
             Assert(offChainAggregationInfo.Register == Context.Sender, "No permission.");
             Assert(offChainAggregationInfo.OffChainQueryInfoList.Value.Count > 1,
                 "Only merkle style aggregation can manage off chain query info.");
@@ -91,7 +86,7 @@ namespace AElf.Contracts.Report
         public override Empty RemoveOffChainQueryInfo(RemoveOffChainQueryInfoInput input)
         {
             var offChainAggregationInfo = State.OffChainAggregationInfoMap[input.ChainId][input.Token];
-            Assert(offChainAggregationInfo != null,$"Token {input.Token} not registered.");
+            Assert(offChainAggregationInfo != null, $"Token {input.Token} not registered.");
             Assert(offChainAggregationInfo.Register == Context.Sender, "No permission.");
             Assert(offChainAggregationInfo.OffChainQueryInfoList.Value.Count > 1,
                 "Only merkle style aggregation can manage off chain query info.");
@@ -109,7 +104,7 @@ namespace AElf.Contracts.Report
         public override Empty ChangeOffChainQueryInfo(ChangeOffChainQueryInfoInput input)
         {
             var offChainAggregationInfo = State.OffChainAggregationInfoMap[input.ChainId][input.Token];
-            Assert(offChainAggregationInfo != null,$"Token {input.Token} not registered.");
+            Assert(offChainAggregationInfo != null, $"Token {input.Token} not registered.");
             Assert(offChainAggregationInfo.Register == Context.Sender, "No permission.");
             Assert(offChainAggregationInfo.OffChainQueryInfoList.Value.Count == 1,
                 "Only single style aggregation can change off chain query info.");

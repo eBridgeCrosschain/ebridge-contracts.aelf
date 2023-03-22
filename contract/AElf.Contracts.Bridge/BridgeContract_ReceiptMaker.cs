@@ -2,7 +2,6 @@ using System.Linq;
 using AElf.Contracts.MerkleTreeContract;
 using AElf.Contracts.ReceiptMakerContract;
 using AElf.CSharp.Core;
-using AElf.Sdk.CSharp;
 using AElf.Types;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;

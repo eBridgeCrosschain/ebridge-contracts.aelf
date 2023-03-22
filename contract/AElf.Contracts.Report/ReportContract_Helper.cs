@@ -1,12 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using AElf.CSharp.Core;
-using AElf.Sdk.CSharp;
 using AElf.Types;
-using Google.Protobuf;
-using Google.Protobuf.WellKnownTypes;
 
 namespace AElf.Contracts.Report
 {
@@ -37,7 +33,7 @@ namespace AElf.Contracts.Report
         {
             var round = report.RoundId;
             var validBytesCount = (byte) report.AggregatedData.Length;
-            Assert(round >= 0,"Invalid round.");
+            Assert(round >= 0, "Invalid round.");
 
             // configText consists of:
             // 6-byte zero padding
@@ -86,7 +82,7 @@ namespace AElf.Contracts.Report
 
         private long GetReceiptIndex(string receipt)
         {
-            Assert(long.TryParse(receipt.Split(".").Last(), out var receiptIndex),"Incorrect receipt index.");
+            Assert(long.TryParse(receipt.Split(".").Last(), out var receiptIndex), "Incorrect receipt index.");
             return receiptIndex;
         }
 
@@ -118,7 +114,7 @@ namespace AElf.Contracts.Report
         private List<byte> SerializeReport(List<object> data, params string[] dataType)
         {
             var dataLength = (long) dataType.Length;
-            Assert(dataLength == data.Count,"Invalid data length.");
+            Assert(dataLength == data.Count, "Invalid data length.");
             var result = new List<byte>();
             var currentIndex = dataLength;
             var lazyData = new List<byte>();
@@ -217,7 +213,7 @@ namespace AElf.Contracts.Report
         private List<byte> ConvertBytes32(object data)
         {
             var dataBytes = data as List<byte>;
-            Assert(dataBytes.Count == SlotByteSize,"Invalid bytes32 data.");
+            Assert(dataBytes.Count == SlotByteSize, "Invalid bytes32 data.");
 
             return dataBytes;
         }
@@ -244,7 +240,7 @@ namespace AElf.Contracts.Report
                 ? MinimumAmercementAmount
                 : Math.Max(State.AmercementAmountMap[associationAddress], MinimumAmercementAmount);
         }
-        
+
         private bool IfDataOnChain(OffChainQueryInfo info)
         {
             return info.Title.StartsWith("lock_token") && info.Options.Count == 1;
