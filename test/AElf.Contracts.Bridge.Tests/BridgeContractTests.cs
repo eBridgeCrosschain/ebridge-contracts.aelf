@@ -25,6 +25,8 @@ public partial class BridgeContractTests : BridgeContractTestBase
 
     private Hash _swapHashOfElf;
     private Hash _swapHashOfUsdt;
+    private Hash _swapOfElfSpaceId;
+    private Hash _swapOfUsdtSpaceId;
 
     private Dictionary<string, Hash> _receiptDictionary;
 
