@@ -2,6 +2,7 @@
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
         <IsContract>true</IsContract>
+        <Version>1.0.0.1</Version>
         <RootNamespace>AElf.Contracts.Oracle</RootNamespace>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -47,6 +48,9 @@
     <ItemGroup>
         <ContractBase Include="..\..\protobuf\acs1.proto">
             <Link>Protobuf\Proto\acs1.proto</Link>
+        </ContractBase>
+        <ContractBase Include="..\..\protobuf\acs12.proto">
+            <Link>Protobuf\Proto\acs12.proto</Link>
         </ContractBase>
         <ContractCode Include="..\..\protobuf\oracle_contract.proto">
             <Link>Protobuf\Proto\oracle_contract.proto</Link>

@@ -14,21 +14,21 @@ public partial class BridgeContract
         Assert(input.RegimentId != null, "Regiment id cannot be null.");
         Assert(State.MerkleTreeContract.Value != null, "MerkleTree contract is not initialized.");
         var targetToken = input.SwapTargetToken;
-        Assert(targetToken != null,"Invalid input.");
+        Assert(targetToken != null, "Invalid input.");
         var fromChainId = targetToken.FromChainId;
         var symbol = targetToken.Symbol;
-        Assert(!string.IsNullOrEmpty(fromChainId) && !string.IsNullOrEmpty(symbol),"Invalid chain id and symbol.");
+        Assert(!string.IsNullOrEmpty(fromChainId) && !string.IsNullOrEmpty(symbol), "Invalid chain id and symbol.");
         Assert(State.ChainTokenSwapIdMap[fromChainId][symbol] == null,
             $"Swap already created. Chain id: {targetToken.FromChainId} Symbol: {targetToken.Symbol}. ");
         var swapId = HashHelper.ConcatAndCompute(Context.TransactionId, HashHelper.ComputeFrom(input));
         Assert(State.SwapInfo[swapId] == null, "Swap already created.");
-        
+
         var regimentAddress = State.RegimentContract.GetRegimentAddress.Call(input.RegimentId);
         var regimentManager = State.RegimentContract.GetRegimentInfo.Call(regimentAddress).Manager;
         Assert(Context.Sender == regimentManager, "Only regiment manager can create swap.");
         Assert(State.RegimentContract.GetRegimentInfo.Call(regimentAddress).Admins.Contains(Context.Self),
             $"Bridge Contract is not the admin of regiment. Regiment id: {input.RegimentId}");
-        
+
         //Create space to record receipt.
         State.MerkleTreeContract.CreateSpace.Send(new CreateSpaceInput
         {
@@ -42,7 +42,7 @@ public partial class BridgeContract
         var spaceId =
             HashHelper.ConcatAndCompute(HashHelper.ComputeFrom(input.RegimentId), HashHelper.ComputeFrom(spaceSalt));
         State.SwapSpaceIdMap[swapId] = spaceId;
-        
+
         AssertSwapTargetToken(targetToken.Symbol);
         Assert(ValidateSwapRatio(targetToken.SwapRatio), "Invalidate swap ratio.");
         var swapInfo = new SwapInfo
@@ -58,12 +58,12 @@ public partial class BridgeContract
             }
         };
         State.SwapInfo[swapId] = swapInfo;
-        
+
         var swapPairInfo = new SwapPairInfo();
         State.SwapPairInfoMap[swapId][targetToken.Symbol] = swapPairInfo;
-        
+
         State.ChainTokenSwapIdMap[targetToken.FromChainId][symbol] = swapId;
-        
+
         Context.Fire(new SwapInfoAdded
         {
             SwapId = swapId,
@@ -134,7 +134,8 @@ public partial class BridgeContract
         var swapInfo = GetTokenSwapInfo(swapId);
         var tokenSymbol = swapInfo.SwapTargetToken.Symbol;
         var maximumAmount = State.TokenMaximumAmount[tokenSymbol];
-        if (amount <= maximumAmount) return;
+        var actualAmount = GetTargetTokenAmount(amount, swapInfo.SwapTargetToken.SwapRatio);
+        if (actualAmount <= maximumAmount) return;
         Assert(State.ApproveTransfer[receiptId],
             $"{tokenSymbol} swap amount higher than maximum amount. Waiting for admin authorization. ReceiptId:{receiptId}");
     }
@@ -148,11 +149,11 @@ public partial class BridgeContract
         };
         var swapTargetToken = swapInfo.SwapTargetToken;
         var swapPairInfo = State.SwapPairInfoMap[swapInfo.SwapId][swapTargetToken.Symbol];
-        Assert(swapPairInfo != null,$"Swap pair {swapInfo.SwapId}-{swapTargetToken.Symbol} is not exist.");
+        Assert(swapPairInfo != null, $"Swap pair {swapInfo.SwapId}-{swapTargetToken.Symbol} is not exist.");
         var targetTokenAmount = GetTargetTokenAmount(amount, swapTargetToken.SwapRatio);
         Assert(targetTokenAmount <= swapPairInfo.DepositAmount,
             $"Deposit not enough. Deposit amount : {swapPairInfo.DepositAmount}");
-            
+
         // Update swap pair and ledger
         swapPairInfo.SwappedAmount = swapPairInfo.SwappedAmount.Add(targetTokenAmount);
         swapPairInfo.SwappedTimes = swapPairInfo.SwappedTimes.Add(1);
@@ -172,7 +173,7 @@ public partial class BridgeContract
         });
 
         swapAmounts.ReceivedAmounts[swapTargetToken.Symbol] = targetTokenAmount;
-        
+
         State.Ledger[swapId][receiptId] = swapAmounts;
         State.RecorderReceiptInfoMap[swapId][receiptId] = new SwappedReceiptInfo
         {
@@ -191,7 +192,7 @@ public partial class BridgeContract
         var regimentManager = State.RegimentContract.GetRegimentInfo.Call(regimentAddress).Manager;
         Assert(Context.Sender == regimentManager, "No permission.");
         var swapPairInfo = State.SwapPairInfoMap[swapInfo.SwapId][input.TargetTokenSymbol];
-        Assert(swapPairInfo != null,$"Swap pair {swapInfo.SwapId}-{input.TargetTokenSymbol} is not exist.");
+        Assert(swapPairInfo != null, $"Swap pair {swapInfo.SwapId}-{input.TargetTokenSymbol} is not exist.");
         Assert(swapPairInfo.DepositAmount >= input.Amount,
             $"Deposits not enough. Deposit amount : {swapPairInfo.DepositAmount}");
         swapPairInfo.DepositAmount = swapPairInfo.DepositAmount.Sub(input.Amount);
@@ -206,7 +207,8 @@ public partial class BridgeContract
         var regimentAddress = State.RegimentContract.GetRegimentAddress.Call(swapInfo.RegimentId);
         var regimentManager = State.RegimentContract.GetRegimentInfo.Call(regimentAddress).Manager;
         Assert(Context.Sender == regimentManager, "No permission.");
-        Assert(swapInfo.SwapTargetToken.Symbol == input.TargetTokenSymbol,$"Swap target token {swapInfo.SwapId}-{input.TargetTokenSymbol} is not exist. ");
+        Assert(swapInfo.SwapTargetToken.Symbol == input.TargetTokenSymbol,
+            $"Swap target token {swapInfo.SwapId}-{input.TargetTokenSymbol} is not exist. ");
         swapInfo.SwapTargetToken.SwapRatio = input.SwapRatio;
         State.SwapInfo[swapInfo.SwapId] = swapInfo;
         Context.Fire(new SwapRatioChanged

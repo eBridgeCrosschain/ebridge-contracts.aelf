@@ -4,6 +4,7 @@
         <!-- The root namespace -->
         <!-- Mark this project as a contract -->
         <IsContract>true</IsContract>
+        <Version>1.0.0.1</Version>
         <RootNamespace>AElf.Contracts.Regiment</RootNamespace>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -43,6 +44,9 @@
     <ItemGroup>
         <ContractBase Include="..\..\protobuf\acs1.proto">
             <Link>Protobuf\Proto\acs1.proto</Link>
+        </ContractBase>
+        <ContractBase Include="..\..\protobuf\acs12.proto">
+            <Link>Protobuf\Proto\acs12.proto</Link>
         </ContractBase>
         <ContractCode Include="..\..\protobuf\regiment_contract.proto">
             <Link>Protobuf\Proto\regiment_contract.proto</Link>

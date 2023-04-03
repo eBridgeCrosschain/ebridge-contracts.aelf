@@ -5,6 +5,7 @@ import "aelf/options.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/wrappers.proto";
 import "acs1.proto";
+import "acs12.proto";
 import "receipt_maker.proto";
 
 option csharp_namespace = "AElf.Contracts.MerkleTreeContract";
@@ -12,6 +13,7 @@ option csharp_namespace = "AElf.Contracts.MerkleTreeContract";
 service MerkleTreeContract {
   option (aelf.csharp_state) = "AElf.Contracts.MerkleTreeContract.MerkleTreeContractState";
   option (aelf.base) = "acs1.proto";
+  option (aelf.base) = "acs12.proto";
 
   rpc Initialize(InitializeInput) returns(google.protobuf.Empty){
   }

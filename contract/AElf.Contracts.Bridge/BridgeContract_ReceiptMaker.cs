@@ -12,7 +12,7 @@ public partial class BridgeContract
 {
     public override Empty RecordReceiptHash(CallbackInput input)
     {
-        Assert(!State.IsContractPause.Value,"Contract is paused.");
+        Assert(!State.IsContractPause.Value, "Contract is paused.");
         Assert(Context.Sender == State.OracleContract.Value, "No permission.");
         var queryResult = new StringValue();
         queryResult.MergeFrom(input.Result);
@@ -20,23 +20,23 @@ public partial class BridgeContract
         Assert(!string.IsNullOrEmpty(receiptHashMap.SwapId), "Swap id is null.");
         var swapId = Hash.LoadFromHex(receiptHashMap.SwapId);
         var spaceId = GetSpaceIdBySwapId(swapId);
-        Assert(spaceId != null,$"Space id is null.SwapId : {swapId}");
+        Assert(spaceId != null, $"Space id is null.SwapId : {swapId}");
 
         foreach (var (receiptId, receiptHash) in receiptHashMap.Value)
         {
             var treeIndex = State.RecordedTreeLeafIndex[spaceId].Add(1);
-            Assert(TryGetReceiptIndex(receiptId,out var receiptIndex), "Incorrect receipt index.");
+            Assert(TryGetReceiptIndex(receiptId, out var receiptIndex), "Incorrect receipt index.");
             Assert(receiptIndex == treeIndex,
                 $"Incorrect receipt index. Current leaf index: {treeIndex}, Receive receipt index: {receiptIndex}");
             State.RecorderReceiptHashMap[spaceId][receiptIndex.Sub(1)] = Hash.LoadFromHex(receiptHash);
             State.RecordedTreeLeafIndex[spaceId] += 1;
             State.ApproveTransfer[receiptId] = false;
         }
-        
+
         //Get received first and last receipt index.
-        Assert(TryGetReceiptIndex(receiptHashMap.Value.Last().Key,out var lastIndex),
+        Assert(TryGetReceiptIndex(receiptHashMap.Value.Last().Key, out var lastIndex),
             "Incorrect receipt index.");
-        Assert(TryGetReceiptIndex(receiptHashMap.Value.First().Key,out var firstIndex),
+        Assert(TryGetReceiptIndex(receiptHashMap.Value.First().Key, out var firstIndex),
             "Incorrect receipt index.");
         State.SpaceReceiptCountMap[spaceId] = lastIndex;
 
@@ -58,7 +58,7 @@ public partial class BridgeContract
     }
 
     #region View
-    
+
     public override Int64Value GetReceiptCount(Hash input)
     {
         return new Int64Value {Value = State.SpaceReceiptCountMap[input]};
@@ -87,5 +87,4 @@ public partial class BridgeContract
     }
 
     #endregion
-    
 }

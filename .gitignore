@@ -300,6 +300,8 @@ coverage*.xml
 
 # Contract patcher dlls
 scripts/patcher/*
+test/patched/*
+src/AElf.Boilerplate.BridgeContract.Launcher/*
 
 tools
 .dotnet
@@ -313,3 +315,6 @@ tools
 .idea/.idea.AElf.Bridge/.idea/vcs.xml
 .idea/.idea.AElf.Bridge/.idea/workspace.xml
 .idea/.idea.AElf.Bridge/riderModule.iml
+.idea/.idea.ebridge-contracts.aelf.dir/*
+
+

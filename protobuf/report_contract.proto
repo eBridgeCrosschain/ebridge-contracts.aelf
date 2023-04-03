@@ -7,13 +7,15 @@ import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
 import "callback_input.proto";
 import "acs1.proto";
+import "acs12.proto";
 
 option csharp_namespace = "AElf.Contracts.Report";
 
 // the contract definition: a gRPC service definition.
 service ReportContract {
   option (aelf.csharp_state) = "AElf.Contracts.Report.ReportContractState";
-  option (aelf.base) = "acs1.proto"; 
+  option (aelf.base) = "acs1.proto";
+  option (aelf.base) = "acs12.proto";
 
   rpc Initialize (InitializeInput) returns (google.protobuf.Empty) {}
 
