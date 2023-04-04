@@ -1,6 +1,5 @@
 using System.Linq;
 using AElf.CSharp.Core;
-using AElf.Sdk.CSharp;
 using AElf.Types;
 using Google.Protobuf.WellKnownTypes;
 
@@ -16,11 +15,7 @@ public partial class MerkleTreeContract
     public override MerkleTreeList ConstructMerkleTree(ConstructMerkleTreeInput input)
     {
         var spaceInfo = State.SpaceInfoMap[input.SpaceId];
-        if (spaceInfo == null)
-        {
-            throw new AssertionException($"Incorrect space id.{input.SpaceId}");
-        }
-
+        Assert(spaceInfo != null,$"Incorrect space id.{input.SpaceId}.");
         var lastTreeIndex = State.LastRecordedMerkleTreeIndex[input.SpaceId];
         var lastLeafIndex = State.LastRecordedLeafIndex[input.SpaceId];
         var spaceIsEmpty = lastLeafIndex == -2;
@@ -91,12 +86,7 @@ public partial class MerkleTreeContract
             Value = State.RegimentSpaceIndexMap[input]
         };
     }
-
-    public override HashList GetRegimentSpaceIdList(Hash input)
-    {
-        return State.RegimentSpaceIdListMap[input];
-    }
-
+    
     public override SpaceInfo GetSpaceInfo(Hash input)
     {
         return State.SpaceInfoMap[input];

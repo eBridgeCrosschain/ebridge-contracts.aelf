@@ -1,22 +1,21 @@
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using AElf.Types;
 using SampleAccount = AElf.ContractTestBase.ContractTestKit.SampleAccount;
 
-namespace AElf.Contracts.Bridge.Tests
+namespace AElf.Contracts.Bridge
 {
     public class SampleSwapInfo
     {
-        public static List<SwapInfo> SwapInfos;
+        public static List<SwapInfoTest> SwapInfos;
 
         static SampleSwapInfo()
         {
-            SwapInfos = new List<SwapInfo>();
+            SwapInfos = new List<SwapInfoTest>();
             for (var i = 1; i <= 5; i++)
             {
                 var tokenId = HashHelper.ConcatAndCompute(HashHelper.ComputeFrom("Ethereum"), HashHelper.ComputeFrom("ELF"));
-                SwapInfos.Add(new SwapInfo
+                SwapInfos.Add(new SwapInfoTest
                 {
                     OriginAmount = (1000000000_00000000 * i).ToString(),
                     ReceiverAddress = Receivers[(i - 1) % 5],
@@ -27,7 +26,7 @@ namespace AElf.Contracts.Bridge.Tests
             for (var i = 1; i <= 5; i++)
             {
                 var tokenId = HashHelper.ConcatAndCompute(HashHelper.ComputeFrom("BSC"), HashHelper.ComputeFrom("USDT"));
-                SwapInfos.Add(new SwapInfo
+                SwapInfos.Add(new SwapInfoTest
                 {
                     OriginAmount = (100000000000000000 * i).ToString(),
                     ReceiverAddress = Receivers[(i - 1) % 5],
@@ -41,7 +40,7 @@ namespace AElf.Contracts.Bridge.Tests
             SampleAccount.Accounts.Skip(6).Take(5).Select(a => a.Address).ToList();
     }
 
-    public class SwapInfo
+    public class SwapInfoTest
     {
         public Hash ReceiptHash => CalculateReceiptHash();
         public string ReceiptId { get; set; }

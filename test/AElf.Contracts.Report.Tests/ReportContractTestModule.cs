@@ -15,7 +15,6 @@ using Volo.Abp.Modularity;
 
 namespace AElf.Contracts.Report;
 
-
 [DependsOn(typeof(MainChainDAppContractTestModule))]
 public class ReportContractTestModule : MainChainDAppContractTestModule
 {

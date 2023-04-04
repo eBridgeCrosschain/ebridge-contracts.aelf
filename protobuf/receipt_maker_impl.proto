@@ -6,10 +6,10 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/wrappers.proto";
 import "receipt_maker.proto";
 
-option csharp_namespace = "AElf.Contracts.ReceiptMakerContract";
+option csharp_namespace = "AElf.Contracts.TestContract.ReceiptMaker";
 
 service ReceiptMakerContractImpl {
-  option (aelf.csharp_state) = "AElf.Contracts.ReceiptMakerContract.ReceiptMakerContractState";
+  option (aelf.csharp_state) = "AElf.Contracts.TestContract.ReceiptMaker.ReceiptMakerContractState";
   option (aelf.base) = "receipt_maker.proto";
   rpc CreateReceipt(CreateReceiptInput) returns(google.protobuf.Empty){
   }

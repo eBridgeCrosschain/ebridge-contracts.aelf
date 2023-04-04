@@ -1,13 +1,11 @@
-﻿using AElf.Contracts.Association;
-using AElf.Sdk.CSharp;
-using AElf.Sdk.CSharp.State;
+﻿using AElf.Sdk.CSharp;
 using AElf.Standards.ACS3;
 using AElf.Types;
 using Google.Protobuf.WellKnownTypes;
 
 namespace AElf.Contracts.Bridge;
 
-public partial class BridgeContract : BridgeContractContainer.BridgeContractBase
+public partial class BridgeContract : BridgeContractImplContainer.BridgeContractImplBase
 {
     public override Empty Initialize(InitializeInput input)
     {
@@ -54,10 +52,7 @@ public partial class BridgeContract : BridgeContractContainer.BridgeContractBase
 
     public override Empty ChangeTransactionFeeController(AuthorityInfo input)
     {
-        if (State.FeeRatioController.Value == null)
-        {
-            throw new AssertionException("Controller not set.");
-        }
+        Assert(State.FeeRatioController.Value != null,"Controller not set.");
 
         Assert(Context.Sender == State.FeeRatioController.Value.OwnerAddress, "No permission.");
         if (input.ContractAddress != null)

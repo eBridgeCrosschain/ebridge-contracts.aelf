@@ -15,5 +15,5 @@ public class ReceiptMakerContractInitializationProvider : IContractInitializatio
     }
 
     public Hash SystemSmartContractName => ReceiptMakerSmartContractAddressNameProvider.Name;
-    public string ContractCodeName => "AElf.Contracts.ReceiptMaker";
+    public string ContractCodeName => "AElf.Contracts.TestContract.ReceiptMaker";
 }

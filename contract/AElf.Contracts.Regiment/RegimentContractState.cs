@@ -1,10 +1,13 @@
 using AElf.Sdk.CSharp.State;
+using AElf.Standards.ACS1;
 using AElf.Types;
 
 namespace AElf.Contracts.Regiment;
 
 public partial class RegimentContractState : ContractState
 {
+    public MappedState<string, MethodFees> TransactionFees { get; set; }
+    public SingletonState<AuthorityInfo> MethodFeeController { get; set; }
     public BoolState IsInitialized { get; set; }
     public SingletonState<Address> Controller { get; set; }
     public SingletonState<int> MemberJoinLimit { get; set; }

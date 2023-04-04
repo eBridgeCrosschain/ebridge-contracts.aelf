@@ -20,10 +20,7 @@ public partial class BridgeContract
             {
                 Symbol = chainToken.Symbol
             });
-            if (string.IsNullOrEmpty(tokenInfo.Symbol))
-            {
-                throw new AssertionException($"Token {chainToken.Symbol} info is not exist.");
-            }
+            Assert(!string.IsNullOrEmpty(tokenInfo.Symbol),$"Token {chainToken.Symbol} info is not exist.");
 
             if (tokenWhitelist.Symbol.Contains(chainToken.Symbol))
             {
@@ -52,12 +49,9 @@ public partial class BridgeContract
         var removedChainToken = new ChainTokenList();
         foreach (var chainToken in toRemoveList)
         {
-            Assert(State.ChainTokenWhitelist[chainToken.ChainId] != null,$"Incorrect chain id {chainToken.ChainId}. ");
-            if (!State.ChainTokenWhitelist[chainToken.ChainId].Symbol.Contains(chainToken.Symbol))
-            {
-                throw new AssertionException($"Token {chainToken.Symbol} is not in whitelist. ");
-            }
-
+            Assert(State.ChainTokenWhitelist[chainToken.ChainId] != null, $"Incorrect chain id {chainToken.ChainId}. ");
+            Assert(State.ChainTokenWhitelist[chainToken.ChainId].Symbol.Contains(chainToken.Symbol),
+                $"Token {chainToken.Symbol} is not in whitelist. ");
             State.ChainTokenWhitelist[chainToken.ChainId].Symbol.Remove(chainToken.Symbol);
             removedChainToken.Value.Add(new ChainToken
             {
@@ -65,6 +59,7 @@ public partial class BridgeContract
                 Symbol = chainToken.Symbol
             });
         }
+
         Context.Fire(new TokenWhitelistRemoved()
         {
             ChainTokenList = removedChainToken
@@ -103,11 +98,6 @@ public partial class BridgeContract
         };
 
         State.ReceiptMap[receiptId] = receipt;
-
-        //TODO: Consider to optimize the data structure for too many records scenario.
-        var receiptIdList = State.OwnerTokenReceiptIdList[Context.Sender] ?? new ReceiptIdList();
-        receiptIdList.Value.Add(receiptId);
-        State.OwnerTokenReceiptIdList[Context.Sender] = receiptIdList;
 
         if (!decimal.TryParse(State.FeeFloatingRatio[input.TargetChainId], out var floatingRatio))
         {

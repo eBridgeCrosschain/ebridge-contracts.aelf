@@ -229,7 +229,7 @@ public partial class RegimentContract : RegimentContractContainer.RegimentContra
             Assert(memberList.Value.Contains(admin), $"{admin} is not a member.");
             memberList.Value.Remove(admin);
         }
-        
+
         State.RegimentMemberListMap[input.RegimentAddress] = memberList;
         State.RegimentInfoMap[input.RegimentAddress] = regimentInfo;
         return new Empty();

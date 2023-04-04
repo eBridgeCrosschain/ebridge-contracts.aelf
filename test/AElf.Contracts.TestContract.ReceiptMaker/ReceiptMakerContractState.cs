@@ -1,7 +1,7 @@
 using AElf.Sdk.CSharp.State;
 using AElf.Types;
 
-namespace AElf.Contracts.ReceiptMakerContract;
+namespace AElf.Contracts.TestContract.ReceiptMaker;
 
 public class ReceiptMakerContractState : ContractState
 {

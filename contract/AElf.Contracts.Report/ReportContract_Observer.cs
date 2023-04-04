@@ -46,7 +46,8 @@ namespace AElf.Contracts.Report
             foreach (var regimentAssociationAddress in input.RegimentAddressList)
             {
                 var observerList = State.ObserverListMap[regimentAssociationAddress] ?? new ObserverList();
-                Assert(observerList.Value.Contains(Context.Sender), $"Sender is not an observer for regiment {regimentAssociationAddress}");
+                Assert(observerList.Value.Contains(Context.Sender),
+                    $"Sender is not an observer for regiment {regimentAssociationAddress}");
                 observerList.Value.Remove(Context.Sender);
                 State.ObserverListMap[regimentAssociationAddress] = observerList;
             }

@@ -1,16 +1,15 @@
-﻿using System.Collections.Generic;
-using AElf.Contracts.ReceiptMakerContract;
+﻿using AElf.Contracts.ReceiptMakerContract;
 using AElf.Types;
 using Google.Protobuf.WellKnownTypes;
 
-namespace AElf.Contracts.ReceiptMakerContract;
+namespace AElf.Contracts.TestContract.ReceiptMaker;
 
 public class ReceiptMakerContract : ReceiptMakerContractImplContainer.ReceiptMakerContractImplBase
 {
     public override Empty CreateReceipt(CreateReceiptInput input)
     {
         var receiptList = new ReceiptList();
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             var receipt = new Receipt
             {
