@@ -8,7 +8,7 @@ import "google/protobuf/wrappers.proto";
 import "callback_input.proto";
 import "authority_info.proto";
 
-option csharp_namespace = "AElf.Contracts.Bridge";
+option csharp_namespace = "EBridge.Contracts.Bridge";
 
 service BridgeContract {
     rpc Initialize (InitializeInput) returns (google.protobuf.Empty) {}
