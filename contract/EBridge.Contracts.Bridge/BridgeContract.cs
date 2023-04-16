@@ -24,13 +24,13 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
         State.Admin.Value = input.Admin;
         State.FeeRatioController.Value = new AuthorityInfo
         {
-            OwnerAddress = input.Controller,
+            OwnerAddress = input.Admin,
             ContractAddress = State.ParliamentContract.Value
         };
         State.IsContractPause.Value = false;
         State.RestartOrganizationAddress.Value = input.OrganizationAddress;
-        State.PauseController.Value = input.Admin;
-
+        State.PauseController.Value = input.PauseController;
+        State.ApproveTransferController.Value = input.ApproveTransferController;
         return new Empty();
     }
 
@@ -38,7 +38,7 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
 
     public override Empty ChangeController(Address input)
     {
-        Assert(Context.Sender == State.Controller.Value, $"No permission. Controller is {State.Controller.Value}. ");
+        Assert(Context.Sender == State.Admin.Value, $"No permission. Admin is {State.Admin.Value}. ");
         State.Controller.Value = input;
         return new Empty();
     }
@@ -95,7 +95,7 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
 
     public override Empty Pause(Empty input)
     {
-        Assert(Context.Sender == State.Admin.Value, "No permission.");
+        Assert(Context.Sender == State.PauseController.Value, "No permission.");
         Assert(!State.IsContractPause.Value, "Contract has already been paused.");
         State.IsContractPause.Value = true;
         return new Empty();
@@ -126,7 +126,7 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
 
     public override Empty ApproveTransfer(ApproveTransferInput input)
     {
-        Assert(Context.Sender == State.Admin.Value, "No permission.");
+        Assert(Context.Sender == State.ApproveTransferController.Value, "No permission.");
         Assert(!State.ApproveTransfer[input.ReceiptId],
             "The receipt has been approved");
         State.ApproveTransfer[input.ReceiptId] = true;

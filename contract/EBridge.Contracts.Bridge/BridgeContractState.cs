@@ -21,6 +21,11 @@ public partial class BridgeContractState : ContractState
     public SingletonState<AuthorityInfo> MethodFeeController { get; set; }
     
     /// <summary>
+    /// Controller who can approve transfer.
+    /// </summary>
+    public SingletonState<Address> ApproveTransferController { get; set; }
+    
+    /// <summary>
     /// Is contract pause (true->pause/false=>start).
     /// </summary>
     public SingletonState<bool> IsContractPause { get; set; }

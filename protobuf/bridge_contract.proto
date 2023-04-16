@@ -152,6 +152,8 @@ message InitializeInput {
     aelf.Address admin = 5;
     aelf.Address controller = 6;
     aelf.Address organization_address = 7;
+    aelf.Address pause_controller = 8;
+    aelf.Address approve_transfer_controller = 9;
 }
 
 message SetMaximumAmountInput{

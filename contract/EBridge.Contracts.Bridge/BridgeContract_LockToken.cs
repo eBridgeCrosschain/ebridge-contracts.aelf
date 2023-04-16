@@ -36,7 +36,7 @@ public partial class BridgeContract
             });
             State.ChainTokenWhitelist[chainToken.ChainId] = tokenWhitelist;
         }
-        SmartContractBridgeContextExtensions.Fire(Context, new TokenWhitelistAdded
+        Context.Fire(new TokenWhitelistAdded
         {
             ChainTokenList = addedChainToken
         });
@@ -62,7 +62,7 @@ public partial class BridgeContract
             });
         }
 
-        SmartContractBridgeContextExtensions.Fire(Context, new TokenWhitelistRemoved()
+        Context.Fire(new TokenWhitelistRemoved()
         {
             ChainTokenList = removedChainToken
         });
@@ -111,7 +111,7 @@ public partial class BridgeContract
         State.TransactionFee.Value = State.TransactionFee.Value.Add(nativeTokenFee);
         TransferFee(DefaultFeeSymbol, nativeTokenFee, Context.Sender,Context.Self);
 
-        SmartContractBridgeContextExtensions.Fire(Context, new ReceiptCreated
+        Context.Fire(new ReceiptCreated
         {
             ReceiptId = receiptId,
             Amount = receipt.Amount,

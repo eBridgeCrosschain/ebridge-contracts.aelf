@@ -41,7 +41,7 @@ public partial class MerkleTreeContract
                 State.NotFullTreeNodeList[spaceId][merkleTree.MerkleTreeIndex] = new HashList {Value = {nodeList}};
             }
 
-            SmartContractBridgeContextExtensions.Fire(Context, new MerkleTreeRecorded
+            Context.Fire(new MerkleTreeRecorded
             {
                 SpaceId = spaceId,
                 MerkleTreeIndex = merkleTree.MerkleTreeIndex,
@@ -126,7 +126,7 @@ public partial class MerkleTreeContract
         }
 
         State.LastRecordedMerkleTreeIndex[spaceId] = tree.MerkleTreeIndex;
-        SmartContractBridgeContextExtensions.Fire(Context, new MerkleTreeRecorded
+        Context.Fire(new MerkleTreeRecorded
         {
             SpaceId = spaceId,
             MerkleTreeIndex = merkleTreeIndex,

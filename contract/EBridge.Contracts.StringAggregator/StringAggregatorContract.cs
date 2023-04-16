@@ -1,4 +1,5 @@
-﻿using AElf.Standards.ACS13;
+﻿using System.Linq;
+using AElf.Standards.ACS13;
 using Google.Protobuf.WellKnownTypes;
 
 namespace EBridge.Contracts.StringAggregator
@@ -7,11 +8,11 @@ namespace EBridge.Contracts.StringAggregator
     {
         public override StringValue Aggregate(AggregateInput input)
         {
-            //var indexOfMax = input.Frequencies.IndexOf(input.Frequencies.Min());
+            var indexOfMax = input.Frequencies.IndexOf(input.Frequencies.Max());
 
             return new StringValue
             {
-                Value = input.Results[0]
+                Value = input.Results[indexOfMax]
             };
         }
     }
