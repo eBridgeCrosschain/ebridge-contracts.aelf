@@ -18,7 +18,7 @@ namespace EBridge.Contracts.Bridge
                 var tokenId = HashHelper.ConcatAndCompute(HashHelper.ComputeFrom("Ethereum"), HashHelper.ComputeFrom("ELF"));
                 SwapInfos.Add(new SwapInfoTest
                 {
-                    OriginAmount = (1000000000_00000000 * i).ToString(),
+                    OriginAmount = (100000000000000000 * i).ToString(),
                     ReceiverAddress = Receivers[(i - 1) % 5],
                     ReceiptId = $"{tokenId}.{i}",
                     TargetChainId = "AELF"

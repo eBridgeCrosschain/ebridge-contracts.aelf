@@ -63,7 +63,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
     {
         await ChangeControllerTest();
         var result =
-            await BridgeContractStub.ChangeController.SendWithExceptionAsync(SampleAccount.Accounts[5].Address);
+            await BridgeContractSetFeeRatioStub.ChangeController.SendWithExceptionAsync(SampleAccount.Accounts[5].Address);
         result.TransactionResult.Error.ShouldContain("No permission.");
     }
 
@@ -460,7 +460,9 @@ public partial class BridgeContractTests : BridgeContractTestBase
             ReportContractAddress = ReportContractAddress,
             Admin = DefaultSenderAddress,
             Controller = DefaultSenderAddress,
-            OrganizationAddress = organizationAddress.Item2
+            OrganizationAddress = organizationAddress.Item2,
+            PauseController = DefaultSenderAddress,
+            ApproveTransferController = DefaultSenderAddress
         });
         return organizationAddress;
     }

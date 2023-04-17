@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using AElf;
@@ -45,12 +46,12 @@ public partial class BridgeContractTests
                 new TokenMaximumAmount
                 {
                     Symbol = "ELF",
-                    MaximumAmount = 4000000000_00000000
+                    MaximumAmount = 400000000
                 },
                 new TokenMaximumAmount
                 {
                     Symbol = "USDT",
-                    MaximumAmount = 4000000000_00000000
+                    MaximumAmount = 400000000
                 }
             }
         });
@@ -59,7 +60,7 @@ public partial class BridgeContractTests
             {
                 Value = "ELF"
             });
-            tokenMaximumAmount.Value.ShouldBe(4000000000_00000000);
+            tokenMaximumAmount.Value.ShouldBe(400000000);
         }
         return organization;
     }
@@ -232,7 +233,7 @@ public partial class BridgeContractTests
             var executionResult = await BridgeContractStub.SwapToken.SendWithExceptionAsync(new SwapTokenInput
             {
                 ReceiverAddress = Receivers[4].Address,
-                OriginAmount = SampleSwapInfo.SwapInfos[4].OriginAmount,
+                OriginAmount = (long.Parse(SampleSwapInfo.SwapInfos[4].OriginAmount) * 10).ToString(),
                 ReceiptId = SampleSwapInfo.SwapInfos[4].ReceiptId,
                 SwapId = _swapHashOfElf
             });
@@ -346,7 +347,7 @@ public partial class BridgeContractTests
                 var executionResult = await ReceiverBridgeContractStubs[4].SwapToken.SendWithExceptionAsync(
                     new SwapTokenInput
                     {
-                        OriginAmount = SampleSwapInfo.SwapInfos[9].OriginAmount,
+                        OriginAmount = (long.Parse(SampleSwapInfo.SwapInfos[9].OriginAmount)*10).ToString(),
                         ReceiptId = SampleSwapInfo.SwapInfos[9].ReceiptId,
                         SwapId = _swapHashOfUsdt
                     });
@@ -862,7 +863,7 @@ public partial class BridgeContractTests
             {
                 ReceiptId = SampleSwapInfo.SwapInfos[0].ReceiptId,
                 Symbol = "ELF",
-                Amount = SampleSwapInfo.SwapInfos[0].OriginAmount
+                Amount = (long.Parse(SampleSwapInfo.SwapInfos[0].OriginAmount)/10000000000).ToString()
             });
             result.Value.ShouldBe(true);
         }
