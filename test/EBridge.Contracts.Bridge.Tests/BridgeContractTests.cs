@@ -110,9 +110,8 @@ public class BridgeContractTests : BridgeContractTestBase
     [Fact]
     public async Task ChangePauseController_NoPermission()
     {
-        await ChangePauseController();
         var executionResult =
-            await BridgeContractStub.ChangePauseController.SendWithExceptionAsync(SampleAccount.Accounts[5].Address);
+            await BridgeContractSetFeeRatioStub.ChangePauseController.SendWithExceptionAsync(SampleAccount.Accounts[5].Address);
         executionResult.TransactionResult.Error.ShouldContain("No permission.");
     }
 
@@ -144,6 +143,22 @@ public class BridgeContractTests : BridgeContractTestBase
             await BridgeContractSetFeeRatioStub.ChangeRestartOrganization.SendWithExceptionAsync(organizationSecond
                 .Item2);
         execution.TransactionResult.Error.ShouldContain("No permission.");
+    }
+    
+    [Fact]
+    public async Task ChangeApproveTransferController()
+    {
+        await InitialBridgeContractAsync();
+        await BridgeContractStub.ChangeApproveTransferController.SendAsync(SampleAccount.Accounts[5].Address);
+        var controller = await BridgeContractStub.GetApproveTransferController.CallAsync(new Empty());
+        controller.ShouldBe(SampleAccount.Accounts[5].Address);
+    }
+    [Fact]
+    public async Task ChangeApproveTransferController_NoPermission()
+    {
+        var executionResult =
+            await BridgeContractSetFeeRatioStub.ChangeApproveTransferController.SendWithExceptionAsync(SampleAccount.Accounts[5].Address);
+        executionResult.TransactionResult.Error.ShouldContain("No permission.");
     }
 
     #endregion

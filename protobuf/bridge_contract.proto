@@ -19,6 +19,7 @@ service BridgeContract {
     rpc ChangeTransactionFeeController(AuthorityInfo) returns (google.protobuf.Empty){}
     rpc ChangeRestartOrganization(aelf.Address) returns (google.protobuf.Empty){}
     rpc ChangePauseController(aelf.Address) returns (google.protobuf.Empty){}
+    rpc ChangeApproveTransferController(aelf.Address) returns (google.protobuf.Empty){}
     
     rpc Pause(google.protobuf.Empty) returns (google.protobuf.Empty){}
     rpc Restart(google.protobuf.Empty) returns (google.protobuf.Empty){}
@@ -52,6 +53,9 @@ service BridgeContract {
         option (aelf.is_view) = true;
     }
     rpc GetApproveReceiptIdList (google.protobuf.Empty) returns (ReceiptIdList){
+        option (aelf.is_view) = true;
+    }
+    rpc GetApproveTransferController(google.protobuf.Empty) returns (aelf.Address){
         option (aelf.is_view) = true;
     }
     
