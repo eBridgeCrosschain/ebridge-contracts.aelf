@@ -201,7 +201,6 @@ public class BridgeContractToAElfTests : BridgeContractTestBase
             result.SwappedAmount.ShouldBe(10000000L);
             result.DepositAmount.ShouldBe(bridgeBalance.Balance - 10000000);
         }
-
         {
             {
                 await BridgeContractStub.ApproveTransfer.SendAsync(new ApproveTransferInput
