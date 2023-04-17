@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using AElf;
 using AElf.Contracts.MultiToken;
+using AElf.ContractTestBase.ContractTestKit;
 using AElf.CSharp.Core;
 using AElf.Types;
 using EBridge.Contracts.Bridge.Helpers;
@@ -13,7 +14,7 @@ using Xunit;
 
 namespace EBridge.Contracts.Bridge;
 
-public partial class BridgeContractTests
+public class BridgeContractAElfToTests : BridgeContractTestBase
 {
     [Fact]
     public async Task<(Address, Address)> InitialAElfTo()
@@ -512,7 +513,10 @@ public partial class BridgeContractTests
     [Fact]
     public async Task SetGasLimit_NoPermission()
     {
-        await ChangeControllerTest();
+        await InitialBridgeContractAsync();
+        await BridgeContractStub.ChangeController.SendAsync(SampleAccount.Accounts[5].Address);
+        var controller = await BridgeContractStub.GetContractController.CallAsync(new Empty());
+        controller.ShouldBe(SampleAccount.Accounts[5].Address);
         {
             var result = await LockBridgeContractStubs[0].SetGasLimit.SendWithExceptionAsync(new SetGasLimitInput
             {
@@ -552,7 +556,10 @@ public partial class BridgeContractTests
     [Fact]
     public async Task SetGasPrice_NoPermission()
     {
-        await ChangeControllerTest();
+        await InitialBridgeContractAsync();
+        await BridgeContractStub.ChangeController.SendAsync(SampleAccount.Accounts[5].Address);
+        var controller = await BridgeContractStub.GetContractController.CallAsync(new Empty());
+        controller.ShouldBe(SampleAccount.Accounts[5].Address);
         {
             var result = await LockBridgeContractStubs[0].SetGasPrice.SendWithExceptionAsync(new SetGasPriceInput
             {
@@ -592,7 +599,10 @@ public partial class BridgeContractTests
     [Fact]
     public async Task SetPriceRatio_NoPermission()
     {
-        await ChangeControllerTest();
+        await InitialBridgeContractAsync();
+        await BridgeContractStub.ChangeController.SendAsync(SampleAccount.Accounts[5].Address);
+        var controller = await BridgeContractStub.GetContractController.CallAsync(new Empty());
+        controller.ShouldBe(SampleAccount.Accounts[5].Address);
         {
             var result = await LockBridgeContractStubs[0].SetPriceRatio.SendWithExceptionAsync(new SetRatioInput
             {
@@ -632,7 +642,10 @@ public partial class BridgeContractTests
     [Fact]
     public async Task SetFeeFloatingRatio_NoPermission()
     {
-        await ChangeControllerTest();
+        await InitialBridgeContractAsync();
+        await BridgeContractStub.ChangeController.SendAsync(SampleAccount.Accounts[5].Address);
+        var controller = await BridgeContractStub.GetContractController.CallAsync(new Empty());
+        controller.ShouldBe(SampleAccount.Accounts[5].Address);
         {
             var result = await LockBridgeContractStubs[0].SetFeeFloatingRatio.SendWithExceptionAsync(
                 new SetRatioInput
@@ -1071,7 +1084,10 @@ public partial class BridgeContractTests
     [Fact]
     public async Task<(Address, Address)> CreateReceiptTest_Pause()
     {
-        var organization = await PauseContract_Test();
+        var organization = await InitialBridgeContractAsync();
+        await BridgeContractStub.Pause.SendAsync(new Empty());
+        var state = await BridgeContractStub.IsContractPause.CallAsync(new Empty());
+        state.Value.ShouldBe(true);
         var executionResult = await BridgeContractStub.CreateReceipt.SendWithExceptionAsync(new CreateReceiptInput
         {
             Symbol = "ELF",

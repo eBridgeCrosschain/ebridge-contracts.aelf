@@ -14,7 +14,7 @@ using CallbackInfo = EBridge.Contracts.Oracle.CallbackInfo;
 
 namespace EBridge.Contracts.Bridge;
 
-public partial class BridgeContractTests
+public class BridgeContractToAElfTests : BridgeContractTestBase
 {
     [Fact]
     public async Task<(Address, Address)> InitialSwapAsync()

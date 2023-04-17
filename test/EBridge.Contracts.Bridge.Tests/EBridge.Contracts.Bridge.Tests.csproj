@@ -11,6 +11,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="AElf.Contracts.Association" Version="1.2.3" />
         <PackageReference Include="AElf.Contracts.MultiToken" Version="1.2.3" />
         <PackageReference Include="AElf.EconomicSystem" Version="1.2.3" />
         <PackageReference Include="AElf.GovernmentSystem" Version="1.2.3" />
