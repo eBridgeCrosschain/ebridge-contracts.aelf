@@ -73,7 +73,7 @@ jobs:
       - script: bash scripts/install.sh
         displayName: 'Install protobuf'
       - script: bash build.sh -target=Test-with-Codecov
-          displayName: 'Build and Test'
+        displayName: 'Build and Test'
       - task: PublishTestResults@2
         condition: always()
         inputs:
