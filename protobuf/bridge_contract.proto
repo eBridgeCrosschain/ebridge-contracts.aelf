@@ -6,17 +6,11 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
 import "callback_input.proto";
-import "acs13.proto";
-import "receipt_maker.proto";
 import "authority_info.proto";
 
-option csharp_namespace = "AElf.Contracts.Bridge";
+option csharp_namespace = "EBridge.Contracts.Bridge";
 
 service BridgeContract {
-    option (aelf.csharp_state) = "AElf.Contracts.Bridge.BridgeContractState";
-    option (aelf.base) = "acs13.proto";
-    option (aelf.base) = "receipt_maker.proto";
-    
     rpc Initialize (InitializeInput) returns (google.protobuf.Empty) {}
     
     //Contract permission.
@@ -25,6 +19,7 @@ service BridgeContract {
     rpc ChangeTransactionFeeController(AuthorityInfo) returns (google.protobuf.Empty){}
     rpc ChangeRestartOrganization(aelf.Address) returns (google.protobuf.Empty){}
     rpc ChangePauseController(aelf.Address) returns (google.protobuf.Empty){}
+    rpc ChangeApproveTransferController(aelf.Address) returns (google.protobuf.Empty){}
     
     rpc Pause(google.protobuf.Empty) returns (google.protobuf.Empty){}
     rpc Restart(google.protobuf.Empty) returns (google.protobuf.Empty){}
@@ -60,6 +55,9 @@ service BridgeContract {
     rpc GetApproveReceiptIdList (google.protobuf.Empty) returns (ReceiptIdList){
         option (aelf.is_view) = true;
     }
+    rpc GetApproveTransferController(google.protobuf.Empty) returns (aelf.Address){
+        option (aelf.is_view) = true;
+    }
     
     //Others to AElf.
     //Action methods.
@@ -88,13 +86,7 @@ service BridgeContract {
     rpc GetSwapAmounts (GetSwapAmountsInput) returns (SwapAmounts) {
         option (aelf.is_view) = true;
     }
-    rpc GetRegimentIdBySpaceId (aelf.Hash) returns (aelf.Hash) {
-        option (aelf.is_view) = true;
-    }
-    rpc GetSwappedReceiptIdList (GetSwappedReceiptIdListInput) returns (ReceiptIdList) {
-        option (aelf.is_view) = true;
-    }
-    rpc GetSwappedReceiptInfoList (GetSwappedReceiptInfoListInput) returns (ReceiptInfoList) {
+    rpc GetSwappedReceiptInfo (GetSwappedReceiptInfoInput) returns (SwappedReceiptInfo) {
         option (aelf.is_view) = true;
     }
     rpc GetSpaceIdBySwapId (aelf.Hash) returns (aelf.Hash){
@@ -147,13 +139,7 @@ service BridgeContract {
     rpc GetReceiptIdInfo(aelf.Hash) returns (ReceiptIdInfo){
         option (aelf.is_view) = true;
     }
-    rpc GetOwnerLockReceipt(GetOwnerLockReceiptInput) returns (ReceiptIdList){
-        option (aelf.is_view) = true;
-    }
-    rpc GetLockTokens(GetLockTokensInput) returns(google.protobuf.Int64Value){
-        option (aelf.is_view) = true;
-    }
-    rpc GetReceiptInfo(GetReceiptInfoInput) returns (Receipt){
+    rpc GetReceiptInfo(google.protobuf.StringValue) returns (Receipt){
         option (aelf.is_view) = true;
     }
     rpc GetTokenWhitelist(google.protobuf.StringValue) returns (TokenSymbolList){
@@ -170,6 +156,8 @@ message InitializeInput {
     aelf.Address admin = 5;
     aelf.Address controller = 6;
     aelf.Address organization_address = 7;
+    aelf.Address pause_controller = 8;
+    aelf.Address approve_transfer_controller = 9;
 }
 
 message SetMaximumAmountInput{
@@ -205,7 +193,7 @@ message SwapTargetToken {
 
 message SwapInfo {
     aelf.Hash swap_id = 1;
-    repeated SwapTargetToken swap_target_token_list = 2;
+    SwapTargetToken swap_target_token = 2;
     aelf.Hash regiment_id = 3;
     aelf.Hash space_id = 4;
 }
@@ -221,15 +209,11 @@ message SwapAmounts {
     map<string, int64> received_amounts = 2;
 }
 
-message ReceiptInfo {
+message SwappedReceiptInfo {
     string receipt_id = 1;
     aelf.Hash receiving_tx_id = 2;
     google.protobuf.Timestamp receiving_time = 3;
     map<string, int64> amount_map = 4;
-}
-
-message ReceiptInfoList {
-    repeated ReceiptInfo value = 1;
 }
 
 message ReceiptHashMap {
@@ -253,7 +237,7 @@ message SendingInfo {
 }
 
 message CreateSwapInput {
-    repeated SwapTargetToken swap_target_token_list = 1;
+    SwapTargetToken swap_target_token = 1;
     aelf.Hash regiment_id = 2;
     int32 merkle_tree_leaf_limit = 3;
 }
@@ -293,14 +277,9 @@ message GetSwapPairInfoInput{
     string symbol = 2;
 }
 
-message GetSwappedReceiptIdListInput {
+message GetSwappedReceiptInfoInput {
     aelf.Hash swap_id = 1;
-    aelf.Address receiver_address = 2;
-}
-
-message GetSwappedReceiptInfoListInput {
-    aelf.Hash swap_id = 1;
-    aelf.Address receiver_address = 2;
+    string receipt_id = 2;
 }
 
 //AElf to others message.

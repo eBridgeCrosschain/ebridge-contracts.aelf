@@ -5,7 +5,7 @@ import "aelf/options.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/wrappers.proto";
 
-option csharp_namespace = "AElf.Contracts.ReceiptMakerContract";
+option csharp_namespace = "EBridge.Contracts.ReceiptMakerContract";
 
 service ReceiptMakerContract {
   rpc GetReceiptCount(aelf.Hash) returns (google.protobuf.Int64Value) {

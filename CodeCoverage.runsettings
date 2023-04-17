@@ -7,7 +7,7 @@
         <Configuration>
           <Format>cobertura</Format>
           <Exclude>[xunit.*]*,[*Tests]*</Exclude> <!-- [Assembly-Filter]Type-Filter -->
-          <ExcludeByFile>**/test/**/*.cs,**/src/**/*.cs,**/contract/AElf.Contracts.Oracle/*.cs,**/contract/AElf.Contracts.ReceiptMaker/*.cs,**/contract/AElf.Contracts.Regiment/*.cs,**/contract/AElf.Contracts.Report/*.cs,**/contract/AElf.Contracts.StringAggregator/*.cs</ExcludeByFile>
+          <ExcludeByFile>**/test/**/*.cs,**/src/**/*.cs</ExcludeByFile>
           <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute</ExcludeByAttribute>
           <SingleHit>false</SingleHit>
         </Configuration>

@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package BridgeContractImpl;
+
+//import "acs1.proto";
+import "acs12.proto";
+import "acs13.proto";
+import "bridge_contract.proto";
+import "receipt_maker.proto";
+
+
+option csharp_namespace = "EBridge.Contracts.Bridge";
+
+service BridgeContractImpl {
+
+  option (aelf.csharp_state) = "EBridge.Contracts.Bridge.BridgeContractState";
+//  option (aelf.base) = "acs1.proto";
+  option (aelf.base) = "acs12.proto";
+  option (aelf.base) = "acs13.proto";
+  option (aelf.base) = "receipt_maker.proto";
+  option (aelf.base) = "bridge_contract.proto";
+}

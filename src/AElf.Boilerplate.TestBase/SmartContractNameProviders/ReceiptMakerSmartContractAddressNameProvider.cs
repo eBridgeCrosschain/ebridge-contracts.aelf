@@ -5,7 +5,7 @@ namespace AElf.Boilerplate.TestBase.SmartContractNameProviders
 {
     public class ReceiptMakerSmartContractAddressNameProvider
     {
-        public static readonly Hash Name = HashHelper.ComputeFrom("AElf.ContractNames.ReceiptMaker");
+        public static readonly Hash Name = HashHelper.ComputeFrom("AElf.ContractNames.TestContract.ReceiptMaker");
 
         public static readonly string StringName = Name.ToStorageKey();
         public Hash ContractName => Name;
