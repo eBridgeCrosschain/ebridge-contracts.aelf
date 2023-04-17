@@ -54,7 +54,7 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
     {
         Assert(State.FeeRatioController.Value != null,"Controller not set.");
 
-        Assert(Context.Sender == State.FeeRatioController.Value.OwnerAddress, "No permission.");
+        Assert(Context.Sender == State.Admin.Value, "No permission.");
         if (input.ContractAddress != null)
         {
             Assert(ValidateOrganizationExists(input.ContractAddress, input.OwnerAddress), "Invalid authority input.");
@@ -77,8 +77,15 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
 
     public override Empty ChangePauseController(Address input)
     {
-        Assert(Context.Sender == State.PauseController.Value, "No permission.");
+        Assert(Context.Sender == State.Admin.Value, "No permission.");
         State.PauseController.Value = input;
+        return new Empty();
+    }
+
+    public override Empty ChangeApproveTransferController(Address input)
+    {
+        Assert(Context.Sender == State.Admin.Value, "No permission.");
+        State.ApproveTransferController.Value = input;
         return new Empty();
     }
 
