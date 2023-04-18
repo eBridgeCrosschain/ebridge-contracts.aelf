@@ -408,6 +408,10 @@ public class BridgeContractToAElfTests : BridgeContractTestBase
             Amount = 10_0000_00000000
         });
         {
+            var deposit = await BridgeContractStub.GetDepositAmount.CallAsync(_swapHashOfElf);
+            deposit.Value.ShouldBe(10_0000_00000000);
+        }
+        {
             var balance = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
             {
                 Owner = BridgeContractAddress,
@@ -1113,7 +1117,7 @@ public class BridgeContractToAElfTests : BridgeContractTestBase
 
     #endregion
 
-    #region Deposit/Withdraw
+    #region Deposit
 
     [Fact]
     public async Task DepositTest_NoPermission()
@@ -1191,6 +1195,10 @@ public class BridgeContractToAElfTests : BridgeContractTestBase
                 Owner = BridgeContractAddress
             });
             balance.Balance.ShouldBe(70000_00000000);
+        }
+        {
+            var deposit = await BridgeContractStub.GetDepositAmount.CallAsync(_swapHashOfElf);
+            deposit.Value.ShouldBe(70000_00000000);
         }
         {
             var userBalanceWithdraw = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
@@ -1275,7 +1283,7 @@ public class BridgeContractToAElfTests : BridgeContractTestBase
             Amount = 8_0000_00000000,
             TargetTokenSymbol = "ELF"
         });
-        executionResult.TransactionResult.Error.ShouldContain("Deposits not enough. Deposit amount : 7000000000000");
+        executionResult.TransactionResult.Error.ShouldContain("Deposit not enough.");
     }
 
     #endregion
