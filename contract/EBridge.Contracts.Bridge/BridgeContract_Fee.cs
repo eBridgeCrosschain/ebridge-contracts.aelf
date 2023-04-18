@@ -64,7 +64,7 @@ public partial class BridgeContract
 
     public override Empty SetPriceFluctuationRatio(SetRatioInput input)
     {
-        Assert(Context.Sender == State.Controller.Value, $"No Permission. {Context.Sender}");
+        Assert(Context.Sender == State.Admin.Value, $"No Permission. {Context.Sender}");
         foreach (var ratio in input.Value)
         {
             Assert(ratio.Ratio_ is > 0 and <= 100, "Incorrect fluctuation.");
