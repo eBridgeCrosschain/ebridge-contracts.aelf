@@ -86,7 +86,8 @@ public partial class BridgeContract
         swapPairInfo.DepositAmount = swapPairInfo.DepositAmount.Add(input.Amount);
         State.SwapPairInfoMap[swapInfo.SwapId][input.TargetTokenSymbol] = swapPairInfo;
         TransferDepositFrom(input.TargetTokenSymbol, input.Amount, Context.Sender);
-        State.DepositAmount[swapInfo.SwapId][input.TargetTokenSymbol] += input.Amount;
+        State.DepositAmount[swapInfo.SwapId][input.TargetTokenSymbol] =
+            State.DepositAmount[swapInfo.SwapId][input.TargetTokenSymbol].Add(input.Amount);
         return new Empty();
     }
 
@@ -196,7 +197,7 @@ public partial class BridgeContract
         var swapPairInfo = State.SwapPairInfoMap[swapInfo.SwapId][input.TargetTokenSymbol];
         Assert(swapPairInfo != null, $"Swap pair {swapInfo.SwapId}-{input.TargetTokenSymbol} is not exist.");
         var depositAmount = State.DepositAmount[swapInfo.SwapId][input.TargetTokenSymbol];
-        Assert(depositAmount >= input.Amount,$"Deposit not enough.Deposit amount:{depositAmount}");
+        Assert(depositAmount >= input.Amount, $"Deposit not enough.Deposit amount:{depositAmount}");
         Assert(swapPairInfo.DepositAmount >= input.Amount,
             $"Swap pair deposits not enough. Deposit amount : {swapPairInfo.DepositAmount}");
         swapPairInfo.DepositAmount = swapPairInfo.DepositAmount.Sub(input.Amount);
