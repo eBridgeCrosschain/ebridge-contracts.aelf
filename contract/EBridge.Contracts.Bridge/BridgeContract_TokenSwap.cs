@@ -79,13 +79,14 @@ public partial class BridgeContract
         var swapInfo = GetTokenSwapInfo(input.SwapId);
         Assert(input.Amount > 0, $"Invalid deposit amount.{input.Amount}");
         var regimentAddress = State.RegimentContract.GetRegimentAddress.Call(swapInfo.RegimentId);
-        var regimentManager = State.RegimentContract.GetRegimentInfo.Call(regimentAddress).Manager;
-        Assert(Context.Sender == regimentManager, "No permission.");
+        var regimentMemberList = State.RegimentContract.GetRegimentMemberList.Call(regimentAddress);
+        Assert(regimentMemberList.Value.Contains(Context.Sender), "No permission.");
         var swapPairInfo = State.SwapPairInfoMap[swapInfo.SwapId][input.TargetTokenSymbol];
         Assert(swapPairInfo != null, $"Swap pair {swapInfo.SwapId}-{input.TargetTokenSymbol} is not exist.");
         swapPairInfo.DepositAmount = swapPairInfo.DepositAmount.Add(input.Amount);
         State.SwapPairInfoMap[swapInfo.SwapId][input.TargetTokenSymbol] = swapPairInfo;
         TransferDepositFrom(input.TargetTokenSymbol, input.Amount, Context.Sender);
+        State.DepositAmount[swapInfo.SwapId][input.TargetTokenSymbol] += input.Amount;
         return new Empty();
     }
 
@@ -194,9 +195,13 @@ public partial class BridgeContract
         Assert(Context.Sender == regimentManager, "No permission.");
         var swapPairInfo = State.SwapPairInfoMap[swapInfo.SwapId][input.TargetTokenSymbol];
         Assert(swapPairInfo != null, $"Swap pair {swapInfo.SwapId}-{input.TargetTokenSymbol} is not exist.");
+        var depositAmount = State.DepositAmount[swapInfo.SwapId][input.TargetTokenSymbol];
+        Assert(depositAmount >= input.Amount,$"Deposit not enough.Deposit amount:{depositAmount}");
         Assert(swapPairInfo.DepositAmount >= input.Amount,
-            $"Deposits not enough. Deposit amount : {swapPairInfo.DepositAmount}");
+            $"Swap pair deposits not enough. Deposit amount : {swapPairInfo.DepositAmount}");
         swapPairInfo.DepositAmount = swapPairInfo.DepositAmount.Sub(input.Amount);
+        depositAmount = depositAmount.Sub(input.Amount);
+        State.DepositAmount[swapInfo.SwapId][input.TargetTokenSymbol] = depositAmount;
         State.SwapPairInfoMap[swapInfo.SwapId][input.TargetTokenSymbol] = swapPairInfo;
         WithdrawDepositTo(input.TargetTokenSymbol, input.Amount, Context.Sender);
         return new Empty();
