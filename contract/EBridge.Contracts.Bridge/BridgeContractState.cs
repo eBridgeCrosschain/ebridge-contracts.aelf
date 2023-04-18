@@ -46,6 +46,11 @@ public partial class BridgeContractState : ContractState
     public MappedState<string, long> TokenMaximumAmount { get; set; }
     
     /// <summary>
+    /// SwapId -> Token symbol -> Deposit Amount
+    /// </summary>
+    public MappedState<Hash, string, long> DepositAmount { get; set; }
+    
+    /// <summary>
     /// Contract method name -> MethodFees
     /// </summary>
     // internal MappedState<string, MethodFees> TransactionFees { get; set; }

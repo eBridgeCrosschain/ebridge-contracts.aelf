@@ -92,6 +92,9 @@ service BridgeContract {
     rpc GetSpaceIdBySwapId (aelf.Hash) returns (aelf.Hash){
         option (aelf.is_view) = true;
     }
+    rpc GetDepositAmount(aelf.Hash) returns (google.protobuf.Int64Value){
+        option (aelf.is_view) = true;
+    }
     
     //AElf to others.
     //Action methods.
