@@ -19,7 +19,7 @@ using DeleteAdminsInput = EBridge.Contracts.Oracle.DeleteAdminsInput;
 
 namespace EBridge.Contracts.Bridge;
 
-public class BridgeContractTests : BridgeContractTestBase
+public partial class BridgeContractTests : BridgeContractTestBase
 {
     #region Permission
 

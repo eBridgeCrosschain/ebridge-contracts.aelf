@@ -1,5 +1,6 @@
 using System;
 using AElf;
+using AElf.Contracts.MultiToken;
 using AElf.CSharp.Core;
 using AElf.Sdk.CSharp;
 using AElf.Types;
@@ -86,8 +87,6 @@ public partial class BridgeContract
         swapPairInfo.DepositAmount = swapPairInfo.DepositAmount.Add(input.Amount);
         State.SwapPairInfoMap[swapInfo.SwapId][input.TargetTokenSymbol] = swapPairInfo;
         TransferDepositFrom(input.TargetTokenSymbol, input.Amount, Context.Sender);
-        State.DepositAmount[swapInfo.SwapId][input.TargetTokenSymbol] =
-            State.DepositAmount[swapInfo.SwapId][input.TargetTokenSymbol].Add(input.Amount);
         return new Empty();
     }
 
@@ -154,13 +153,10 @@ public partial class BridgeContract
         var swapPairInfo = State.SwapPairInfoMap[swapInfo.SwapId][swapTargetToken.Symbol];
         Assert(swapPairInfo != null, $"Swap pair {swapInfo.SwapId}-{swapTargetToken.Symbol} is not exist.");
         var targetTokenAmount = GetTargetTokenAmount(amount, swapTargetToken.SwapRatio);
-        Assert(targetTokenAmount <= swapPairInfo.DepositAmount,
-            $"Deposit not enough. Deposit amount : {swapPairInfo.DepositAmount}");
 
         // Update swap pair and ledger
         swapPairInfo.SwappedAmount = swapPairInfo.SwappedAmount.Add(targetTokenAmount);
         swapPairInfo.SwappedTimes = swapPairInfo.SwappedTimes.Add(1);
-        swapPairInfo.DepositAmount = swapPairInfo.DepositAmount.Sub(targetTokenAmount);
 
         State.SwapPairInfoMap[swapInfo.SwapId][swapTargetToken.Symbol] = swapPairInfo;
 
@@ -196,13 +192,15 @@ public partial class BridgeContract
         Assert(Context.Sender == regimentManager, "No permission.");
         var swapPairInfo = State.SwapPairInfoMap[swapInfo.SwapId][input.TargetTokenSymbol];
         Assert(swapPairInfo != null, $"Swap pair {swapInfo.SwapId}-{input.TargetTokenSymbol} is not exist.");
-        var depositAmount = State.DepositAmount[swapInfo.SwapId][input.TargetTokenSymbol];
-        Assert(depositAmount >= input.Amount, $"Deposit not enough.Deposit amount:{depositAmount}");
+        var balance = State.TokenContract.GetBalance.Call(new GetBalanceInput
+        {
+            Symbol = input.TargetTokenSymbol,
+            Owner = Context.Self
+        }).Balance;
+        Assert(balance >= input.Amount, $"Contract balance not enough. Balance : {balance}");
         Assert(swapPairInfo.DepositAmount >= input.Amount,
             $"Swap pair deposits not enough. Deposit amount : {swapPairInfo.DepositAmount}");
         swapPairInfo.DepositAmount = swapPairInfo.DepositAmount.Sub(input.Amount);
-        depositAmount = depositAmount.Sub(input.Amount);
-        State.DepositAmount[swapInfo.SwapId][input.TargetTokenSymbol] = depositAmount;
         State.SwapPairInfoMap[swapInfo.SwapId][input.TargetTokenSymbol] = swapPairInfo;
         WithdrawDepositTo(input.TargetTokenSymbol, input.Amount, Context.Sender);
         return new Empty();
