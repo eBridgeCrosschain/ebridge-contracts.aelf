@@ -14,7 +14,7 @@ using Xunit;
 
 namespace EBridge.Contracts.Bridge;
 
-public class BridgeContractAElfToTests : BridgeContractTestBase
+public partial class BridgeContractTests : BridgeContractTestBase
 {
     [Fact]
     public async Task<(Address, Address)> InitialAElfTo()
@@ -22,6 +22,7 @@ public class BridgeContractAElfToTests : BridgeContractTestBase
         await InitialOracleContractAsync();
         var organization = await InitialBridgeContractAsync();
         await InitialReportContractAsync();
+        await InitialMerkleTreeContractAsync();
         await CreateAndIssueUSDTAsync();
         await CreateRegimentTest();
 
@@ -92,7 +93,12 @@ public class BridgeContractAElfToTests : BridgeContractTestBase
                 new TokenMaximumAmount
                 {
                     Symbol = "ELF",
-                    MaximumAmount = 10_00000000
+                    MaximumAmount = 400000000
+                },
+                new TokenMaximumAmount
+                {
+                    Symbol = "USDT",
+                    MaximumAmount = 400000000
                 }
             }
         });
@@ -237,6 +243,90 @@ public class BridgeContractAElfToTests : BridgeContractTestBase
                     Signature = SignHelper.GetSignature(rawReport.Value, account.KeyPair.PrivateKey).RecoverInfo
                 });
             }
+        }
+        {
+            await CheckBalanceAsync(BridgeContractAddress, "ELF",  150_00000000 + 62_00000000);
+        }
+    }
+
+    [Fact]
+    public async Task SwapTokenWithoutDeposit()
+    {
+        await AElfToPipelineTest();
+        {
+            var regimentId = HashHelper.ComputeFrom(_regimentAddress);
+            // Create swap.
+            var createSwapResult = await BridgeContractStub.CreateSwap.SendAsync(new CreateSwapInput
+            {
+                RegimentId = regimentId,
+                SwapTargetToken =
+                    new SwapTargetToken
+                    {
+                        Symbol = "ELF",
+                        FromChainId = "Ethereum",
+                        SwapRatio = new SwapRatio
+                        {
+                            OriginShare = 10000000000,
+                            TargetShare = 1
+                        }
+                    }
+            });
+            _swapHashOfElf = createSwapResult.Output;
+            _swapOfElfSpaceId = await BridgeContractStub.GetSpaceIdBySwapId.CallAsync(_swapHashOfElf);
+            {
+                // Query
+                var queryId = await MakeQueryAsync(_swapHashOfElf.ToString(), 1, 3);
+
+                // Commit
+                await CommitAndRevealAsync(queryId, _swapHashOfElf, "Ethereum", "ELF", 1, 3);
+            }
+            await CheckBalanceAsync(BridgeContractAddress, "ELF",  150_00000000 + 62_00000000);
+            var executionResult = await ReceiverBridgeContractStubs.First().SwapToken.SendAsync(new SwapTokenInput
+            {
+                OriginAmount = SampleSwapInfo.SwapInfos[0].OriginAmount,
+                ReceiptId = SampleSwapInfo.SwapInfos[0].ReceiptId,
+                SwapId = _swapHashOfElf
+            });
+            var log = TokenSwapped.Parser.ParseFrom(executionResult.TransactionResult.Logs
+                .First(l => l.Name == nameof(TokenSwapped)).NonIndexed);
+            log.FromChainId.ShouldBe("Ethereum");
+            await CheckBalanceAsync(Receivers.First().Address, "ELF", 10000000L);
+            await CheckBalanceAsync(BridgeContractAddress, "ELF",  150_00000000 + 62_00000000 - 10000000L);
+            var swapPairInfo = await BridgeContractStub.GetSwapPairInfo.CallAsync(new GetSwapPairInfoInput
+            {
+                SwapId = _swapHashOfElf,
+                Symbol = "ELF"
+            });
+            swapPairInfo.DepositAmount.ShouldBe(0);
+            {
+                await BridgeContractStub.Deposit.SendAsync(new DepositInput
+                {
+                    SwapId = _swapHashOfElf,
+                    TargetTokenSymbol = "ELF",
+                    Amount = 10_0000_00000000
+                });
+            }
+            var swapPairInfo1 = await BridgeContractStub.GetSwapPairInfo.CallAsync(new GetSwapPairInfoInput
+            {
+                SwapId = _swapHashOfElf,
+                Symbol = "ELF"
+            });
+            swapPairInfo1.DepositAmount.ShouldBe(10_0000_00000000);
+            await BridgeContractStub.SwapToken.SendAsync(new SwapTokenInput
+            {
+                ReceiverAddress = Receivers[1].Address,
+                OriginAmount = SampleSwapInfo.SwapInfos[1].OriginAmount,
+                ReceiptId = SampleSwapInfo.SwapInfos[1].ReceiptId,
+                SwapId = _swapHashOfElf
+            });
+            await CheckBalanceAsync(Receivers[1].Address, "ELF", 20000000L);
+            var swapPairInfo2 = await BridgeContractStub.GetSwapPairInfo.CallAsync(new GetSwapPairInfoInput
+            {
+                SwapId = _swapHashOfElf,
+                Symbol = "ELF"
+            });
+            swapPairInfo2.DepositAmount.ShouldBe(10_0000_00000000);
+            await CheckBalanceAsync(BridgeContractAddress, "ELF",  150_00000000 + 62_00000000 - 10000000L - 20000000L + 10_0000_00000000);
         }
     }
 

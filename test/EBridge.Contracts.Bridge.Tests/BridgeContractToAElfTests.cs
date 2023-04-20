@@ -14,7 +14,7 @@ using CallbackInfo = EBridge.Contracts.Oracle.CallbackInfo;
 
 namespace EBridge.Contracts.Bridge;
 
-public class BridgeContractToAElfTests : BridgeContractTestBase
+public partial class BridgeContractTests
 {
     [Fact]
     public async Task<(Address, Address)> InitialSwapAsync()
@@ -199,7 +199,8 @@ public class BridgeContractToAElfTests : BridgeContractTestBase
             });
             result.SwappedTimes.ShouldBe(1);
             result.SwappedAmount.ShouldBe(10000000L);
-            result.DepositAmount.ShouldBe(bridgeBalance.Balance - 10000000);
+            result.DepositAmount.ShouldBe(10_0000_00000000);
+            await CheckBalanceAsync(BridgeContractAddress,"ELF", bridgeBalance.Balance - 10000000L);
         }
         {
             {
@@ -225,7 +226,7 @@ public class BridgeContractToAElfTests : BridgeContractTestBase
             });
             result.SwappedTimes.ShouldBe(2);
             result.SwappedAmount.ShouldBe(30000000L);
-            result.DepositAmount.ShouldBe(bridgeBalance.Balance - 30000000L);
+            result.DepositAmount.ShouldBe(10_0000_00000000);
         }
         {
             // Swap
@@ -275,7 +276,7 @@ public class BridgeContractToAElfTests : BridgeContractTestBase
             });
             result.SwappedTimes.ShouldBe(3);
             result.SwappedAmount.ShouldBe(80000000L);
-            result.DepositAmount.ShouldBe(bridgeBalance.Balance - 80000000L);
+            result.DepositAmount.ShouldBe(10_0000_00000000);
             var receiptInfo = await BridgeContractStub.GetSwappedReceiptInfo.CallAsync(
                 new GetSwappedReceiptInfoInput
                 {
@@ -318,7 +319,7 @@ public class BridgeContractToAElfTests : BridgeContractTestBase
             });
             result.SwappedTimes.ShouldBe(1);
             result.SwappedAmount.ShouldBe(10000000L);
-            result.DepositAmount.ShouldBe(bridgeUsdtBalance.Balance - 10000000L);
+            result.DepositAmount.ShouldBe(10_0000_00000000);
         }
 
         {
@@ -338,7 +339,7 @@ public class BridgeContractToAElfTests : BridgeContractTestBase
             });
             result.SwappedTimes.ShouldBe(2);
             result.SwappedAmount.ShouldBe(30000000L);
-            result.DepositAmount.ShouldBe(bridgeUsdtBalance.Balance - 30000000L);
+            result.DepositAmount.ShouldBe(10_0000_00000000);
         }
         {
             // Swap
@@ -407,10 +408,6 @@ public class BridgeContractToAElfTests : BridgeContractTestBase
             TargetTokenSymbol = "ELF",
             Amount = 10_0000_00000000
         });
-        {
-            var deposit = await BridgeContractStub.GetDepositAmount.CallAsync(_swapHashOfElf);
-            deposit.Value.ShouldBe(10_0000_00000000);
-        }
         {
             var balance = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
             {
@@ -961,7 +958,7 @@ public class BridgeContractToAElfTests : BridgeContractTestBase
             });
             result.SwappedTimes.ShouldBe(1);
             result.SwappedAmount.ShouldBe(10000000L);
-            result.DepositAmount.ShouldBe(bridgeBalance.Balance - 10000000);
+            result.DepositAmount.ShouldBe(10_0000_00000000);
         }
     }
 
@@ -1005,7 +1002,7 @@ public class BridgeContractToAElfTests : BridgeContractTestBase
                 ReceiptId = SampleSwapInfo.SwapInfos[2].ReceiptId,
                 SwapId = _swapHashOfElf
             });
-            executionResult.TransactionResult.Error.ShouldContain("Deposit not enough.");
+            executionResult.TransactionResult.Error.ShouldContain("Insufficient balance");
         }
     }
 
@@ -1197,10 +1194,6 @@ public class BridgeContractToAElfTests : BridgeContractTestBase
             balance.Balance.ShouldBe(70000_00000000);
         }
         {
-            var deposit = await BridgeContractStub.GetDepositAmount.CallAsync(_swapHashOfElf);
-            deposit.Value.ShouldBe(70000_00000000);
-        }
-        {
             var userBalanceWithdraw = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
             {
                 Symbol = "ELF",
@@ -1283,7 +1276,7 @@ public class BridgeContractToAElfTests : BridgeContractTestBase
             Amount = 8_0000_00000000,
             TargetTokenSymbol = "ELF"
         });
-        executionResult.TransactionResult.Error.ShouldContain("Deposit not enough.");
+        executionResult.TransactionResult.Error.ShouldContain("Contract balance not enough");
     }
 
     #endregion
