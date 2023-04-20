@@ -68,15 +68,6 @@ public partial class BridgeContract
         return State.Ledger[input.SwapId][input.ReceiptId];
     }
 
-    public override Int64Value GetDepositAmount(Hash input)
-    {
-        var swapInfo = GetTokenSwapInfo(input);
-        return new Int64Value
-        {
-            Value = State.DepositAmount[input][swapInfo.SwapTargetToken.Symbol]
-        };
-    }
-
     public override SwappedReceiptInfo GetSwappedReceiptInfo(GetSwappedReceiptInfoInput input)
     {
         return State.RecorderReceiptInfoMap[input.SwapId][input.ReceiptId];
