@@ -1,0 +1,18 @@
+using System.Collections.Generic;
+using AElf.Kernel.SmartContract.Application;
+using AElf.Types;
+using EBridge.Contracts.Bridge.SmartContractNameProviders;
+using Volo.Abp.DependencyInjection;
+
+namespace EBridge.Contracts.Report.ContractInitializationProvider;
+
+public class ReportContractInitializationProvider : IContractInitializationProvider,ISingletonDependency
+{
+    public List<ContractInitializationMethodCall> GetInitializeMethodList(byte[] contractCode)
+    {
+        return new List<ContractInitializationMethodCall>();
+    }
+
+    public Hash SystemSmartContractName => ReportSmartContractAddressNameProvider.Name;
+    public string ContractCodeName => "EBridge.Contracts.Report";
+}

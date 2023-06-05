@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package AssociationImpl;
+
+import "Protobuf/message/acs1.proto";
+import "Protobuf/message/acs3.proto";
+import "Protobuf/stub/association_contract.proto";
+
+option csharp_namespace = "AElf.Contracts.Association";
+
+service AssociationContractImpl {
+    
+    option (aelf.csharp_state) = "AElf.Contracts.Association.AssociationState";
+    option (aelf.base) = "Protobuf/message/acs3.proto";
+    option (aelf.base) = "Protobuf/message/acs1.proto";
+    option (aelf.base) = "Protobuf/stub/association_contract.proto";
+}
