@@ -9,11 +9,12 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
 {
     public override Empty Initialize(InitializeInput input)
     {
-        Assert(State.Controller.Value == null, "Already initialized.");
+        Assert(State.IsInitialized.Value == false,"Already initialized.");
         State.TokenContract.Value =
             Context.GetContractAddressByName(SmartContractConstants.TokenContractSystemName);
         State.ParliamentContract.Value =
             Context.GetContractAddressByName(SmartContractConstants.ParliamentContractSystemName);
+        State.IsInitialized.Value = true;
         State.OracleContract.Value = input.OracleContractAddress;
         State.MerkleTreeContract.Value = input.MerkleTreeContractAddress;
         State.RegimentContract.Value = input.RegimentContractAddress;
