@@ -6,6 +6,11 @@ namespace EBridge.Contracts.Bridge;
 public partial class BridgeContractState : ContractState
 {
     /// <summary>
+    /// Is initialized
+    /// </summary>
+    public BoolState IsInitialized { get; set; }
+
+    /// <summary>
     /// Contract Controller.
     /// </summary>
     public SingletonState<Address> Controller { get; set; }
