@@ -5,6 +5,8 @@ namespace EBridge.Contracts.MerkleTreeContract;
 
 public partial class MerkleTreeContractState : ContractState
 {
+    public BoolState IsInitialized { get; set; }
+
     public SingletonState<Address> Owner { get; set; }
     // public MappedState<string, MethodFees> TransactionFees { get; set; }
     public SingletonState<AuthorityInfo> MethodFeeController { get; set; }
