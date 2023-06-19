@@ -9,6 +9,7 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
 {
     public override Empty Initialize(InitializeInput input)
     {
+        Assert(State.Controller.Value == null, "Already initialized.");
         Assert(State.IsInitialized.Value == false,"Already initialized.");
         State.TokenContract.Value =
             Context.GetContractAddressByName(SmartContractConstants.TokenContractSystemName);

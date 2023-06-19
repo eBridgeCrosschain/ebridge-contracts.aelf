@@ -12,6 +12,7 @@ public partial class MerkleTreeContract : MerkleTreeContractContainer.MerkleTree
 {
     public override Empty Initialize(InitializeInput input)
     {
+        Assert(State.Owner.Value == null, $"Already initialized.");
         Assert(State.IsInitialized.Value == false,"Already initialized.");
         State.IsInitialized.Value = true;
         State.Owner.Value = input.Owner;
