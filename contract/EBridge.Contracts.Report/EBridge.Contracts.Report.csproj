@@ -35,6 +35,9 @@
         <ContractReference Include="..\..\protobuf\parliament_contract_impl.proto">
             <Link>Protobuf\Proto\referece\parliament_contract_impl.proto</Link>
         </ContractReference>
+        <ContractReference Include="..\..\protobuf\acs0.proto">
+            <Link>Protobuf\Proto\reference\acs0.proto</Link>
+        </ContractReference>
         <ContractReference Include="..\..\protobuf\acs13.proto">
             <Link>Protobuf\Proto\referece\acs13.proto</Link>
         </ContractReference>

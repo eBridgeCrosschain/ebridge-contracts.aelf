@@ -10,6 +10,9 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
     public override Empty Initialize(InitializeInput input)
     {
         Assert(State.IsInitialized.Value == false,"Already initialized.");
+        // State.GensisContract.Value = Context.GetZeroSmartContractAddress();
+        // var author = State.GensisContract.GetContractAuthor.Call(Context.Self);
+        // Assert(Context.Sender == author, "No permission.");
         State.TokenContract.Value =
             Context.GetContractAddressByName(SmartContractConstants.TokenContractSystemName);
         State.ParliamentContract.Value =
@@ -106,6 +109,10 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
         Assert(Context.Sender == State.PauseController.Value, "No permission.");
         Assert(!State.IsContractPause.Value, "Contract has already been paused.");
         State.IsContractPause.Value = true;
+        Context.Fire(new Pause()
+        {
+            Sender = Context.Sender
+        });
         return new Empty();
     }
 
@@ -114,6 +121,10 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
         Assert(Context.Sender == State.RestartOrganizationAddress.Value, "No permission.");
         Assert(State.IsContractPause.Value, "Contract has already been started.");
         State.IsContractPause.Value = false;
+        Context.Fire(new Restart()
+        {
+            Sender = Context.Sender
+        });
         return new Empty();
     }
 
@@ -138,6 +149,11 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
         Assert(!State.ApproveTransfer[input.ReceiptId],
             "The receipt has been approved");
         State.ApproveTransfer[input.ReceiptId] = true;
+        Context.Fire(new ApproveTransfer()
+        {
+            Sender = Context.Sender,
+            ReceiptId = input.ReceiptId
+        });
         return new Empty();
     }
 
