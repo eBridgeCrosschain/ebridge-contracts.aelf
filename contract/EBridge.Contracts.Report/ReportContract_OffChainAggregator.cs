@@ -80,6 +80,13 @@ namespace EBridge.Contracts.Report
             Assert(offChainAggregationInfo.OffChainQueryInfoList.Value.Count <= MaximumOffChainQueryInfoCount,
                 $"Maximum off chain query info count: {MaximumOffChainQueryInfoCount}");
             State.OffChainAggregationInfoMap[input.ChainId][input.Token] = offChainAggregationInfo;
+            Context.Fire(new AddOffChainQueryInfo()
+            {
+                Sender = Context.Sender,
+                Token = input.Token,
+                ChainId = input.ChainId,
+                OffChainQueryInfo = input.OffChainQueryInfo
+            });
             return new Empty();
         }
 
@@ -98,6 +105,13 @@ namespace EBridge.Contracts.Report
                 };
             offChainAggregationInfo.RoundIds[input.RemoveNodeIndex] = -1;
             State.OffChainAggregationInfoMap[input.ChainId][input.Token] = offChainAggregationInfo;
+            Context.Fire(new RemoveOffChainQueryInfo()
+            {
+                Sender = Context.Sender,
+                Token = input.Token,
+                ChainId = input.ChainId,
+                RemoveNodeIndex = input.RemoveNodeIndex
+            });
             return new Empty();
         }
 
@@ -110,6 +124,13 @@ namespace EBridge.Contracts.Report
                 "Only single style aggregation can change off chain query info.");
             offChainAggregationInfo.OffChainQueryInfoList.Value[0] = input.NewOffChainQueryInfo;
             State.OffChainAggregationInfoMap[input.ChainId][input.Token] = offChainAggregationInfo;
+            Context.Fire(new ChangeOffChainQueryInfo()
+            {
+                Sender = Context.Sender,
+                Token = input.Token,
+                ChainId = input.ChainId,
+                NewOffChainQueryInfo = input.NewOffChainQueryInfo
+            });
             return new Empty();
         }
 
@@ -119,6 +140,11 @@ namespace EBridge.Contracts.Report
                 "No permission.");
             Assert(!State.RegisterWhiteListMap[input], $"{input} already in register white list.");
             State.RegisterWhiteListMap[input] = true;
+            Context.Fire(new AddRegisterWhiteList()
+            {
+                Sender = Context.Sender,
+                Input = input
+            });
             return new Empty();
         }
 
@@ -128,6 +154,11 @@ namespace EBridge.Contracts.Report
                 "No permission.");
             Assert(State.RegisterWhiteListMap[input], $"{input} is not in register white list.");
             State.RegisterWhiteListMap[input] = false;
+            Context.Fire(new RemoveFromRegisterWhiteList()
+            {
+                Sender = Context.Sender,
+                Input = input
+            });
             return new Empty();
         }
     }

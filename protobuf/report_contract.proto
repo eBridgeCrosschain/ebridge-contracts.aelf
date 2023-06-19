@@ -31,7 +31,7 @@ service ReportContract {
 
   rpc MortgageTokens (google.protobuf.Int64Value) returns (google.protobuf.Empty) {}
 
-  rpc WithdrawTokens (google.protobuf.Int64Value) returns (google.protobuf.Empty) {}
+  rpc WithdrawTokens (WithdrawTokensInput) returns (google.protobuf.Empty) {}
   
   rpc SetSkipMemberList (SetSkipMemberListInput) returns (google.protobuf.Empty){}
   
@@ -144,6 +144,11 @@ message RejectReportInput {
   int64 round_id = 2;
   repeated aelf.Address accusing_nodes = 3;
   string chain_id = 4;
+}
+
+message WithdrawTokensInput {
+  int64 amount = 1;
+  aelf.Address regiment = 2;
 }
 
 message Report {
@@ -355,4 +360,40 @@ message MerkleReportNodeAdded {
   int32 node_index = 2;
   int64 node_round_id = 3;
   string aggregated_data = 4;
+}
+
+message AddOffChainQueryInfo{
+  option (aelf.is_event) = true;
+  string token = 1;
+  string chain_id = 2;
+  OffChainQueryInfo off_chain_query_info = 3;
+  aelf.Address sender = 4;
+}
+
+message RemoveOffChainQueryInfo{
+  option (aelf.is_event) = true;
+  string token = 1;
+  string chain_id = 2;
+  int32 remove_node_index = 3;
+  aelf.Address sender = 4;
+}
+
+message ChangeOffChainQueryInfo{
+  option (aelf.is_event) = true;
+  string token = 1;
+  string chain_id = 2;
+  OffChainQueryInfo new_off_chain_query_info = 3;
+  aelf.Address sender = 4;
+}
+
+message AddRegisterWhiteList{
+  option (aelf.is_event) = true;
+  aelf.Address sender = 1;
+  aelf.Address input = 2;
+}
+
+message RemoveFromRegisterWhiteList{
+  option (aelf.is_event) = true;
+  aelf.Address sender = 1;
+  aelf.Address input = 2;
 }
