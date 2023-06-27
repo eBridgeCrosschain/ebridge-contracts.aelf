@@ -262,6 +262,7 @@ namespace EBridge.Contracts.Oracle
             Assert(actualDesignatedNodeList.Value.Count >= State.MinimumOracleNodesCount.Value,
                 "Invalid designated nodes count.");
 
+            Assert(State.CommitmentMap[input.QueryId][Context.Sender] == null, "Sender is already submit commitment");
             var updatedResponseCount = State.ResponseCount[input.QueryId].Add(1);
             State.CommitmentMap[input.QueryId][Context.Sender] = input.Commitment;
 

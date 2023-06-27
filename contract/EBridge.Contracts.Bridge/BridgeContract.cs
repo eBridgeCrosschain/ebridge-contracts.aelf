@@ -112,7 +112,8 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
         State.IsContractPause.Value = true;
         Context.Fire(new Pause()
         {
-            Sender = Context.Sender
+            Sender = Context.Sender,
+            IsContractPause = true
         });
         return new Empty();
     }
@@ -124,7 +125,8 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
         State.IsContractPause.Value = false;
         Context.Fire(new Restart()
         {
-            Sender = Context.Sender
+            Sender = Context.Sender,
+            IsContractPause = false
         });
         return new Empty();
     }
@@ -136,6 +138,11 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
     public override Empty SetTokenMaximumAmount(SetMaximumAmountInput input)
     {
         Assert(Context.Sender == State.Admin.Value, "No permission.");
+        foreach (var tokenMaximumAmount in input.Value)
+        {
+            Assert(tokenMaximumAmount.MaximumAmount > 0, $"invalid MaximumAmount ${tokenMaximumAmount.MaximumAmount}");
+        }
+
         foreach (var tokenMaximumAmount in input.Value)
         {
             State.TokenMaximumAmount[tokenMaximumAmount.Symbol] = tokenMaximumAmount.MaximumAmount;

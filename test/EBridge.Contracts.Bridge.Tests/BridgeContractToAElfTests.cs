@@ -122,6 +122,30 @@ public partial class BridgeContractTests
             tokenMaximumAmount.Value.ShouldBe(5000000000_00000000);
         }
     }
+    
+    [Fact]
+    public async Task SetTokenMaximumAmount_Invalid()
+    {
+        await InitialBridgeContractAsync();
+        var executionResult = await BridgeContractStub.SetTokenMaximumAmount.SendWithExceptionAsync(
+            new SetMaximumAmountInput
+            {
+                Value =
+                {
+                    new TokenMaximumAmount
+                    {
+                        Symbol = "ELF",
+                        MaximumAmount = 4000000000_00000000
+                    },
+                    new TokenMaximumAmount
+                    {
+                        Symbol = "ELF",
+                        MaximumAmount = -1
+                    },
+                }
+            });
+        executionResult.TransactionResult.Error.ShouldContain("invalid MaximumAmount");
+    }
 
     private async Task OracleQueryCommitAndReveal()
     {
@@ -204,10 +228,13 @@ public partial class BridgeContractTests
         }
         {
             {
-                await BridgeContractStub.ApproveTransfer.SendAsync(new ApproveTransferInput
+                var executionResult = await BridgeContractStub.ApproveTransfer.SendAsync(new ApproveTransferInput
                 {
                     ReceiptId = SampleSwapInfo.SwapInfos[1].ReceiptId
                 });
+                var log = ApproveTransfer.Parser.ParseFrom(executionResult.TransactionResult.Logs.First(l => l.Name == nameof(ApproveTransfer)).NonIndexed);
+                log.ReceiptId.ShouldBe(SampleSwapInfo.SwapInfos[1].ReceiptId);
+                log.Sender.ShouldBe(DefaultSenderAddress);
             }
             // Swap
             await BridgeContractStub.SwapToken.SendAsync(new SwapTokenInput
@@ -712,6 +739,28 @@ public partial class BridgeContractTests
             swapInfo.SwapTargetToken.SwapRatio.OriginShare.ShouldBe(50000000000);
             swapInfo.SwapTargetToken.SwapRatio.TargetShare.ShouldBe(2);
         }
+        var executionResult = await BridgeContractStub.ChangeSwapRatio.SendWithExceptionAsync(new ChangeSwapRatioInput
+        {
+            SwapId = _swapHashOfElf,
+            TargetTokenSymbol = "ELF",
+            SwapRatio = new SwapRatio
+            {
+                OriginShare = -1,
+                TargetShare = 2
+            }
+        });
+        executionResult.TransactionResult.Error.ShouldContain("SwapRatio originShare is invalid");
+        executionResult = await BridgeContractStub.ChangeSwapRatio.SendWithExceptionAsync(new ChangeSwapRatioInput
+        {
+            SwapId = _swapHashOfElf,
+            TargetTokenSymbol = "ELF",
+            SwapRatio = new SwapRatio
+            {
+                OriginShare = 50000000000,
+                TargetShare = -1
+            }
+        });
+        executionResult.TransactionResult.Error.ShouldContain("SwapRatio targetShare is invalid");
     }
 
     [Fact]
@@ -813,6 +862,19 @@ public partial class BridgeContractTests
 
             // Commit
             await CommitAndReveal_IncorrectReceiptIndex(queryId, _swapHashOfElf, "Ethereum", "ELF", 2, 3);
+        }
+    }
+    
+    [Fact]
+    public async Task ToAElfTest_DuplicateCommit()
+    {
+        await CreateSwapTestAsync();
+        {
+            // Query
+            var queryId = await MakeQueryAsync(_swapHashOfElf.ToString(), 1, 2);
+
+            // Commit
+            await Commit_Duplicate(queryId, _swapHashOfElf, "Ethereum", "ELF", 1, 2);
         }
     }
 
@@ -1454,6 +1516,40 @@ public partial class BridgeContractTests
             QueryId = queryId
         });
         executionResult.TransactionResult.Error.ShouldContain("Incorrect receipt index.");
+    }
+    
+    private async Task Commit_Duplicate(Hash queryId, Hash swapId, string chainId, string symbol,
+        long from, long end)
+    {
+        var tokenId = HashHelper.ConcatAndCompute(HashHelper.ComputeFrom(chainId), HashHelper.ComputeFrom(symbol));
+        var receiptHashMap = new ReceiptHashMap
+        {
+            SwapId = swapId.ToHex()
+        };
+        for (var index = from; index <= end; index++)
+        {
+            var receiptId = $"{tokenId}.{index}";
+            receiptHashMap.Value.Add(receiptId,
+                chainId == "Ploygon"
+                    ? SampleSwapInfo.SwapInfos[(int) index + 4].ReceiptHash.ToHex()
+                    : SampleSwapInfo.SwapInfos[(int) index - 1].ReceiptHash.ToHex());
+        }
+
+        var salt = HashHelper.ComputeFrom("Salt");
+
+        var account = Transmitters[0];
+        var stub = GetOracleContractStub(account.KeyPair);
+        var dataHash = HashHelper.ComputeFrom(receiptHashMap.ToString());
+        var commitInput = new CommitInput
+        {
+            QueryId = queryId,
+            Commitment = HashHelper.ConcatAndCompute(
+                dataHash,
+                HashHelper.ConcatAndCompute(salt, HashHelper.ComputeFrom(account.Address.ToBase58())))
+        };
+        await stub.Commit.SendAsync(commitInput);
+        var executeResult = await stub.Commit.SendWithExceptionAsync(commitInput);
+        executeResult.TransactionResult.Error.ShouldContain("already submit commitment");
     }
 
     private async Task CommitAndRevealAsync_SwapIdIsNull(Hash queryId, Hash swapId, string chainId, string symbol,

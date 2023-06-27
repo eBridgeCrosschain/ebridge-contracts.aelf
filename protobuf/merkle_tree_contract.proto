@@ -87,7 +87,7 @@ service MerkleTreeContract {
 
 message SpaceInfo{
   int64 max_leaf_count = 1;
-  aelf.Hash operators = 2;
+  aelf.Hash operator = 2;
 }
 
 message MerkleTree{
