@@ -67,8 +67,8 @@ namespace EBridge.Contracts.Report
         public override Empty WithdrawTokens(WithdrawTokensInput input)
         {
             var observerList = State.ObserverListMap[input.Regiment];
-            Assert(observerList != null && observerList.Value.Contains(Context.Sender), 
-                $"Sender is not an observer for regiment {input.Regiment}");
+            Assert(observerList == null || !observerList.Value.Contains(Context.Sender), 
+                $"Sender is an observer for regiment {input.Regiment}");
             TransferTokenFromSenderVirtualAddress(State.ObserverMortgageTokenSymbol.Value, input.Amount);
             return new Empty();
         }

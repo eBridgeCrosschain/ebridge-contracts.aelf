@@ -210,9 +210,12 @@ public partial class BridgeContractTests : BridgeContractTestBase
     public async Task<(Address, Address)> PauseContract_Test()
     {
         var organizationAddress = await InitialBridgeContractAsync();
-        await BridgeContractStub.Pause.SendAsync(new Empty());
+        var executionResult = await BridgeContractStub.Pause.SendAsync(new Empty());
         var state = await BridgeContractStub.IsContractPause.CallAsync(new Empty());
         state.Value.ShouldBe(true);
+        var log = Pause.Parser.ParseFrom(executionResult.TransactionResult.Logs.First(l => l.Name == nameof(Pause)).NonIndexed);
+        log.Sender.ShouldBe(DefaultSenderAddress);
+        log.IsContractPause.ShouldBe(true);
         return organizationAddress;
     }
 
@@ -230,6 +233,25 @@ public partial class BridgeContractTests : BridgeContractTestBase
         await InitialBridgeContractAsync();
         var execution = await BridgeContractSetFeeRatioStub.Pause.SendWithExceptionAsync(new Empty());
         execution.TransactionResult.Error.ShouldContain("No permission.");
+    }
+    
+    [Fact]
+    public async Task Pause_Restart_Contract_Test()
+    {
+        await BridgeContractStub.Initialize.SendAsync(new InitializeInput
+        {
+            PauseController = DefaultSenderAddress,
+            OrganizationAddress = DefaultSenderAddress,
+            Admin = DefaultSenderAddress,
+            Controller = DefaultSenderAddress
+        });
+        await BridgeContractStub.Pause.SendAsync(new Empty());
+        var executionResult = await BridgeContractStub.Restart.SendAsync(new Empty());
+        var state = await BridgeContractStub.IsContractPause.CallAsync(new Empty());
+        state.Value.ShouldBe(false);
+        var log = Restart.Parser.ParseFrom(executionResult.TransactionResult.Logs.First(l => l.Name == nameof(Restart)).NonIndexed);
+        log.Sender.ShouldBe(DefaultSenderAddress);
+        log.IsContractPause.ShouldBe(false);
     }
 
     [Fact]
