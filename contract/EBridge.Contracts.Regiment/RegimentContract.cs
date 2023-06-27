@@ -63,6 +63,7 @@ public partial class RegimentContract : RegimentContractContainer.RegimentContra
         var regimentAssociationAddress =
             State.AssociationContract.CalculateOrganizationAddress.Call(createOrganizationInput);
         var regimentId = HashHelper.ComputeFrom(regimentAssociationAddress);
+        Assert(State.RegimentIdAddressMap[regimentId] == null, "RegimentId already exists.");
         State.RegimentIdAddressMap[regimentId] = regimentAssociationAddress;
         State.RegimentAddressIdMap[regimentAssociationAddress] = regimentId;
         Assert(State.RegimentInfoMap[regimentAssociationAddress] == null, "Regiment already exists.");

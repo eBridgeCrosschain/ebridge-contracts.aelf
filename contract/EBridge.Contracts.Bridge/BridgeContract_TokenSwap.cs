@@ -37,7 +37,7 @@ public partial class BridgeContract
             Value = new SpaceInfo
             {
                 MaxLeafCount = input.MerkleTreeLeafLimit == 0 ? DefaultMaximalLeafCount : input.MerkleTreeLeafLimit,
-                Operators = input.RegimentId
+                Operator = input.RegimentId
             }
         });
         var spaceSalt = State.MerkleTreeContract.GetRegimentSpaceCount.Call(input.RegimentId).Value.Add(1);
@@ -214,6 +214,8 @@ public partial class BridgeContract
         Assert(Context.Sender == regimentManager, "No permission.");
         Assert(swapInfo.SwapTargetToken.Symbol == input.TargetTokenSymbol,
             $"Swap target token {swapInfo.SwapId}-{input.TargetTokenSymbol} is not exist. ");
+        Assert(input.SwapRatio.OriginShare >= 1, "SwapRatio originShare is invalid");
+        Assert(input.SwapRatio.TargetShare >= 1, "SwapRatio targetShare is invalid");
         swapInfo.SwapTargetToken.SwapRatio = input.SwapRatio;
         State.SwapInfo[swapInfo.SwapId] = swapInfo;
         Context.Fire(new SwapRatioChanged
