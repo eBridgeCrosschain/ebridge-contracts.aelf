@@ -386,14 +386,14 @@ message ChangeOffChainQueryInfo{
   aelf.Address sender = 4;
 }
 
-message AddRegisterWhiteList{
+message RegisterWhiteListAdded{
   option (aelf.is_event) = true;
   aelf.Address sender = 1;
-  aelf.Address input = 2;
+  aelf.Address add_address = 2;
 }
 
-message RemoveFromRegisterWhiteList{
+message RegisterWhiteListRemoved{
   option (aelf.is_event) = true;
   aelf.Address sender = 1;
-  aelf.Address input = 2;
+  aelf.Address remove_address = 2;
 }
