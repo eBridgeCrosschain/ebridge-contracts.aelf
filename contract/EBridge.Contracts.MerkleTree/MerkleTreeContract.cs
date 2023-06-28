@@ -67,7 +67,7 @@ public partial class MerkleTreeContract : MerkleTreeContractContainer.MerkleTree
     private Hash NextSpaceId(Hash spaceId, long id, Hash op)
     {
         long baseId = long.MaxValue >> 4;
-        for (int i = 1; i <= 10; i++)
+        for (int i = 1; i <= 3; i++)
         {
             long nextId = baseId + 16 * (id - 1) + i;
             spaceId =
