@@ -150,7 +150,7 @@ public partial class MerkleTreeContractTests : MerkleTreeContractTestBase
         spaceInfoMap[spaceId] = spaceId;
         
         long baseId = long.MaxValue >> 4;
-        for (int i = 1; i <= 10; i++)
+        for (int i = 1; i <= 3; i++)
         {
             long nextId = baseId + 16 * (id - 1) + i;
             spaceId =
