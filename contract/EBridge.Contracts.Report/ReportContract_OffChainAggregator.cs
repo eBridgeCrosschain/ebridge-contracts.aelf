@@ -140,10 +140,10 @@ namespace EBridge.Contracts.Report
                 "No permission.");
             Assert(!State.RegisterWhiteListMap[input], $"{input} already in register white list.");
             State.RegisterWhiteListMap[input] = true;
-            Context.Fire(new AddRegisterWhiteList()
+            Context.Fire(new RegisterWhiteListAdded()
             {
                 Sender = Context.Sender,
-                Input = input
+                AddAddress = input
             });
             return new Empty();
         }
@@ -154,10 +154,10 @@ namespace EBridge.Contracts.Report
                 "No permission.");
             Assert(State.RegisterWhiteListMap[input], $"{input} is not in register white list.");
             State.RegisterWhiteListMap[input] = false;
-            Context.Fire(new RemoveFromRegisterWhiteList()
+            Context.Fire(new RegisterWhiteListRemoved()
             {
                 Sender = Context.Sender,
-                Input = input
+                RemoveAddress = input
             });
             return new Empty();
         }
