@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using AElf.Boilerplate.TestBase;
 using AElf.Boilerplate.TestBase.SmartContractNameProviders;
 using AElf.Contracts.MultiToken;
@@ -41,7 +42,9 @@ public class ReportContractTestBase : DAppContractTestBase<ReportContractTestMod
     internal Address ReportContractAddress =>
         GetAddress(ReportSmartContractAddressNameProvider.StringName);
 
-
+    internal readonly Address _regimentAddress =
+        Address.FromBase58("2aT9rHLuFRFCHJ1cBSTDR8oD1EFFEBqqiw8fdXD8UuEKRj6Tfh");
+    
     public ReportContractTestBase()
     {
         DefaultSenderAddress = SampleAccount.Accounts.First().Address;
@@ -90,5 +93,56 @@ public class ReportContractTestBase : DAppContractTestBase<ReportContractTestMod
             ReportContractAddress,
             senderKeyPair
         );
+    }
+    
+    internal async Task InitialReportContractAsync()
+    {
+        await PortTokenCreate();
+        await ReportContractStub.Initialize.SendAsync(new InitializeInput()
+        {
+            OracleContractAddress = OracleContractAddress,
+            RegimentContractAddress = RegimentContractAddress,
+            ReportFee = 0,
+            InitialRegisterWhiteList = {DefaultSenderAddress}
+        });
+    }
+    
+    internal async Task InitialOracleContractAsync()
+    {
+        await OracleContractStub.Initialize.SendAsync(new Oracle.InitializeInput
+        {
+            RegimentContractAddress = RegimentContractAddress
+        });
+    }
+    
+    internal async Task PortTokenCreate()
+    {
+        // Create PORT token.
+        await TokenContractStub.Create.SendAsync(new CreateInput
+        {
+            TokenName = "Port Token",
+            Decimals = 8,
+            Issuer = DefaultSenderAddress,
+            IsBurnable = true,
+            Symbol = "PORT",
+            TotalSupply = 10_00000000_00000000
+        });
+    
+        // Issue PORT token.
+        await TokenContractStub.Issue.SendAsync(new IssueInput
+        {
+            To = Transmitters.First().Address,
+            Amount = 10_00000000_00000000,
+            Symbol = "PORT"
+        });
+    
+        // Approve Oracle Contract.
+        var transmitterTokenContractStub = GetTokenContractStub(Transmitters.First().KeyPair);
+        await transmitterTokenContractStub.Approve.SendAsync(new ApproveInput
+        {
+            Symbol = "PORT",
+            Amount = 5_00000000_00000000,
+            Spender = OracleContractAddress
+        });
     }
 }
