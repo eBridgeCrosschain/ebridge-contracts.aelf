@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 using System.Threading.Tasks;
 using AElf;
 using AElf.Boilerplate.TestBase;
@@ -10,7 +11,9 @@ using AElf.Contracts.Parliament;
 using AElf.ContractTestBase.ContractTestKit;
 using AElf.Cryptography.ECDSA;
 using AElf.CSharp.Core.Extension;
+using AElf.Kernel;
 using AElf.Kernel.Proposal;
+using AElf.Standards.ACS0;
 using AElf.Standards.ACS3;
 using AElf.Types;
 using EBridge.Contracts.MerkleTreeContract;
@@ -21,6 +24,7 @@ using EBridge.Contracts.TestContract.ReceiptMaker;
 using Google.Protobuf;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
+using Volo.Abp.Threading;
 using AddAdminsInput = EBridge.Contracts.Oracle.AddAdminsInput;
 using CreateOrganizationInput = AElf.Contracts.Referendum.CreateOrganizationInput;
 using CreateRegimentInput = EBridge.Contracts.Oracle.CreateRegimentInput;
@@ -50,6 +54,7 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
 
     internal AssociationContractImplContainer.AssociationContractImplStub AssociationContractImplStub { get; set; }
 
+    internal ACS0Container.ACS0Stub ZeroContractStub { get; set; }
     internal BridgeContractContainer.BridgeContractStub BridgeContractStub { get; set; }
 
     internal BridgeContractImplContainer.BridgeContractImplStub BridgeContractImplStub { get; set; }
@@ -88,22 +93,16 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
         new List<AssociationContractImplContainer.AssociationContractImplStub>();
 
     internal ReceiptMakerContractImplContainer.ReceiptMakerContractImplStub ReceiptMakerContractImplStub { get; set; }
-
-    internal Address BridgeContractAddress => GetAddress(BridgeSmartContractAddressNameProvider.StringName);
-
-    internal Address ReportContractAddress => GetAddress(ReportSmartContractAddressNameProvider.StringName);
-
-    internal Address OracleContractAddress => GetAddress(OracleSmartContractAddressNameProvider.StringName);
+    protected Address BridgeContractAddress { get; set; }
+    public Address ReportContractAddress { get; set; }
+    protected Address OracleContractAddress { get; set; }
 
     internal Address StringAggregatorContractAddress =>
         GetAddress(StringAggregatorSmartContractAddressNameProvider.StringName);
-
-    internal Address MerkleTreeContractAddress =>
-        GetAddress(MerkleTreeSmartContractAddressNameProvider.StringName);
+    protected Address MerkleTreeContractAddress { get; set; }
 
     internal Address RegimentContractAddress =>
         GetAddress(RegimentSmartContractAddressNameProvider.StringName);
-
     internal Address ParliamentContractAddress =>
         GetAddress(ParliamentSmartContractAddressNameProvider.StringName);
 
@@ -111,7 +110,7 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
         GetAddress(ReceiptMakerSmartContractAddressNameProvider.StringName);
     
     internal readonly Address _regimentAddress =
-        Address.FromBase58("2aT9rHLuFRFCHJ1cBSTDR8oD1EFFEBqqiw8fdXD8UuEKRj6Tfh");
+        Address.FromBase58("2Myxs3YTFEcDN5VQDECBgmBda1NXJT1bdRQYSkdbZL74aKxEW3");
     
     internal Dictionary<string, Hash> _receiptDictionary;
     
@@ -124,6 +123,40 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
     {
         DefaultSenderAddress = SampleAccount.Accounts.First().Address;
         TransactionFeeRatioAddress = SampleAccount.Accounts[14].Address;
+        
+        ZeroContractStub = GetContractZeroTester(DefaultKeypair);
+        var result = AsyncHelper.RunSync(async () =>await ZeroContractStub.DeploySmartContract.SendAsync(new ContractDeploymentInput
+        {   
+            Category = KernelConstants.CodeCoverageRunnerCategory,
+            Code = ByteString.CopyFrom(
+                File.ReadAllBytes(typeof(BridgeContract).Assembly.Location))
+        }));
+        BridgeContractAddress = Address.Parser.ParseFrom(result.TransactionResult.ReturnValue);
+        
+        result = AsyncHelper.RunSync(async () =>await ZeroContractStub.DeploySmartContract.SendAsync(new ContractDeploymentInput
+        {   
+            Category = KernelConstants.CodeCoverageRunnerCategory,
+            Code = ByteString.CopyFrom(
+                File.ReadAllBytes(typeof(MerkleTreeContract.MerkleTreeContract).Assembly.Location))
+        }));
+        MerkleTreeContractAddress = Address.Parser.ParseFrom(result.TransactionResult.ReturnValue);
+        
+        result = AsyncHelper.RunSync(async () =>await ZeroContractStub.DeploySmartContract.SendAsync(new ContractDeploymentInput
+        {   
+            Category = KernelConstants.CodeCoverageRunnerCategory,
+            Code = ByteString.CopyFrom(
+                File.ReadAllBytes(typeof(OracleContract).Assembly.Location))
+        }));
+        OracleContractAddress = Address.Parser.ParseFrom(result.TransactionResult.ReturnValue);
+        
+        result = AsyncHelper.RunSync(async () =>await ZeroContractStub.DeploySmartContract.SendAsync(new ContractDeploymentInput
+        {   
+            Category = KernelConstants.CodeCoverageRunnerCategory,
+            Code = ByteString.CopyFrom(
+                File.ReadAllBytes(typeof(ReportContract).Assembly.Location))
+        }));
+        ReportContractAddress = Address.Parser.ParseFrom(result.TransactionResult.ReturnValue);
+        
         BridgeContractStub = GetBridgeContractStub(DefaultKeypair);
         BridgeContractImplStub = GetBridgeContractImplStub(DefaultKeypair);
         BridgeContractImplUserStub = GetTester<BridgeContractImplContainer.BridgeContractImplStub>(
@@ -656,5 +689,12 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
             .ParseFrom(executionResult.TransactionResult.Logs.First(l => l.Name == nameof(RegimentCreated))
                 .NonIndexed).RegimentAddress;
         return regimentAddress;
+    }
+    
+    internal ACS0Container.ACS0Stub GetContractZeroTester(
+        ECKeyPair keyPair)
+    {
+        return GetTester<ACS0Container.ACS0Stub>(BasicContractZeroAddress,
+            keyPair);
     }
 }
