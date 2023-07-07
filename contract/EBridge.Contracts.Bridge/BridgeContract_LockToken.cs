@@ -86,7 +86,7 @@ public partial class BridgeContract
         };
         TransferDepositTo(input.Symbol, input.Amount, Context.Sender);
 
-        var receiptIdToken = HashHelper.ConcatAndCompute(HashHelper.ComputeFrom(input.TargetChainId),
+        var receiptIdToken = HashHelper.ConcatAndCompute(HashHelper.ComputeFrom(Context.ChainId),HashHelper.ComputeFrom(input.TargetChainId),
             HashHelper.ComputeFrom(input.Symbol));
 
         var receiptCount = State.ReceiptCountMap[receiptIdToken].Add(1);
