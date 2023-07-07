@@ -1,12 +1,17 @@
+using System.IO;
 using System.Linq;
 using AElf.Boilerplate.TestBase;
 using AElf.Boilerplate.TestBase.SmartContractNameProviders;
 using AElf.Contracts.Association;
 using AElf.ContractTestBase.ContractTestKit;
 using AElf.Cryptography.ECDSA;
+using AElf.Kernel;
+using AElf.Standards.ACS0;
 using AElf.Types;
 using EBridge.Contracts.Regiment;
 using EBridge.Contracts.TestContract.ReceiptMaker;
+using Google.Protobuf;
+using Volo.Abp.Threading;
 
 namespace EBridge.Contracts.MerkleTreeContract;
 
@@ -29,10 +34,9 @@ public class MerkleTreeContractTestBase : DAppContractTestBase<MerkleTreeContrac
     internal AssociationContractContainer.AssociationContractStub AssociationContractStub { get; set; }
 
     internal AssociationContractImplContainer.AssociationContractImplStub AssociationContractImplStub { get; set; }
-
-
-    internal Address MerkleTreeContractAddress =>
-        GetAddress(MerkleTreeSmartContractAddressNameProvider.StringName);
+    protected Address MerkleTreeContractAddress { get; set; }
+    
+    internal ACS0Container.ACS0Stub ZeroContractStub { get; set; }
 
     internal Address RegimentContractAddress =>
         GetAddress(RegimentSmartContractAddressNameProvider.StringName);
@@ -43,6 +47,14 @@ public class MerkleTreeContractTestBase : DAppContractTestBase<MerkleTreeContrac
 
     public MerkleTreeContractTestBase()
     {
+        ZeroContractStub = GetContractZeroTester(DefaultKeypair);
+        var result = AsyncHelper.RunSync(async () =>await ZeroContractStub.DeploySmartContract.SendAsync(new ContractDeploymentInput
+        {   
+            Category = KernelConstants.CodeCoverageRunnerCategory,
+            Code = ByteString.CopyFrom(
+                File.ReadAllBytes(typeof(MerkleTreeContract).Assembly.Location))
+        }));
+        MerkleTreeContractAddress = Address.Parser.ParseFrom(result.TransactionResult.ReturnValue);
         DefaultSenderAddress = SampleAccount.Accounts.First().Address;
         MerkleTreeContractStub = GetMerkleTreeContractStub(DefaultKeypair);
         UserMerkleTreeContractStub = GetMerkleTreeContractStub(UserKeyPair);
@@ -92,5 +104,12 @@ public class MerkleTreeContractTestBase : DAppContractTestBase<MerkleTreeContrac
             ReceiptMakerContractAddress,
             senderKeyPair
         );
+    }
+    
+    internal ACS0Container.ACS0Stub GetContractZeroTester(
+        ECKeyPair keyPair)
+    {
+        return GetTester<ACS0Container.ACS0Stub>(BasicContractZeroAddress,
+            keyPair);
     }
 }
