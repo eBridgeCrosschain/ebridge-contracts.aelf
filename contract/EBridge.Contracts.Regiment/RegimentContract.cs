@@ -1,4 +1,3 @@
-using System;
 using AElf;
 using AElf.Contracts.Association;
 using AElf.Sdk.CSharp;
@@ -13,11 +12,7 @@ public partial class RegimentContract : RegimentContractContainer.RegimentContra
     public override Empty Initialize(InitializeInput input)
     {
         Assert(!State.IsInitialized.Value, "Already initialized.");
-        // State.GensisContract.Value = Context.GetZeroSmartContractAddress();
-        // var author = State.GensisContract.GetContractAuthor.Call(Context.Self);
-        // Assert( Context.Sender == author, "No permission.");
         State.IsInitialized.Value = true;
-
         State.Controller.Value = input.Controller ?? Context.Sender;
         State.MemberJoinLimit.Value = input.MemberJoinLimit <= 0 ? DefaultMemberJoinLimit : input.MemberJoinLimit;
         State.RegimentLimit.Value = input.RegimentLimit <= 0 ? DefaultRegimentLimit : input.RegimentLimit;
