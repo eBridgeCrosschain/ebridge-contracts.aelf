@@ -3,6 +3,7 @@ using System.IO;
 using AElf.Boilerplate.TestBase;
 using AElf.ContractTestBase;
 using AElf.ContractTestKit;
+using AElf.Kernel.SmartContract;
 using AElf.Kernel.SmartContract.Application;
 using EBridge.Contracts.Bridge.ContractInitializationProvider;
 using EBridge.Contracts.Oracle;
@@ -26,6 +27,7 @@ public class ReportContractTestModule : MainChainDAppContractTestModule
         context.Services.AddSingleton<IBlockTimeProvider, BlockTimeProvider>();
         context.Services
             .AddSingleton<IContractDeploymentListProvider, MainChainDAppContractTestDeploymentListProvider>();
+        Configure<ContractOptions>(o => o.ContractDeploymentAuthorityRequired = false);
     }
 
     public override void OnPreApplicationInitialization(ApplicationInitializationContext context)
