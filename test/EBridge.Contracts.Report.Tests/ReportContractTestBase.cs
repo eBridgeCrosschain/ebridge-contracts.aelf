@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using AElf.Boilerplate.TestBase;
@@ -6,9 +7,14 @@ using AElf.Boilerplate.TestBase.SmartContractNameProviders;
 using AElf.Contracts.MultiToken;
 using AElf.ContractTestBase.ContractTestKit;
 using AElf.Cryptography.ECDSA;
+using AElf.Kernel;
+using AElf.Standards.ACS0;
 using AElf.Types;
+using EBridge.Contracts.Bridge;
 using EBridge.Contracts.Oracle;
 using EBridge.Contracts.Regiment;
+using Google.Protobuf;
+using Volo.Abp.Threading;
 
 namespace EBridge.Contracts.Report;
 
@@ -31,22 +37,38 @@ public class ReportContractTestBase : DAppContractTestBase<ReportContractTestMod
         new List<OracleContractContainer.OracleContractStub>();
 
 
-    internal Address OracleContractAddress => GetAddress(OracleSmartContractAddressNameProvider.StringName);
+    public Address ReportContractAddress { get; set; }
+    protected Address OracleContractAddress { get; set; }
 
     internal Address StringAggregatorContractAddress =>
         GetAddress(StringAggregatorSmartContractAddressNameProvider.StringName);
 
     internal Address RegimentContractAddress =>
         GetAddress(RegimentSmartContractAddressNameProvider.StringName);
-
-    internal Address ReportContractAddress =>
-        GetAddress(ReportSmartContractAddressNameProvider.StringName);
+    
+    internal ACS0Container.ACS0Stub ZeroContractStub { get; set; }
 
     internal readonly Address _regimentAddress =
         Address.FromBase58("2aT9rHLuFRFCHJ1cBSTDR8oD1EFFEBqqiw8fdXD8UuEKRj6Tfh");
     
     public ReportContractTestBase()
     {
+        ZeroContractStub = GetContractZeroTester(DefaultKeypair);
+        var result = AsyncHelper.RunSync(async () =>await ZeroContractStub.DeploySmartContract.SendAsync(new ContractDeploymentInput
+        {   
+            Category = KernelConstants.CodeCoverageRunnerCategory,
+            Code = ByteString.CopyFrom(
+                File.ReadAllBytes(typeof(OracleContract).Assembly.Location))
+        }));
+        OracleContractAddress = Address.Parser.ParseFrom(result.TransactionResult.ReturnValue);
+        
+        result = AsyncHelper.RunSync(async () =>await ZeroContractStub.DeploySmartContract.SendAsync(new ContractDeploymentInput
+        {   
+            Category = KernelConstants.CodeCoverageRunnerCategory,
+            Code = ByteString.CopyFrom(
+                File.ReadAllBytes(typeof(ReportContract).Assembly.Location))
+        }));
+        ReportContractAddress = Address.Parser.ParseFrom(result.TransactionResult.ReturnValue);
         DefaultSenderAddress = SampleAccount.Accounts.First().Address;
         OracleContractStub = GetOracleContractStub(DefaultKeypair);
         TokenContractStub = GetTokenContractStub(DefaultKeypair);
@@ -144,5 +166,12 @@ public class ReportContractTestBase : DAppContractTestBase<ReportContractTestMod
             Amount = 5_00000000_00000000,
             Spender = OracleContractAddress
         });
+    }
+    
+    internal ACS0Container.ACS0Stub GetContractZeroTester(
+        ECKeyPair keyPair)
+    {
+        return GetTester<ACS0Container.ACS0Stub>(BasicContractZeroAddress,
+            keyPair);
     }
 }
