@@ -749,7 +749,7 @@ public partial class BridgeContractTests
                 TargetShare = 2
             }
         });
-        executionResult.TransactionResult.Error.ShouldContain("SwapRatio originShare is invalid");
+        executionResult.TransactionResult.Error.ShouldContain("SwapRatio originShare or TargetShare is invalid");
         executionResult = await BridgeContractStub.ChangeSwapRatio.SendWithExceptionAsync(new ChangeSwapRatioInput
         {
             SwapId = _swapHashOfElf,
@@ -760,7 +760,7 @@ public partial class BridgeContractTests
                 TargetShare = -1
             }
         });
-        executionResult.TransactionResult.Error.ShouldContain("SwapRatio targetShare is invalid");
+        executionResult.TransactionResult.Error.ShouldContain("SwapRatio originShare or TargetShare is invalid");
     }
 
     [Fact]
