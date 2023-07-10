@@ -214,8 +214,7 @@ public partial class BridgeContract
         Assert(Context.Sender == regimentManager, "No permission.");
         Assert(swapInfo.SwapTargetToken.Symbol == input.TargetTokenSymbol,
             $"Swap target token {swapInfo.SwapId}-{input.TargetTokenSymbol} is not exist. ");
-        Assert(input.SwapRatio.OriginShare >= 1, "SwapRatio originShare is invalid");
-        Assert(input.SwapRatio.TargetShare >= 1, "SwapRatio targetShare is invalid");
+        Assert(input.SwapRatio.OriginShare >= 1 && input.SwapRatio.TargetShare >= 1, "SwapRatio originShare or TargetShare is invalid");
         swapInfo.SwapTargetToken.SwapRatio = input.SwapRatio;
         State.SwapInfo[swapInfo.SwapId] = swapInfo;
         Context.Fire(new SwapRatioChanged

@@ -141,10 +141,6 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
         foreach (var tokenMaximumAmount in input.Value)
         {
             Assert(tokenMaximumAmount.MaximumAmount > 0, $"invalid MaximumAmount ${tokenMaximumAmount.MaximumAmount}");
-        }
-
-        foreach (var tokenMaximumAmount in input.Value)
-        {
             State.TokenMaximumAmount[tokenMaximumAmount.Symbol] = tokenMaximumAmount.MaximumAmount;
         }
 
