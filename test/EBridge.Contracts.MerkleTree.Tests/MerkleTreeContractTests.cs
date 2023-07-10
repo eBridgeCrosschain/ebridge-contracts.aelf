@@ -149,10 +149,10 @@ public partial class MerkleTreeContractTests : MerkleTreeContractTestBase
         spaceInfoMap.GetOrDefault(spaceId).ShouldBe(null);
         spaceInfoMap[spaceId] = spaceId;
         
-        long baseId = long.MaxValue >> 4;
-        for (int i = 1; i <= 3; i++)
+        var baseId = long.MaxValue >> 4;
+        for (var i = 1; i <= 3; i++)
         {
-            long nextId = baseId + 16 * (id - 1) + i;
+            var nextId = baseId + 16 * (id - 1) + i;
             spaceId =
                 HashHelper.ConcatAndCompute(HashHelper.ComputeFrom(input.Value.Operator), HashHelper.ComputeFrom(nextId));
             if (spaceInfoMap.GetOrDefault(spaceId) == null)
