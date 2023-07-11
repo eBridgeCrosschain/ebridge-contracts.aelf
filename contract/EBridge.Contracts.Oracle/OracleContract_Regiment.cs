@@ -1,6 +1,8 @@
 using AElf.Contracts.MultiToken;
 using AElf.CSharp.Core;
 using AElf.Sdk.CSharp;
+using AElf.Types;
+using EBridge.Contracts.Regiment;
 using Google.Protobuf.WellKnownTypes;
 
 namespace EBridge.Contracts.Oracle
@@ -13,7 +15,7 @@ namespace EBridge.Contracts.Oracle
 
             State.RegimentContract.CreateRegiment.Send(new Regiment.CreateRegimentInput
             {
-                InitialMemberList = {input.InitialMemberList},
+                InitialMemberList = { input.InitialMemberList },
                 IsApproveToJoin = input.IsApproveToJoin,
                 Manager = Context.Sender
             });
@@ -81,7 +83,7 @@ namespace EBridge.Contracts.Oracle
             State.RegimentContract.AddAdmins.Send(new Regiment.AddAdminsInput
             {
                 RegimentAddress = input.RegimentAddress,
-                NewAdmins = {input.NewAdmins},
+                NewAdmins = { input.NewAdmins },
                 OriginSenderAddress = Context.Sender
             });
             return new Empty();
@@ -92,7 +94,7 @@ namespace EBridge.Contracts.Oracle
             State.RegimentContract.DeleteAdmins.Send(new Regiment.DeleteAdminsInput
             {
                 RegimentAddress = input.RegimentAddress,
-                DeleteAdmins = {input.DeleteAdmins},
+                DeleteAdmins = { input.DeleteAdmins },
                 OriginSenderAddress = Context.Sender
             });
             return new Empty();
@@ -136,6 +138,26 @@ namespace EBridge.Contracts.Oracle
             State.LockedTokenFromAddressMap[Context.Sender][input.OracleNodeAddress] =
                 State.LockedTokenFromAddressMap[Context.Sender][input.OracleNodeAddress].Sub(input.WithdrawAmount);
             return new Empty();
+        }
+
+        public override Empty ChangeRegimentController(Address input)
+        {
+            Assert(Context.Sender == State.Controller.Value, "No permission.");
+            State.RegimentContract.ChangeController.Send(input);
+            return new Empty();
+        }
+
+        public override Empty ResetRegimentConfig(ResetRegimentConfigInput input)
+        {
+            Assert(Context.Sender == State.Controller.Value, "No permission.");
+            State.RegimentContract.ResetConfig.Send(new RegimentContractConfig
+            {
+                MaximumAdminsCount = input.MaximumAdminsCount,
+                MemberJoinLimit = input.MemberJoinLimit,
+                RegimentLimit = input.RegimentLimit
+            });
+            return new Empty();
+
         }
     }
 }
