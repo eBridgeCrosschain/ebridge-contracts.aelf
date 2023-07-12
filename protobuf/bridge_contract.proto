@@ -413,16 +413,14 @@ message ReceiptCreated{
     string target_chain_id = 6;
 }
 
-message Pause{
+message Paused{
     option (aelf.is_event) = true;
     aelf.Address sender = 1;
-    bool paused = 2;
 }
 
-message Restart{
+message Unpaused{
     option (aelf.is_event) = true;
     aelf.Address sender = 1;
-    bool unpaused = 2;
 }
 
 message ApproveTransfer{
