@@ -362,7 +362,7 @@ message MerkleReportNodeAdded {
   string aggregated_data = 4;
 }
 
-message AddOffChainQueryInfo{
+message OffChainQueryInfoAdded{
   option (aelf.is_event) = true;
   string token = 1;
   string chain_id = 2;
@@ -370,7 +370,7 @@ message AddOffChainQueryInfo{
   aelf.Address sender = 4;
 }
 
-message RemoveOffChainQueryInfo{
+message OffChainQueryInfoRemoved{
   option (aelf.is_event) = true;
   string token = 1;
   string chain_id = 2;
@@ -378,7 +378,7 @@ message RemoveOffChainQueryInfo{
   aelf.Address sender = 4;
 }
 
-message ChangeOffChainQueryInfo{
+message OffChainQueryInfoChanged{
   option (aelf.is_event) = true;
   string token = 1;
   string chain_id = 2;

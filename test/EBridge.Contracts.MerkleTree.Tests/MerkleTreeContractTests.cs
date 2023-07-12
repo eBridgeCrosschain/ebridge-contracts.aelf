@@ -152,7 +152,7 @@ public partial class MerkleTreeContractTests : MerkleTreeContractTestBase
         var baseId = long.MaxValue >> 4;
         for (var i = 1; i <= 3; i++)
         {
-            var nextId = baseId + 16 * (id - 1) + i;
+            var nextId = baseId + 15 * (id - 1) + i;
             spaceId =
                 HashHelper.ConcatAndCompute(HashHelper.ComputeFrom(input.Value.Operator), HashHelper.ComputeFrom(nextId));
             if (spaceInfoMap.GetOrDefault(spaceId) == null)

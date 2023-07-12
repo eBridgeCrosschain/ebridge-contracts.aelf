@@ -80,7 +80,7 @@ namespace EBridge.Contracts.Report
             Assert(offChainAggregationInfo.OffChainQueryInfoList.Value.Count <= MaximumOffChainQueryInfoCount,
                 $"Maximum off chain query info count: {MaximumOffChainQueryInfoCount}");
             State.OffChainAggregationInfoMap[input.ChainId][input.Token] = offChainAggregationInfo;
-            Context.Fire(new AddOffChainQueryInfo()
+            Context.Fire(new OffChainQueryInfoAdded()
             {
                 Sender = Context.Sender,
                 Token = input.Token,
@@ -105,7 +105,7 @@ namespace EBridge.Contracts.Report
                 };
             offChainAggregationInfo.RoundIds[input.RemoveNodeIndex] = -1;
             State.OffChainAggregationInfoMap[input.ChainId][input.Token] = offChainAggregationInfo;
-            Context.Fire(new RemoveOffChainQueryInfo()
+            Context.Fire(new OffChainQueryInfoRemoved()
             {
                 Sender = Context.Sender,
                 Token = input.Token,
@@ -124,7 +124,7 @@ namespace EBridge.Contracts.Report
                 "Only single style aggregation can change off chain query info.");
             offChainAggregationInfo.OffChainQueryInfoList.Value[0] = input.NewOffChainQueryInfo;
             State.OffChainAggregationInfoMap[input.ChainId][input.Token] = offChainAggregationInfo;
-            Context.Fire(new ChangeOffChainQueryInfo()
+            Context.Fire(new OffChainQueryInfoChanged()
             {
                 Sender = Context.Sender,
                 Token = input.Token,
