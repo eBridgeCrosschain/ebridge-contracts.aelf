@@ -110,10 +110,9 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
         Assert(Context.Sender == State.PauseController.Value, "No permission.");
         Assert(!State.IsContractPause.Value, "Contract has already been paused.");
         State.IsContractPause.Value = true;
-        Context.Fire(new Pause()
+        Context.Fire(new Paused()
         {
-            Sender = Context.Sender,
-            Paused = true
+            Sender = Context.Sender
         });
         return new Empty();
     }
@@ -123,10 +122,9 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
         Assert(Context.Sender == State.RestartOrganizationAddress.Value, "No permission.");
         Assert(State.IsContractPause.Value, "Contract has already been started.");
         State.IsContractPause.Value = false;
-        Context.Fire(new Restart()
+        Context.Fire(new Unpaused()
         {
-            Sender = Context.Sender,
-            Unpaused = true
+            Sender = Context.Sender
         });
         return new Empty();
     }
