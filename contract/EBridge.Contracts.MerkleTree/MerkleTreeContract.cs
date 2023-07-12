@@ -13,6 +13,12 @@ public partial class MerkleTreeContract : MerkleTreeContractContainer.MerkleTree
     public override Empty Initialize(InitializeInput input)
     {
         Assert(State.Owner.Value == null, $"Already initialized.");
+        
+        Assert(State.IsInitialized.Value == false,"Already initialized.");
+        State.GensisContract.Value = Context.GetZeroSmartContractAddress();
+        var author = State.GensisContract.GetContractAuthor.Call(Context.Self);
+        Assert(Context.Sender == author, "No permission.");
+        State.IsInitialized.Value = true;
         State.Owner.Value = input.Owner;
         State.RegimentContract.Value = input.RegimentContractAddress;
         State.TokenContract.Value =
@@ -30,34 +36,56 @@ public partial class MerkleTreeContract : MerkleTreeContractContainer.MerkleTree
 
     public override Empty CreateSpace(CreateSpaceInput input)
     {
-        Assert(input.Value.Operators != null, "Not set regiment address.");
-        Assert(input.Value.MaxLeafCount > 0, $"Incorrect leaf count.{input.Value.MaxLeafCount}");
-        var regimentAddress = State.RegimentContract.GetRegimentAddress.Call(input.Value.Operators);
+        Assert(input.Value.Operator != null, "Not set regiment address.");
+        Assert(input.Value.MaxLeafCount > 0 && input.Value.MaxLeafCount < DefaultMaxLeafCount, $"Incorrect leaf count.{input.Value.MaxLeafCount}");
+        var regimentAddress = State.RegimentContract.GetRegimentAddress.Call(input.Value.Operator);
         Assert(!regimentAddress.Value.IsEmpty, "Regiment Address not exist.");
         var regimentInfo = State.RegimentContract.GetRegimentInfo.Call(regimentAddress);
         Assert(regimentInfo != null, "Regiment Info not exist.");
         Assert(regimentInfo.Admins.Contains(Context.Sender), "No permission.");
-        var id = State.RegimentSpaceIndexMap[input.Value.Operators].Add(1);
+        var id = State.RegimentSpaceIndexMap[input.Value.Operator].Add(1);
         var spaceId =
-            HashHelper.ConcatAndCompute(HashHelper.ComputeFrom(input.Value.Operators), HashHelper.ComputeFrom(id));
+            HashHelper.ConcatAndCompute(HashHelper.ComputeFrom(input.Value.Operator), HashHelper.ComputeFrom(id));
+        if (State.SpaceInfoMap[spaceId] != null)
+        {
+            spaceId = NextSpaceId(spaceId, id, input.Value.Operator);
+        }
+        Assert(State.SpaceInfoMap[spaceId] == null, "spaceId existed.");
+        
         State.SpaceInfoMap[spaceId] = input.Value;
-        State.RegimentSpaceIndexMap[input.Value.Operators] += 1;
+        State.RegimentSpaceIndexMap[input.Value.Operator] += 1;
         State.LastRecordedLeafIndex[spaceId] = -2;
         State.LastRecordedMerkleTreeIndex[spaceId] = -2;
         Context.Fire(new SpaceCreated
         {
             SpaceId = spaceId,
-            RegimentId = input.Value.Operators,
+            RegimentId = input.Value.Operator,
             SpaceInfo = input.Value
         });
         return new Empty();
+    }
+
+    private Hash NextSpaceId(Hash spaceId, long id, Hash op)
+    {
+        var baseId = long.MaxValue >> 4;
+        for (var i = 1; i <= 3; i++)
+        {
+            var nextId = baseId + 15 * (id - 1) + i;
+            spaceId =
+                HashHelper.ConcatAndCompute(HashHelper.ComputeFrom(op), HashHelper.ComputeFrom(nextId));
+            if (State.SpaceInfoMap[spaceId] == null)
+            {
+                break;
+            }
+        }
+        return spaceId;
     }
 
     public override Empty RecordMerkleTree(RecordMerkleTreeInput input)
     {
         var spaceInfo = State.SpaceInfoMap[input.SpaceId];
         Assert(spaceInfo != null, $"Incorrect space id.{input.SpaceId}");
-        var regimentAddress = State.RegimentContract.GetRegimentAddress.Call(spaceInfo.Operators);
+        var regimentAddress = State.RegimentContract.GetRegimentAddress.Call(spaceInfo.Operator);
         var memberList = State.RegimentContract.GetRegimentMemberList.Call(regimentAddress);
         Assert(memberList.Value.Contains(Context.Sender), "No permission.");
         var lastTreeIndex = State.LastRecordedMerkleTreeIndex[input.SpaceId];

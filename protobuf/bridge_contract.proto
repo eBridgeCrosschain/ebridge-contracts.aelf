@@ -412,3 +412,19 @@ message ReceiptCreated{
     int64 amount = 5;
     string target_chain_id = 6;
 }
+
+message Paused{
+    option (aelf.is_event) = true;
+    aelf.Address sender = 1;
+}
+
+message Unpaused{
+    option (aelf.is_event) = true;
+    aelf.Address sender = 1;
+}
+
+message ApproveTransfer{
+    option (aelf.is_event) = true;
+    aelf.Address sender = 1;
+    string receipt_id = 2;  
+}

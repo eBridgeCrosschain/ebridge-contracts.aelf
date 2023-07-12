@@ -2,6 +2,7 @@ using AElf.Contracts.Consensus.AEDPoS;
 using AElf.Contracts.MultiToken;
 using AElf.Contracts.Parliament;
 using AElf.Contracts.Profit;
+using AElf.Standards.ACS0;
 using AElf.Standards.ACS13;
 using EBridge.Contracts.Regiment;
 
@@ -20,4 +21,6 @@ public partial class OracleContractState
     internal RegimentContractContainer.RegimentContractReferenceState RegimentContract { get; set; }
 
     internal OracleAggregatorContractContainer.OracleAggregatorContractReferenceState OracleAggregatorContract { get; set; }
+    
+    internal ACS0Container.ACS0ReferenceState GensisContract { get; set; }
 }

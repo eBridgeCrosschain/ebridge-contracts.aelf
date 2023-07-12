@@ -1,5 +1,6 @@
 using AElf.Contracts.MultiToken;
 using AElf.Contracts.Parliament;
+using AElf.Standards.ACS0;
 using AElf.Standards.ACS13;
 using EBridge.Contracts.Oracle;
 using EBridge.Contracts.Regiment;
@@ -25,5 +26,7 @@ namespace EBridge.Contracts.Report
             get;
             set;
         }
+        
+        internal ACS0Container.ACS0ReferenceState GensisContract { get; set; }
     }
 }

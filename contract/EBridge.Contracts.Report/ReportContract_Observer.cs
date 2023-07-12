@@ -64,9 +64,12 @@ namespace EBridge.Contracts.Report
             return new Empty();
         }
 
-        public override Empty WithdrawTokens(Int64Value input)
+        public override Empty WithdrawTokens(WithdrawTokensInput input)
         {
-            TransferTokenFromSenderVirtualAddress(State.ObserverMortgageTokenSymbol.Value, input.Value);
+            var observerList = State.ObserverListMap[input.Regiment];
+            Assert(observerList == null || !observerList.Value.Contains(Context.Sender), 
+                $"Sender is an observer for regiment {input.Regiment}");
+            TransferTokenFromSenderVirtualAddress(State.ObserverMortgageTokenSymbol.Value, input.Amount);
             return new Empty();
         }
 
