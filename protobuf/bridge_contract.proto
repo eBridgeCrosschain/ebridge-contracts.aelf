@@ -416,13 +416,13 @@ message ReceiptCreated{
 message Pause{
     option (aelf.is_event) = true;
     aelf.Address sender = 1;
-    bool is_contract_pause = 2;
+    bool paused = 2;
 }
 
 message Restart{
     option (aelf.is_event) = true;
     aelf.Address sender = 1;
-    bool is_contract_pause = 2;
+    bool unpaused = 2;
 }
 
 message ApproveTransfer{

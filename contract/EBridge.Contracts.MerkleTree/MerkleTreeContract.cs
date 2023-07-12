@@ -37,7 +37,7 @@ public partial class MerkleTreeContract : MerkleTreeContractContainer.MerkleTree
     public override Empty CreateSpace(CreateSpaceInput input)
     {
         Assert(input.Value.Operator != null, "Not set regiment address.");
-        Assert(input.Value.MaxLeafCount > 0 && input.Value.MaxLeafCount < 2 << 20, $"Incorrect leaf count.{input.Value.MaxLeafCount}");
+        Assert(input.Value.MaxLeafCount > 0 && input.Value.MaxLeafCount < DefaultMaxLeafCount, $"Incorrect leaf count.{input.Value.MaxLeafCount}");
         var regimentAddress = State.RegimentContract.GetRegimentAddress.Call(input.Value.Operator);
         Assert(!regimentAddress.Value.IsEmpty, "Regiment Address not exist.");
         var regimentInfo = State.RegimentContract.GetRegimentInfo.Call(regimentAddress);
@@ -70,7 +70,7 @@ public partial class MerkleTreeContract : MerkleTreeContractContainer.MerkleTree
         var baseId = long.MaxValue >> 4;
         for (var i = 1; i <= 3; i++)
         {
-            var nextId = baseId + 16 * (id - 1) + i;
+            var nextId = baseId + 15 * (id - 1) + i;
             spaceId =
                 HashHelper.ConcatAndCompute(HashHelper.ComputeFrom(op), HashHelper.ComputeFrom(nextId));
             if (State.SpaceInfoMap[spaceId] == null)
