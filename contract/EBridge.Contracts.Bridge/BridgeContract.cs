@@ -113,7 +113,7 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
         Context.Fire(new Pause()
         {
             Sender = Context.Sender,
-            IsContractPause = true
+            Paused = true
         });
         return new Empty();
     }
@@ -126,7 +126,7 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
         Context.Fire(new Restart()
         {
             Sender = Context.Sender,
-            IsContractPause = false
+            Unpaused = true
         });
         return new Empty();
     }
