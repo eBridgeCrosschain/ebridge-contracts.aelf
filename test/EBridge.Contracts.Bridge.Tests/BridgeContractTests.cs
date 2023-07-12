@@ -213,9 +213,8 @@ public partial class BridgeContractTests : BridgeContractTestBase
         var executionResult = await BridgeContractStub.Pause.SendAsync(new Empty());
         var state = await BridgeContractStub.IsContractPause.CallAsync(new Empty());
         state.Value.ShouldBe(true);
-        var log = Pause.Parser.ParseFrom(executionResult.TransactionResult.Logs.First(l => l.Name == nameof(Pause)).NonIndexed);
+        var log = Paused.Parser.ParseFrom(executionResult.TransactionResult.Logs.First(l => l.Name == nameof(Paused)).NonIndexed);
         log.Sender.ShouldBe(DefaultSenderAddress);
-        log.Paused.ShouldBe(true);
         return organizationAddress;
     }
 
@@ -249,9 +248,8 @@ public partial class BridgeContractTests : BridgeContractTestBase
         var executionResult = await BridgeContractStub.Restart.SendAsync(new Empty());
         var state = await BridgeContractStub.IsContractPause.CallAsync(new Empty());
         state.Value.ShouldBe(false);
-        var log = Restart.Parser.ParseFrom(executionResult.TransactionResult.Logs.First(l => l.Name == nameof(Restart)).NonIndexed);
+        var log = Unpaused.Parser.ParseFrom(executionResult.TransactionResult.Logs.First(l => l.Name == nameof(Unpaused)).NonIndexed);
         log.Sender.ShouldBe(DefaultSenderAddress);
-        log.Unpaused.ShouldBe(true);
     }
 
     [Fact]
