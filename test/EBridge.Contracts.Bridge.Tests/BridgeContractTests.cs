@@ -215,7 +215,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
         state.Value.ShouldBe(true);
         var log = Pause.Parser.ParseFrom(executionResult.TransactionResult.Logs.First(l => l.Name == nameof(Pause)).NonIndexed);
         log.Sender.ShouldBe(DefaultSenderAddress);
-        log.IsContractPause.ShouldBe(true);
+        log.Paused.ShouldBe(true);
         return organizationAddress;
     }
 
@@ -251,7 +251,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
         state.Value.ShouldBe(false);
         var log = Restart.Parser.ParseFrom(executionResult.TransactionResult.Logs.First(l => l.Name == nameof(Restart)).NonIndexed);
         log.Sender.ShouldBe(DefaultSenderAddress);
-        log.IsContractPause.ShouldBe(false);
+        log.Unpaused.ShouldBe(true);
     }
 
     [Fact]
