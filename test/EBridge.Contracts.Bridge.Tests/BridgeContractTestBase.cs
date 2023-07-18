@@ -374,15 +374,22 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
             Symbol = "PORT",
             TotalSupply = 10_00000000_00000000
         });
-
+    
         // Issue PORT token.
         await TokenContractStub.Issue.SendAsync(new IssueInput
         {
             To = Transmitters.First().Address,
-            Amount = 10_00000000_00000000,
+            Amount = 5_00000000_00000000,
             Symbol = "PORT"
         });
-
+        // Issue PORT token.
+        await TokenContractStub.Issue.SendAsync(new IssueInput
+        {
+            To = DefaultSenderAddress,
+            Amount = 5_00000000_00000000,
+            Symbol = "PORT"
+        });
+    
         // Approve Oracle Contract.
         var transmitterTokenContractStub = GetTokenContractStub(Transmitters.First().KeyPair);
         await transmitterTokenContractStub.Approve.SendAsync(new ApproveInput
@@ -390,6 +397,14 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
             Symbol = "PORT",
             Amount = 5_00000000_00000000,
             Spender = OracleContractAddress
+        });
+        // Approve Report Contract.
+        var senderTokenContractStub = GetTokenContractStub(DefaultKeypair);
+        await senderTokenContractStub.Approve.SendAsync(new ApproveInput
+        {
+            Symbol = "PORT",
+            Amount = 5_00000000_00000000,
+            Spender = ReportContractAddress
         });
     }
 
