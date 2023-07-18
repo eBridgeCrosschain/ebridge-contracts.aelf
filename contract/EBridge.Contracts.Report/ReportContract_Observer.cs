@@ -11,8 +11,11 @@ namespace EBridge.Contracts.Report
     {
         public override Empty ApplyObserver(ApplyObserverInput input)
         {
+            State.ObserverMortgageTokenSymbol.Value ??=
+                State.OracleContract.GetOracleTokenSymbol.Call(new Empty()).Value;
+            var fee = State.ApplyObserverFee.Value == 0 ? DefaultApplyObserverFee : State.ApplyObserverFee.Value;
             var regimentCount = input.RegimentAddressList.Count;
-            var totalApplyFee = State.ApplyObserverFee.Value.Mul(regimentCount);
+            var totalApplyFee = fee.Mul(regimentCount);
             TransferTokenToSenderVirtualAddress(State.ObserverMortgageTokenSymbol.Value, totalApplyFee);
             foreach (var regimentAddress in input.RegimentAddressList)
             {
@@ -23,6 +26,7 @@ namespace EBridge.Contracts.Report
                     $"Sender is already an observer for regiment {regimentAddress}");
                 observerList.Value.Add(Context.Sender);
                 State.ObserverListMap[regimentAddress] = observerList;
+                State.ObserverMortgagedTokensMap[regimentAddress][Context.Sender] = fee;
             }
 
             return new Empty();
@@ -31,19 +35,6 @@ namespace EBridge.Contracts.Report
         public override Empty QuitObserver(QuitObserverInput input)
         {
             var currentLockingAmount = GetSenderVirtualAddressBalance(State.ObserverMortgageTokenSymbol.Value);
-            var shouldReturnAmount = State.ApplyObserverFee.Value.Mul(input.RegimentAddressList.Count);
-            if (currentLockingAmount > 0)
-            {
-                Context.SendVirtualInline(HashHelper.ComputeFrom(Context.Sender), State.TokenContract.Value,
-                    nameof(State.TokenContract.Transfer), new TransferInput
-                    {
-                        To = Context.Sender,
-                        Symbol = State.ObserverMortgageTokenSymbol.Value,
-                        Amount = currentLockingAmount
-                    }.ToByteString());
-                State.ObserverMortgagedTokensMap[Context.Sender] = 0;
-            }
-
             foreach (var regimentAssociationAddress in input.RegimentAddressList)
             {
                 var observerList = State.ObserverListMap[regimentAssociationAddress] ?? new ObserverList();
@@ -51,25 +42,23 @@ namespace EBridge.Contracts.Report
                     $"Sender is not an observer for regiment {regimentAssociationAddress}");
                 observerList.Value.Remove(Context.Sender);
                 State.ObserverListMap[regimentAssociationAddress] = observerList;
+                var shouldReturnAmount = State.ObserverMortgagedTokensMap[regimentAssociationAddress][Context.Sender];
+                Assert(currentLockingAmount > 0 && currentLockingAmount >= shouldReturnAmount, "Insufficient amount");
+                TransferTokenFromSenderVirtualAddress(State.ObserverMortgageTokenSymbol.Value, shouldReturnAmount);
+                State.ObserverMortgagedTokensMap[regimentAssociationAddress][Context.Sender] = 0;
             }
 
             return new Empty();
         }
 
-        public override Empty MortgageTokens(Int64Value input)
+        public override Empty MortgageTokens(MortgageTokensInput input)
         {
-            // Maybe transfer some tokens as fees.
-
-            TransferTokenToSenderVirtualAddress(State.ObserverMortgageTokenSymbol.Value, input.Value);
-            return new Empty();
-        }
-
-        public override Empty WithdrawTokens(WithdrawTokensInput input)
-        {
-            var observerList = State.ObserverListMap[input.Regiment];
-            Assert(observerList == null || !observerList.Value.Contains(Context.Sender), 
-                $"Sender is an observer for regiment {input.Regiment}");
-            TransferTokenFromSenderVirtualAddress(State.ObserverMortgageTokenSymbol.Value, input.Amount);
+            var observerList = State.ObserverListMap[input.RegimentAddress] ?? new ObserverList();
+            Assert(observerList.Value.Contains(Context.Sender),
+                $"Sender is not an observer for regiment {input.RegimentAddress}");
+            State.ObserverMortgagedTokensMap[input.RegimentAddress][Context.Sender] =
+                State.ObserverMortgagedTokensMap[input.RegimentAddress][Context.Sender].Add(input.Amount);
+            TransferTokenToSenderVirtualAddress(State.ObserverMortgageTokenSymbol.Value, input.Amount);
             return new Empty();
         }
 
@@ -92,8 +81,6 @@ namespace EBridge.Contracts.Report
                 Symbol = symbol,
                 Amount = amount
             });
-            var currentAmount = GetSenderVirtualAddressBalance(symbol);
-            State.ObserverMortgagedTokensMap[Context.Sender] = currentAmount.Add(amount);
         }
 
         private void TransferTokenFromSenderVirtualAddress(string symbol, long amount)
@@ -106,8 +93,6 @@ namespace EBridge.Contracts.Report
                     Symbol = symbol,
                     Amount = amount
                 }.ToByteString());
-            var currentAmount = GetSenderVirtualAddressBalance(symbol);
-            State.ObserverMortgagedTokensMap[Context.Sender] = currentAmount.Sub(amount);
         }
 
         private long GetSenderVirtualAddressBalance(string symbol)
@@ -143,6 +128,15 @@ namespace EBridge.Contracts.Report
                     Owner = virtualAddress,
                     Symbol = State.ObserverMortgageTokenSymbol.Value
                 }).Balance
+            };
+        }
+
+        public override Int64Value GetObserverMortgagedTokenByRegiment(GetObserverMortgagedTokenByRegimentInput input)
+        {
+            var mortgagedToken = State.ObserverMortgagedTokensMap[input.RegimentAddress][input.ObserverAddress];
+            return new Int64Value
+            {
+                Value = mortgagedToken
             };
         }
     }

@@ -125,6 +125,7 @@ public class ReportContractTestBase : DAppContractTestBase<ReportContractTestMod
             OracleContractAddress = OracleContractAddress,
             RegimentContractAddress = RegimentContractAddress,
             ReportFee = 0,
+            ApplyObserverFee = 200_00000000,
             InitialRegisterWhiteList = {DefaultSenderAddress}
         });
     }
@@ -154,7 +155,14 @@ public class ReportContractTestBase : DAppContractTestBase<ReportContractTestMod
         await TokenContractStub.Issue.SendAsync(new IssueInput
         {
             To = Transmitters.First().Address,
-            Amount = 10_00000000_00000000,
+            Amount = 5_00000000_00000000,
+            Symbol = "PORT"
+        });
+        // Issue PORT token.
+        await TokenContractStub.Issue.SendAsync(new IssueInput
+        {
+            To = DefaultSenderAddress,
+            Amount = 5_00000000_00000000,
             Symbol = "PORT"
         });
     
@@ -165,6 +173,14 @@ public class ReportContractTestBase : DAppContractTestBase<ReportContractTestMod
             Symbol = "PORT",
             Amount = 5_00000000_00000000,
             Spender = OracleContractAddress
+        });
+        // Approve Report Contract.
+        var senderTokenContractStub = GetTokenContractStub(DefaultKeypair);
+        await senderTokenContractStub.Approve.SendAsync(new ApproveInput
+        {
+            Symbol = "PORT",
+            Amount = 5_00000000_00000000,
+            Spender = ReportContractAddress
         });
     }
     
