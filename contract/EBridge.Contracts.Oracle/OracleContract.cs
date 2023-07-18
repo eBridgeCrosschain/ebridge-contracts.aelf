@@ -81,8 +81,7 @@ namespace EBridge.Contracts.Oracle
 
             var callbackInfo = input.CallbackInfo ?? new CallbackInfo
             {
-                ContractAddress = Context.Self,
-                MethodName = NotSetCallbackInfo
+                ContractAddress = Context.Self
             };
             var queryRecord = new QueryRecord
             {
@@ -385,7 +384,7 @@ namespace EBridge.Contracts.Oracle
             // Reorg helpful nodes list.
             helpfulNodeList = new AddressList
             {
-                Value = {helpfulNodeList.Value.Where(a => actualDesignatedNodeList.Value.Contains(a))}
+                Value = { helpfulNodeList.Value.Where(a => actualDesignatedNodeList.Value.Contains(a)) }
             };
             return helpfulNodeList;
         }
@@ -418,7 +417,7 @@ namespace EBridge.Contracts.Oracle
                 Token = queryRecord.Token,
                 DataRecords = new DataRecords()
             };
-            nodeDataList.DataRecords.Value.Add(new DataRecord {Address = Context.Sender, Data = data});
+            nodeDataList.DataRecords.Value.Add(new DataRecord { Address = Context.Sender, Data = data });
             State.PlainResultMap[queryId] = nodeDataList;
         }
 
@@ -467,11 +466,11 @@ namespace EBridge.Contracts.Oracle
             var callbackInfo = queryRecord.CallbackInfo;
             if (callbackInfo.ContractAddress != Context.Self)
             {
-                Context.SendInline(callbackInfo.ContractAddress, callbackInfo.MethodName, new CallbackInput
+                Context.SendInline(callbackInfo.ContractAddress, CallbackMethodName, new CallbackInput
                 {
                     QueryId = queryRecord.QueryId,
                     Result = finalResult.Value,
-                    OracleNodes = {queryRecord.DesignatedNodeList.Value}
+                    OracleNodes = { queryRecord.DesignatedNodeList.Value }
                 });
             }
 
@@ -489,11 +488,11 @@ namespace EBridge.Contracts.Oracle
             var resultList = State.ResultListMap[queryRecord.QueryId];
             var finalResultStr = State.OracleAggregatorContract.Aggregate.Call(new AggregateInput
             {
-                Results = {resultList.Results},
-                Frequencies = {resultList.Frequencies},
+                Results = { resultList.Results },
+                Frequencies = { resultList.Frequencies },
                 AggregateOption = queryRecord.AggregateOption
             }).Value;
-            var finalResult = new StringValue {Value = finalResultStr}.ToBytesValue();
+            var finalResult = new StringValue { Value = finalResultStr }.ToBytesValue();
             queryRecord.FinalResult = finalResultStr;
 
             Context.Fire(new QueryCompletedWithAggregation

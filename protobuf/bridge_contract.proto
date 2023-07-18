@@ -71,7 +71,7 @@ service BridgeContract {
     }
     rpc Withdraw (WithdrawInput) returns (google.protobuf.Empty) {
     }
-    rpc RecordReceiptHash (CallbackInput) returns (google.protobuf.Empty) {
+    rpc FulfillQuery (CallbackInput) returns (google.protobuf.Empty) {
     }
     //View methods.
     rpc GetSwapIdByToken(GetSwapIdByTokenInput) returns (aelf.Hash){
