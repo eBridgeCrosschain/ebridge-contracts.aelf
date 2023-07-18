@@ -907,7 +907,7 @@ public partial class BridgeContractTests
     [Fact]
     public async Task RecordReceiptHash_NoPermission()
     {
-        var executionResult = await BridgeContractStub.RecordReceiptHash.SendWithExceptionAsync(new CallbackInput
+        var executionResult = await BridgeContractStub.FulfillQuery.SendWithExceptionAsync(new CallbackInput
         {
             QueryId = new Hash(),
             Result = new StringValue().ToByteString()
@@ -1358,8 +1358,7 @@ public partial class BridgeContractTests
             AggregatorContractAddress = StringAggregatorContractAddress,
             CallbackInfo = new CallbackInfo
             {
-                ContractAddress = BridgeContractAddress,
-                MethodName = "RecordReceiptHash"
+                ContractAddress = BridgeContractAddress
             },
             DesignatedNodeList = new AddressList
             {
