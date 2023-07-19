@@ -363,7 +363,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
                 });
             mortgagedTokenLast.Value.ShouldBe(100_00000000);
             var amount1 = await TransmittersReportContractStubs.Last().GetMortgagedTokenAmount.CallAsync(Transmitters.Last().Address);
-            amount1.Value.ShouldBe(100_00000000);
+            amount1.Value.ShouldBe(200_00000000);
             var mortgagedToken2 = await ReportContractStub.GetObserverMortgagedTokenByRegiment.CallAsync(
                 new GetObserverMortgagedTokenByRegimentInput
                 {
@@ -379,6 +379,33 @@ public partial class BridgeContractTests : BridgeContractTestBase
                 Signature = SignHelper.GetSignature(rawReport.Value, Transmitters.Last().KeyPair.PrivateKey).RecoverInfo
             });
             result.TransactionResult.Error.ShouldContain("This report is already rejected.");
+            var amount2Before = await TransmittersReportContractStubs.Last().GetMortgagedTokenAmount.CallAsync(Transmitters.Last().Address);
+            amount2Before.Value.ShouldBe(200_00000000);
+            var amountNode = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
+            {
+                Owner = ReportContractAddress,
+                Symbol = "PORT"
+            });
+            amountNode.Balance.ShouldBe(0);
+            await TransmittersReportContractStubs.Last().QuitObserver.SendAsync(new QuitObserverInput
+            {
+                RegimentAddressList = { _regimentAddress }
+            });
+            var amount2After = await TransmittersReportContractStubs.Last().GetMortgagedTokenAmount.CallAsync(Transmitters.Last().Address);
+            amount2After.Value.ShouldBe(0);
+            var amountNodeAfter = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
+            {
+                Owner = ReportContractAddress,
+                Symbol = "PORT"
+            });
+            amountNodeAfter.Balance.ShouldBe(100_00000000);
+            var amountReport = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
+            {
+                Owner = ReportContractAddress,
+                Symbol = "PORT"
+            });
+            amountReport.Balance.ShouldBe(100_00000000);
+
         }
     }
 
