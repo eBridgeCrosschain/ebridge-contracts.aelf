@@ -45,6 +45,18 @@ namespace EBridge.Contracts.Report
                 var shouldReturnAmount = State.ObserverInRegimentMortgagedTokensMap[regimentAssociationAddress][Context.Sender];
                 Assert(currentLockingAmount > 0 && currentLockingAmount >= shouldReturnAmount, "Insufficient amount");
                 TransferTokenFromSenderVirtualAddress(State.ObserverMortgageTokenSymbol.Value, shouldReturnAmount);
+                //charge amercement
+                var amercement = State.ObserverAmercementAmountMap[regimentAssociationAddress][Context.Sender];
+                if (amercement > 0)
+                {
+                    Context.SendVirtualInline(HashHelper.ComputeFrom(Context.Sender), State.TokenContract.Value,
+                        nameof(State.TokenContract.Transfer), new TransferInput
+                        {
+                            To = Context.Self,
+                            Symbol = State.ObserverMortgageTokenSymbol.Value,
+                            Amount = amercement
+                        }.ToByteString());
+                }
                 State.ObserverInRegimentMortgagedTokensMap[regimentAssociationAddress][Context.Sender] = 0;
             }
 

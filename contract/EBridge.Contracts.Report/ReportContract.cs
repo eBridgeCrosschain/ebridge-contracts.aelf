@@ -168,7 +168,7 @@ namespace EBridge.Contracts.Report
                 "Only Oracle Contract can propose report.");
             var queryResult = new PlainResult();
             queryResult.MergeFrom(input.Result);
-            return ProposeReport(input.QueryId,queryResult);
+            return ProposeReport(input.QueryId, queryResult);
         }
 
         private Report ProposeReport(Hash queryId, PlainResult plainResult)
@@ -494,20 +494,13 @@ namespace EBridge.Contracts.Report
                 }
 
                 // Fine.
-                var balance = GetSenderVirtualAddressBalance(State.ObserverMortgageTokenSymbol.Value);
                 var mortgagedAmount = State.ObserverInRegimentMortgagedTokensMap[regimentAddress][accusingNode];
                 var amercementAmount = GetAmercementAmount(regimentAddress);
-                Assert(
-                    balance >= amercementAmount && mortgagedAmount >= amercementAmount,
-                    "Insufficient mortgaged amount to reject.");
-                State.ObserverInRegimentMortgagedTokensMap[regimentAddress][accusingNode] = mortgagedAmount.Sub(amercementAmount);
-                Context.SendVirtualInline(HashHelper.ComputeFrom(Context.Sender), State.TokenContract.Value,
-                    nameof(State.TokenContract.Transfer), new TransferInput
-                    {
-                        To = Context.Self,
-                        Symbol = State.ObserverMortgageTokenSymbol.Value,
-                        Amount = amercementAmount
-                    }.ToByteString());
+                Assert(mortgagedAmount >= amercementAmount, "Insufficient mortgaged amount to accuse.");
+                State.ObserverInRegimentMortgagedTokensMap[regimentAddress][accusingNode] =
+                    mortgagedAmount.Sub(amercementAmount);
+                State.ObserverAmercementAmountMap[regimentAddress][accusingNode] =
+                    State.ObserverAmercementAmountMap[regimentAddress][accusingNode].Add(amercementAmount);
             }
 
             reportRecord.IsRejected = true;

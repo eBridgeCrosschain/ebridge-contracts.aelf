@@ -55,6 +55,11 @@ namespace EBridge.Contracts.Report
         /// regiment address -> sender -> fee
         /// </summary>
         public MappedState<Address, Address, long> ObserverInRegimentMortgagedTokensMap { get; set; }
+        
+        /// <summary>
+        /// regiment address -> sender -> Amercement
+        /// </summary>
+        public MappedState<Address, Address, long> ObserverAmercementAmountMap { get; set; }
 
         public MappedState<string, long, BinaryMerkleTree> BinaryMerkleTreeMap { get; set; }
 
