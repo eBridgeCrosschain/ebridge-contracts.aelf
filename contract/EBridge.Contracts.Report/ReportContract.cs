@@ -166,18 +166,17 @@ namespace EBridge.Contracts.Report
         {
             Assert(Context.Sender == State.OracleContract.Value,
                 "Only Oracle Contract can propose report.");
-            return ProposeReport(input);
+            var queryResult = new PlainResult();
+            queryResult.MergeFrom(input.Result);
+            return ProposeReport(input.QueryId,queryResult);
         }
 
-        private Report ProposeReport(CallbackInput input)
+        private Report ProposeReport(Hash queryId, PlainResult plainResult)
         {
-            Assert(State.ReportQueryRecordMap[input.QueryId] != null,
+            Assert(State.ReportQueryRecordMap[queryId] != null,
                 "This query is not initialed by Report Contract.");
 
-            var plainResult = new PlainResult();
-            plainResult.MergeFrom(input.Result);
-
-            var queryRecord = State.ReportQueryRecordMap[input.QueryId];
+            var queryRecord = State.ReportQueryRecordMap[queryId];
 
             var currentRoundId = State.CurrentRoundIdMap[queryRecord.TargetChainId][plainResult.Token];
 
@@ -187,12 +186,12 @@ namespace EBridge.Contracts.Report
             Report report;
             if (offChainAggregationInfo.OffChainQueryInfoList.Value.Count == 1)
             {
-                report = ProposeReportWithNormalStyle(plainResult, input.QueryId, currentRoundId,
+                report = ProposeReportWithNormalStyle(plainResult, queryId, currentRoundId,
                     offChainAggregationInfo, queryRecord.TargetChainId);
             }
             else
             {
-                report = ProposeReportWithMerkleStyle(plainResult, input.QueryId, offChainAggregationInfo,
+                report = ProposeReportWithMerkleStyle(plainResult, queryId, offChainAggregationInfo,
                     currentRoundId, queryRecord.TargetChainId);
             }
 
@@ -496,12 +495,12 @@ namespace EBridge.Contracts.Report
 
                 // Fine.
                 var balance = GetSenderVirtualAddressBalance(State.ObserverMortgageTokenSymbol.Value);
-                var mortgagedAmount = State.ObserverMortgagedTokensMap[regimentAddress][accusingNode];
+                var mortgagedAmount = State.ObserverInRegimentMortgagedTokensMap[regimentAddress][accusingNode];
                 var amercementAmount = GetAmercementAmount(regimentAddress);
                 Assert(
                     balance >= amercementAmount && mortgagedAmount >= amercementAmount,
                     "Insufficient mortgaged amount to reject.");
-                State.ObserverMortgagedTokensMap[regimentAddress][accusingNode] = mortgagedAmount.Sub(amercementAmount);
+                State.ObserverInRegimentMortgagedTokensMap[regimentAddress][accusingNode] = mortgagedAmount.Sub(amercementAmount);
                 Context.SendVirtualInline(HashHelper.ComputeFrom(Context.Sender), State.TokenContract.Value,
                     nameof(State.TokenContract.Transfer), new TransferInput
                     {
