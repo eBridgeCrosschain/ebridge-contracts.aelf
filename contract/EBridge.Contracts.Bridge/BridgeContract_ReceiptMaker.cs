@@ -14,15 +14,15 @@ public partial class BridgeContract
     {
         Assert(!State.IsContractPause.Value, "Contract is paused.");
         Assert(Context.Sender == State.OracleContract.Value, "No permission.");
-        RecordReceiptHash(input);
+        var queryResult = new StringValue();
+        queryResult.MergeFrom(input.Result);
+        RecordReceiptHash(queryResult.Value);
         return new Empty();
     }
 
-    private void RecordReceiptHash(CallbackInput input)
+    private void RecordReceiptHash(string queryResult)
     {
-        var queryResult = new StringValue();
-        queryResult.MergeFrom(input.Result);
-        var receiptHashMap = JsonParser.Default.Parse<ReceiptHashMap>(queryResult.Value);
+        var receiptHashMap = JsonParser.Default.Parse<ReceiptHashMap>(queryResult);
         Assert(!string.IsNullOrEmpty(receiptHashMap.SwapId), "Swap id is null.");
         var swapId = Hash.LoadFromHex(receiptHashMap.SwapId);
         var spaceId = GetSpaceIdBySwapId(swapId);
