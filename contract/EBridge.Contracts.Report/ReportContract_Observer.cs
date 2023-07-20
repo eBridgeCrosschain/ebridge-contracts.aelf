@@ -56,6 +56,7 @@ namespace EBridge.Contracts.Report
                             Symbol = State.ObserverMortgageTokenSymbol.Value,
                             Amount = amercement
                         }.ToByteString());
+                    State.ObserverAmercementAmountMap[regimentAssociationAddress][Context.Sender] = 0;
                 }
                 State.ObserverInRegimentMortgagedTokensMap[regimentAssociationAddress][Context.Sender] = 0;
             }
