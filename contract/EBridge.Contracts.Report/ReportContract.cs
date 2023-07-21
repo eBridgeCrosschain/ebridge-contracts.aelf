@@ -76,17 +76,16 @@ namespace EBridge.Contracts.Report
                 // AggregatorContractAddress = null,
                 DesignatedNodeList = new AddressList
                 {
-                    Value = {regimentAddress}
+                    Value = { regimentAddress }
                 },
                 QueryInfo = new QueryInfo
                 {
                     Title = queryInfo.Title,
-                    Options = {queryInfo.Options}
+                    Options = { queryInfo.Options }
                 },
                 CallbackInfo = new CallbackInfo
                 {
-                    ContractAddress = Context.Self,
-                    MethodName = nameof(ProposeReport)
+                    ContractAddress = Context.Self
                 },
                 Token = input.Token
             };
@@ -163,17 +162,21 @@ namespace EBridge.Contracts.Report
             return new Empty();
         }
 
-        public override Report ProposeReport(CallbackInput input)
+        public override Report FulfillQuery(CallbackInput input)
         {
             Assert(Context.Sender == State.OracleContract.Value,
                 "Only Oracle Contract can propose report.");
-            Assert(State.ReportQueryRecordMap[input.QueryId] != null,
+            var queryResult = new PlainResult();
+            queryResult.MergeFrom(input.Result);
+            return ProposeReport(input.QueryId, queryResult);
+        }
+
+        private Report ProposeReport(Hash queryId, PlainResult plainResult)
+        {
+            Assert(State.ReportQueryRecordMap[queryId] != null,
                 "This query is not initialed by Report Contract.");
 
-            var plainResult = new PlainResult();
-            plainResult.MergeFrom(input.Result);
-
-            var queryRecord = State.ReportQueryRecordMap[input.QueryId];
+            var queryRecord = State.ReportQueryRecordMap[queryId];
 
             var currentRoundId = State.CurrentRoundIdMap[queryRecord.TargetChainId][plainResult.Token];
 
@@ -183,12 +186,12 @@ namespace EBridge.Contracts.Report
             Report report;
             if (offChainAggregationInfo.OffChainQueryInfoList.Value.Count == 1)
             {
-                report = ProposeReportWithNormalStyle(plainResult, input.QueryId, currentRoundId,
+                report = ProposeReportWithNormalStyle(plainResult, queryId, currentRoundId,
                     offChainAggregationInfo, queryRecord.TargetChainId);
             }
             else
             {
-                report = ProposeReportWithMerkleStyle(plainResult, input.QueryId, offChainAggregationInfo,
+                report = ProposeReportWithMerkleStyle(plainResult, queryId, offChainAggregationInfo,
                     currentRoundId, queryRecord.TargetChainId);
             }
 
@@ -236,7 +239,7 @@ namespace EBridge.Contracts.Report
             var offChainQueryInfo = new OffChainQueryInfo
             {
                 Title = plainResult.QueryInfo.Title,
-                Options = {plainResult.QueryInfo.Options}
+                Options = { plainResult.QueryInfo.Options }
             };
             var nodeIndex = offChainAggregationInfo.OffChainQueryInfoList.Value.IndexOf(offChainQueryInfo);
             var nodeRoundId = offChainAggregationInfo.RoundIds[nodeIndex];
@@ -258,7 +261,7 @@ namespace EBridge.Contracts.Report
             });
             State.NodeObserverListMap[plainResult.Token][currentRoundId][nodeIndex] = new ObserverList
             {
-                Value = {plainResult.DataRecords.Value.Select(d => d.Address)}
+                Value = { plainResult.DataRecords.Value.Select(d => d.Address) }
             };
             Context.Fire(new MerkleReportNodeAdded
             {
@@ -340,7 +343,7 @@ namespace EBridge.Contracts.Report
                 QueryInfo = new OffChainQueryInfo
                 {
                     Title = queryInfo.Title,
-                    Options = {queryInfo.Options.First()}
+                    Options = { queryInfo.Options.First() }
                 },
                 TargetChainId = info.ChainId
             });
@@ -363,7 +366,7 @@ namespace EBridge.Contracts.Report
             }
 
             State.AggregatorContract.Value = aggregatorContractAddress;
-            var aggregateInput = new AggregateInput {AggregateOption = offChainAggregationInfo.AggregateOption};
+            var aggregateInput = new AggregateInput { AggregateOption = offChainAggregationInfo.AggregateOption };
             foreach (var nodeData in plainResult.DataRecords.Value)
             {
                 aggregateInput.Results.Add(nodeData.Data);
@@ -458,8 +461,11 @@ namespace EBridge.Contracts.Report
             Assert(offChainAggregationInfo != null, "Off chain aggregation info not exists.");
             var regimentAddress = State.RegimentContract.GetRegimentAddress.Call(offChainAggregationInfo.RegimentId);
 
-            Assert(offChainAggregationInfo.OffChainQueryInfoList.Value.Count == 1,
-                "Merkle tree style aggregation doesn't support rejection.");
+            if (offChainAggregationInfo.OffChainQueryInfoList != null)
+            {
+                Assert(offChainAggregationInfo.OffChainQueryInfoList.Value.Count == 1,
+                    "Merkle tree style aggregation doesn't support rejection.");
+            }
 
             Assert(State.ObserverSignatureMap[input.ChainId][input.Token][input.RoundId][Context.Sender] == null,
                 "Sender already confirmed this report.");
@@ -472,21 +478,32 @@ namespace EBridge.Contracts.Report
             }
 
             var report = State.ReportMap[input.ChainId][input.Token][input.RoundId];
-            var senderData = report.Observations.Value
-                .FirstOrDefault(o => o.Key == Context.Sender.ToByteArray().ToHex())?.Data;
+            var reportRecord = report.QueryId == null
+                ? State.ReportRecordMap[input.ChainId][input.Token][input.RoundId]
+                : State.ReportQueryRecordMap[report.QueryId];
             foreach (var accusingNode in input.AccusingNodes)
             {
-                var accusedNodeData = report.Observations.Value.First(o => o.Key == accusingNode.ToByteArray().ToHex())
-                    .Data;
-                Assert(senderData == null || !senderData.Equals(accusedNodeData), "Invalid accuse.");
+                if (report.QueryId != null)
+                {
+                    var senderData = report.Observations.Value
+                        .FirstOrDefault(o => o.Key == Context.Sender.ToByteArray().ToHex())?.Data;
+                    var accusedNodeData = report.Observations.Value
+                        .First(o => o.Key == accusingNode.ToByteArray().ToHex())
+                        .Data;
+                    Assert(senderData == null || !senderData.Equals(accusedNodeData), "Invalid accuse.");
+                }
+
                 // Fine.
-                State.ObserverMortgagedTokensMap[accusingNode] = State.ObserverMortgagedTokensMap[accusingNode]
-                    .Sub(GetAmercementAmount(regimentAddress));
+                var mortgagedAmount = State.ObserverInRegimentMortgagedTokensMap[regimentAddress][accusingNode];
+                var amercementAmount = GetAmercementAmount(regimentAddress);
+                Assert(mortgagedAmount >= amercementAmount, "Insufficient mortgaged amount to accuse.");
+                State.ObserverInRegimentMortgagedTokensMap[regimentAddress][accusingNode] =
+                    mortgagedAmount.Sub(amercementAmount);
+                State.ObserverAmercementAmountMap[regimentAddress][accusingNode] =
+                    State.ObserverAmercementAmountMap[regimentAddress][accusingNode].Add(amercementAmount);
             }
 
-            var reportQueryRecord = State.ReportQueryRecordMap[report.QueryId];
-            reportQueryRecord.IsRejected = true;
-            State.ReportQueryRecordMap[report.QueryId] = reportQueryRecord;
+            reportRecord.IsRejected = true;
             return new Empty();
         }
 

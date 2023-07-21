@@ -248,6 +248,166 @@ public partial class BridgeContractTests : BridgeContractTestBase
             await CheckBalanceAsync(BridgeContractAddress, "ELF",  150_00000000 + 62_00000000);
         }
     }
+    
+    [Fact]
+     public async Task RejectReportTest()
+    {
+        await InitialAElfTo();
+        await InitialSetGas();
+        {
+            await BridgeContractStub.CreateReceipt.SendAsync(new CreateReceiptInput
+            {
+                Symbol = "ELF",
+                Amount = 100_00000000,
+                TargetAddress = "0x643C7DCAd9321b36de85FEaC19763BE492dB5a04",
+                TargetChainId = "Ethereum"
+            });
+
+            var rawReport = await ReportContractStub.GetRawReport.CallAsync(new GetRawReportInput
+            {
+                ChainId = "Ethereum",
+                Token = "0xf8F862Aaeb9cb101383d27044202aBbe3a057eCC",
+                RoundId = 1
+            });
+            
+            var regimentInfo = await RegimentContractStub.GetRegimentInfo.CallAsync(_regimentAddress);
+            var skipList = new MemberList();
+            foreach (var admin in regimentInfo.Admins)
+            {
+                skipList.Value.Add(admin);
+            }
+
+            skipList.Value.Add(regimentInfo.Manager);
+            await ReportContractStub.SetSkipMemberList.SendAsync(new SetSkipMemberListInput
+            {
+                ChainId = "Ethereum",
+                Token = "0xf8F862Aaeb9cb101383d27044202aBbe3a057eCC",
+                Value = skipList
+            });
+            foreach (var transmitter in Transmitters)
+            {
+                await TokenContractStub.Transfer.SendAsync(new TransferInput
+                {
+                    Symbol = "PORT",
+                    To = transmitter.Address,
+                    Amount = 300_00000000
+                });
+                var stub = GetTokenContractStub(transmitter.KeyPair);
+                await stub.Approve.SendAsync(new ApproveInput
+                {
+                    Symbol = "PORT",
+                    Spender = ReportContractAddress,
+                    Amount = 300_00000000
+                });
+            }
+            foreach (var reportContractStub in TransmittersReportContractStubs)
+            {
+                await reportContractStub.ApplyObserver.SendAsync(new ApplyObserverInput
+                {
+                    RegimentAddressList = { _regimentAddress }
+                });
+            }
+
+            for (var i = 0; i < Transmitters.Count; i++)
+            {
+                var mortgagedToken = await ReportContractStub.GetObserverMortgagedTokenByRegiment.CallAsync(
+                    new GetObserverMortgagedTokenByRegimentInput
+                    {
+                        RegimentAddress = _regimentAddress,
+                        ObserverAddress = Transmitters[i].Address
+                    });
+                mortgagedToken.Value.ShouldBe(200_00000000);
+                var balance = (await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
+                {
+                    Owner = Transmitters[i].Address,
+                    Symbol = "PORT"
+                })).Balance;
+                if (i == 0)
+                {
+                    balance.ShouldBe(500000100_00000000);
+                }
+                else
+                {
+                    balance.ShouldBe(100_00000000);
+                }
+            }
+            
+
+            for (var i = 0; i < Transmitters.Count - 1; i++)
+            {
+                var stub = GetReportContractStub(Transmitters[i].KeyPair);
+                await stub.ConfirmReport.SendAsync(new ConfirmReportInput
+                {
+                    ChainId = "Ethereum",
+                    Token = "0xf8F862Aaeb9cb101383d27044202aBbe3a057eCC",
+                    RoundId = 1,
+                    Signature = SignHelper.GetSignature(rawReport.Value, Transmitters[i].KeyPair.PrivateKey).RecoverInfo
+                });
+                var amount = await stub.GetMortgagedTokenAmount.CallAsync(Transmitters[i].Address);
+                amount.Value.ShouldBe(200_00000000);
+            }
+
+            var lastStub = GetReportContractStub(Transmitters.Last().KeyPair);
+            await lastStub.RejectReport.SendAsync(new RejectReportInput
+            {
+                ChainId = "Ethereum",
+                Token = "0xf8F862Aaeb9cb101383d27044202aBbe3a057eCC",
+                RoundId = 1,
+                AccusingNodes = { Transmitters.Last().Address }
+            });
+            var mortgagedTokenLast = await ReportContractStub.GetObserverMortgagedTokenByRegiment.CallAsync(
+                new GetObserverMortgagedTokenByRegimentInput
+                {
+                    RegimentAddress = _regimentAddress,
+                    ObserverAddress = Transmitters.Last().Address
+                });
+            mortgagedTokenLast.Value.ShouldBe(100_00000000);
+            var amount1 = await TransmittersReportContractStubs.Last().GetMortgagedTokenAmount.CallAsync(Transmitters.Last().Address);
+            amount1.Value.ShouldBe(200_00000000);
+            var mortgagedToken2 = await ReportContractStub.GetObserverMortgagedTokenByRegiment.CallAsync(
+                new GetObserverMortgagedTokenByRegimentInput
+                {
+                    RegimentAddress = _regimentAddress,
+                    ObserverAddress = Transmitters[1].Address
+                });
+            mortgagedToken2.Value.ShouldBe(200_00000000);
+            var result = await TransmittersReportContractStubs.Last().ConfirmReport.SendWithExceptionAsync(new ConfirmReportInput
+            {
+                ChainId = "Ethereum",
+                Token = "0xf8F862Aaeb9cb101383d27044202aBbe3a057eCC",
+                RoundId = 1,
+                Signature = SignHelper.GetSignature(rawReport.Value, Transmitters.Last().KeyPair.PrivateKey).RecoverInfo
+            });
+            result.TransactionResult.Error.ShouldContain("This report is already rejected.");
+            var amount2Before = await TransmittersReportContractStubs.Last().GetMortgagedTokenAmount.CallAsync(Transmitters.Last().Address);
+            amount2Before.Value.ShouldBe(200_00000000);
+            var amountNode = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
+            {
+                Owner = ReportContractAddress,
+                Symbol = "PORT"
+            });
+            amountNode.Balance.ShouldBe(0);
+            await TransmittersReportContractStubs.Last().QuitObserver.SendAsync(new QuitObserverInput
+            {
+                RegimentAddressList = { _regimentAddress }
+            });
+            var amount2After = await TransmittersReportContractStubs.Last().GetMortgagedTokenAmount.CallAsync(Transmitters.Last().Address);
+            amount2After.Value.ShouldBe(0);
+            var amountNodeAfter = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
+            {
+                Owner = ReportContractAddress,
+                Symbol = "PORT"
+            });
+            amountNodeAfter.Balance.ShouldBe(100_00000000);
+            var amountReport = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
+            {
+                Owner = ReportContractAddress,
+                Symbol = "PORT"
+            });
+            amountReport.Balance.ShouldBe(100_00000000);
+
+        }
+    }
 
     [Fact]
     public async Task SwapTokenWithoutDeposit()

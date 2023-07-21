@@ -27,11 +27,9 @@ service ReportContract {
 
   rpc RejectReport (RejectReportInput) returns (google.protobuf.Empty) {}
 
-  rpc ProposeReport (CallbackInput) returns (Report) {}
+  rpc FulfillQuery (CallbackInput) returns (Report) {}
 
-  rpc MortgageTokens (google.protobuf.Int64Value) returns (google.protobuf.Empty) {}
-
-  rpc WithdrawTokens (WithdrawTokensInput) returns (google.protobuf.Empty) {}
+  rpc MortgageTokens (MortgageTokensInput) returns (google.protobuf.Empty) {}
   
   rpc SetSkipMemberList (SetSkipMemberListInput) returns (google.protobuf.Empty){}
   
@@ -112,6 +110,9 @@ service ReportContract {
   rpc GetTokenByChainId(google.protobuf.StringValue) returns (google.protobuf.StringValue){
     option (aelf.is_view) = true;
   }
+  rpc GetObserverMortgagedTokenByRegiment(GetObserverMortgagedTokenByRegimentInput) returns (google.protobuf.Int64Value) {
+    option (aelf.is_view) = true;
+  }
 }
 
 message InitializeInput {
@@ -146,9 +147,9 @@ message RejectReportInput {
   string chain_id = 4;
 }
 
-message WithdrawTokensInput {
+message MortgageTokensInput {
   int64 amount = 1;
-  aelf.Address regiment = 2;
+  aelf.Address regiment_address = 2;
 }
 
 message Report {
@@ -317,6 +318,11 @@ message SetSkipMemberListInput{
 message GetSkipMemberListInput{
   string token = 1;
   string chain_id = 2;
+}
+
+message GetObserverMortgagedTokenByRegimentInput{
+  aelf.Address regiment_address = 1;
+  aelf.Address observer_address = 2;
 }
 
 // Events

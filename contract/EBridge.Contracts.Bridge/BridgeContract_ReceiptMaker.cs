@@ -10,13 +10,19 @@ namespace EBridge.Contracts.Bridge;
 
 public partial class BridgeContract
 {
-    public override Empty RecordReceiptHash(CallbackInput input)
+    public override Empty FulfillQuery(CallbackInput input)
     {
         Assert(!State.IsContractPause.Value, "Contract is paused.");
         Assert(Context.Sender == State.OracleContract.Value, "No permission.");
         var queryResult = new StringValue();
         queryResult.MergeFrom(input.Result);
-        var receiptHashMap = JsonParser.Default.Parse<ReceiptHashMap>(queryResult.Value);
+        RecordReceiptHash(queryResult.Value);
+        return new Empty();
+    }
+
+    private void RecordReceiptHash(string queryResult)
+    {
+        var receiptHashMap = JsonParser.Default.Parse<ReceiptHashMap>(queryResult);
         Assert(!string.IsNullOrEmpty(receiptHashMap.SwapId), "Swap id is null.");
         var swapId = Hash.LoadFromHex(receiptHashMap.SwapId);
         var spaceId = GetSpaceIdBySwapId(swapId);
@@ -51,17 +57,15 @@ public partial class BridgeContract
         State.MerkleTreeContract.RecordMerkleTree.Send(new RecordMerkleTreeInput
         {
             SpaceId = spaceId,
-            LeafNodeHash = {leafNodeList}
+            LeafNodeHash = { leafNodeList }
         });
-
-        return new Empty();
     }
 
     #region View
 
     public override Int64Value GetReceiptCount(Hash input)
     {
-        return new Int64Value {Value = State.SpaceReceiptCountMap[input]};
+        return new Int64Value { Value = State.SpaceReceiptCountMap[input] };
     }
 
     public override Hash GetReceiptHash(GetReceiptHashInput input)

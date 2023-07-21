@@ -156,7 +156,6 @@ message CompleteQueryTaskInput {
 
 message CallbackInfo {
     aelf.Address contract_address = 1;
-    string method_name = 2;
 }
 
 message AddressList {
