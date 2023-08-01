@@ -10,5 +10,5 @@ public partial class RegimentContractState
 
     internal AssociationContractContainer.AssociationContractReferenceState AssociationContract { get; set; }
     
-    internal ACS0Container.ACS0ReferenceState GensisContract { get; set; }
+    internal ACS0Container.ACS0ReferenceState GenesisContract { get; set; }
 }
