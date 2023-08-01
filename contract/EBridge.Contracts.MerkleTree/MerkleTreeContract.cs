@@ -15,8 +15,8 @@ public partial class MerkleTreeContract : MerkleTreeContractContainer.MerkleTree
         Assert(State.Owner.Value == null, $"Already initialized.");
         
         Assert(State.IsInitialized.Value == false,"Already initialized.");
-        State.GensisContract.Value = Context.GetZeroSmartContractAddress();
-        var author = State.GensisContract.GetContractAuthor.Call(Context.Self);
+        State.GenesisContract.Value = Context.GetZeroSmartContractAddress();
+        var author = State.GenesisContract.GetContractAuthor.Call(Context.Self);
         Assert(Context.Sender == author, "No permission.");
         State.IsInitialized.Value = true;
         State.Owner.Value = input.Owner;

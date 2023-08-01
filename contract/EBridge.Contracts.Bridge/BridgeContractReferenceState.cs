@@ -18,5 +18,5 @@ public partial class BridgeContractState
 
     internal ReportContractContainer.ReportContractReferenceState ReportContract { get; set; }
 
-    internal ACS0Container.ACS0ReferenceState GensisContract { get; set; }
+    internal ACS0Container.ACS0ReferenceState GenesisContract { get; set; }
 }

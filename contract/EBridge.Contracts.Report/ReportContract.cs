@@ -19,8 +19,8 @@ namespace EBridge.Contracts.Report
         public override Empty Initialize(InitializeInput input)
         {
             Assert(!State.IsInitialized.Value, "Already initialized.");
-            State.GensisContract.Value = Context.GetZeroSmartContractAddress();
-            var author = State.GensisContract.GetContractAuthor.Call(Context.Self);
+            State.GenesisContract.Value = Context.GetZeroSmartContractAddress();
+            var author = State.GenesisContract.GetContractAuthor.Call(Context.Self);
             Assert(Context.Sender == author, "No permission.");
             State.Owner.Value = input.OwnerAddress;
             State.OracleContract.Value = input.OracleContractAddress;
