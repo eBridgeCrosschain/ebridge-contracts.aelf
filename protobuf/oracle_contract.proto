@@ -53,6 +53,10 @@ service OracleContract {
 
     rpc UnlockTokens (UnlockTokensInput) returns (google.protobuf.Empty) {}
     
+    rpc ChangeRegimentController (aelf.Address) returns (google.protobuf.Empty){}
+
+    rpc ResetRegimentConfig (ResetRegimentConfigInput) returns (google.protobuf.Empty){}
+    
     // config setting
     
     rpc SetThreshold (OracleNodeThreshold) returns (google.protobuf.Empty) {}
@@ -152,7 +156,6 @@ message CompleteQueryTaskInput {
 
 message CallbackInfo {
     aelf.Address contract_address = 1;
-    string method_name = 2;
 }
 
 message AddressList {
@@ -291,6 +294,12 @@ message LockTokensInput {
 message UnlockTokensInput {
     aelf.Address oracle_node_address = 1;
     int64 withdraw_amount = 2;
+}
+
+message ResetRegimentConfigInput{
+    int32 member_join_limit = 1;
+    int32 regiment_limit = 2;
+    int32 maximum_admins_count = 3;
 }
 
 message QueryInfo {

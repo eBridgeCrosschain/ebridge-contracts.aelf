@@ -76,6 +76,9 @@
         <ContractStub Include="..\..\protobuf\acs13.proto">
             <Link>Protobuf\Proto\acs13.proto</Link>
         </ContractStub>
+        <ContractStub Include="..\..\protobuf\acs0.proto">
+            <Link>Protobuf\Proto\acs0.proto</Link>
+        </ContractStub>
         <ContractStub Include="..\..\protobuf\bridge_contract.proto">
             <Link>Protobuf\Proto\bridge_contract.proto</Link>
         </ContractStub>

@@ -71,7 +71,7 @@ service BridgeContract {
     }
     rpc Withdraw (WithdrawInput) returns (google.protobuf.Empty) {
     }
-    rpc RecordReceiptHash (CallbackInput) returns (google.protobuf.Empty) {
+    rpc FulfillQuery (CallbackInput) returns (google.protobuf.Empty) {
     }
     //View methods.
     rpc GetSwapIdByToken(GetSwapIdByTokenInput) returns (aelf.Hash){
@@ -411,4 +411,20 @@ message ReceiptCreated{
     string targetAddress = 4;
     int64 amount = 5;
     string target_chain_id = 6;
+}
+
+message Paused{
+    option (aelf.is_event) = true;
+    aelf.Address sender = 1;
+}
+
+message Unpaused{
+    option (aelf.is_event) = true;
+    aelf.Address sender = 1;
+}
+
+message ApproveTransfer{
+    option (aelf.is_event) = true;
+    aelf.Address sender = 1;
+    string receipt_id = 2;  
 }
