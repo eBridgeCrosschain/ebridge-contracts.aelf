@@ -11,9 +11,9 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
     {
         Assert(State.Controller.Value == null, "Already initialized.");
         Assert(State.IsInitialized.Value == false,"Already initialized.");
-        State.GenesisContract.Value = Context.GetZeroSmartContractAddress();
-        var author = State.GenesisContract.GetContractAuthor.Call(Context.Self);
-        Assert(Context.Sender == author, "No permission.");
+        // State.GenesisContract.Value = Context.GetZeroSmartContractAddress();
+        // var author = State.GenesisContract.GetContractAuthor.Call(Context.Self);
+        // Assert(Context.Sender == author, "No permission.");
         State.TokenContract.Value =
             Context.GetContractAddressByName(SmartContractConstants.TokenContractSystemName);
         State.ParliamentContract.Value =
