@@ -304,6 +304,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
         await AssociationContractImplStub.Approve.SendAsync(proposalId);
         return proposalId;
     }
+    
 
     #endregion
 
