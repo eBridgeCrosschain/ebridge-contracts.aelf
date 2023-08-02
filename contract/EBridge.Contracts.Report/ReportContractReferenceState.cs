@@ -27,6 +27,6 @@ namespace EBridge.Contracts.Report
             set;
         }
         
-        internal ACS0Container.ACS0ReferenceState GensisContract { get; set; }
+        internal ACS0Container.ACS0ReferenceState GenesisContract { get; set; }
     }
 }
