@@ -9,5 +9,5 @@ public partial class MerkleTreeContractState
     internal RegimentContractContainer.RegimentContractReferenceState RegimentContract { get; set; }
     internal TokenContractContainer.TokenContractReferenceState TokenContract { get; set; }
 
-    internal ACS0Container.ACS0ReferenceState GensisContract { get; set; }
+    internal ACS0Container.ACS0ReferenceState GenesisContract { get; set; }
 }
