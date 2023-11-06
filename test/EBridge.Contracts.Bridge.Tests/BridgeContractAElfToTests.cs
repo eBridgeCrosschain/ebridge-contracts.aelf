@@ -86,22 +86,6 @@ public partial class BridgeContractTests : BridgeContractTestBase
             RegimentId = regimentId,
             ChainId = "Ethereum"
         });
-        await BridgeContractStub.SetTokenMaximumAmount.SendAsync(new SetMaximumAmountInput
-        {
-            Value =
-            {
-                new TokenMaximumAmount
-                {
-                    Symbol = "ELF",
-                    MaximumAmount = 400000000
-                },
-                new TokenMaximumAmount
-                {
-                    Symbol = "USDT",
-                    MaximumAmount = 400000000
-                }
-            }
-        });
         return organization;
     }
 
