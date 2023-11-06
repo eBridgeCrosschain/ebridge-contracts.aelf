@@ -7,7 +7,11 @@ import "acs12.proto";
 import "acs13.proto";
 import "bridge_contract.proto";
 import "receipt_maker.proto";
-
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+import "aelf/core.proto";
+import "aelf/options.proto";
 
 option csharp_namespace = "EBridge.Contracts.Bridge";
 
@@ -19,4 +23,168 @@ service BridgeContractImpl {
   option (aelf.base) = "acs13.proto";
   option (aelf.base) = "receipt_maker.proto";
   option (aelf.base) = "bridge_contract.proto";
+
+  rpc SetDailyReceiptLimit (SetDailyReceiptLimitInput) returns (google.protobuf.Empty) {}
+  rpc SetDailySwapLimit (SetDailySwapLimitInput) returns (google.protobuf.Empty) {}
+  rpc ConfigReceiptTokenBucket (ConfigReceiptTokenBucketInput) returns (google.protobuf.Empty) {}
+  rpc ConfigSwapTokenBucket (ConfigSwapTokenBucketInput) returns (google.protobuf.Empty) {}
+  
+  rpc GetDailyReceiptLimit (GetDailyReceiptLimitInput) returns (DailyLimitTokenInfo) {
+    option (aelf.is_view) = true;
+  }
+
+  rpc GetDailySwapLimit (aelf.Hash) returns (DailyLimitTokenInfo) {
+    option (aelf.is_view) = true;
+  }
+  
+  rpc GetCurrentReceiptTokenBucketState (GetCurrentReceiptTokenBucketStateInput) returns (TokenBucket) {
+    option (aelf.is_view) = true;
+  }
+  
+  rpc GetReceiptMinWaitTimeInSeconds (GetReceiptMinWaitTimeInSecondsInput) returns (google.protobuf.Int64Value){
+    option (aelf.is_view) = true;
+  }
+  
+  rpc GetCurrentSwapTokenBucketState (aelf.Hash) returns (TokenBucket) {
+    option (aelf.is_view) = true;
+  }
+ 
+  rpc GetSwapMinWaitTimeInSeconds (GetSwapMinWaitTimeInSecondsInput) returns (google.protobuf.Int64Value){
+    option (aelf.is_view) = true;
+  }
+}
+
+// Data struct
+message DailyLimitTokenInfo{
+  int64 token_amount = 1; 
+  google.protobuf.Timestamp refresh_time = 2; 
+  int64 default_token_amount = 3; 
+}
+
+message TokenBucket {
+  int64 current_token_amount = 1;
+  google.protobuf.Timestamp last_updated_time = 2;
+  int64 token_capacity = 3; 
+  int64 rate = 4;
+  bool isEnable = 5;
+}
+
+// Input
+message SetDailyReceiptLimitInput{
+  repeated DailyReceiptLimitInfo daily_receipt_limit_infos = 1;
+}
+
+message DailyReceiptLimitInfo{
+  string symbol = 1;
+  string chain = 2;
+  google.protobuf.Timestamp start_time = 3;
+  int64 default_token_amount = 4;
+}
+
+message GetDailyReceiptLimitInput{
+  string symbol = 1;
+  string chain = 2;
+}
+
+message SetDailySwapLimitInput{
+  repeated DailySwapLimitInfo daily_swap_limit_infos = 1;
+}
+
+message DailySwapLimitInfo{
+  aelf.Hash swap_id = 1;
+  google.protobuf.Timestamp start_time = 2;
+  int64 default_token_amount = 3;
+}
+
+message ConfigReceiptTokenBucketInput{
+  repeated ReceiptTokenBucketConfig receipt_token_bucket_configs = 1;
+}
+
+message ReceiptTokenBucketConfig {
+  string symbol = 1;
+  string chain = 2;
+  bool isEnable = 3;
+  int64 token_capacity = 4;
+  int64 rate = 5;
+}
+
+message GetCurrentReceiptTokenBucketStateInput{
+  string symbol = 1; 
+  string chain = 2;
+}
+
+message GetReceiptMinWaitTimeInSecondsInput{
+  string symbol = 1;
+  string chain = 2;
+  int64 token_amount = 3;
+}
+
+message ConfigSwapTokenBucketInput{
+  repeated SwapTokenBucketConfig swap_token_bucket_configs = 1;
+}
+
+message SwapTokenBucketConfig {
+  aelf.Hash swap_id = 1;
+  bool isEnable = 2; 
+  int64 token_capacity = 3;
+  int64 rate = 4; 
+}
+
+message GetSwapMinWaitTimeInSecondsInput{
+  aelf.Hash swapId = 1;
+  int64 token_amount = 2;
+}
+
+message DailyReceiptLimitSet{
+  option (aelf.is_event) = true;
+  string symbol = 1;
+  string target_chain_id = 2;
+  int64 daily_receipt_limit = 3;
+  google.protobuf.Timestamp receipt_refresh_time = 4;
+}
+
+message DailySwapLimitSet{
+  option (aelf.is_event) = true;
+  string symbol = 1;
+  string from_chain_id = 2;
+  int64 daily_swap_limit = 3;
+  google.protobuf.Timestamp swap_refresh_time = 4;
+}
+
+message ReceiptTokenBucketSet{
+  option (aelf.is_event) = true;
+  string symbol = 1;
+  string target_chain_id = 2;
+  int64 receipt_capacity = 3;
+  int64 receipt_refill_rate = 4;
+  bool receipt_bucket_isEnable = 5;
+}
+
+message SwapTokenBucketSet{
+  option (aelf.is_event) = true;
+  string symbol = 1;
+  string from_chain_id = 2;
+  int64 swap_capacity = 3;
+  int64 swap_refill_rate = 4;
+  bool swap_bucket_isEnable = 5;
+}
+
+message ReceiptLimitChanged {
+  option (aelf.is_event) = true;
+  string symbol = 1;
+  string targetChainId = 2;
+  int64 current_receipt_daily_limit_amount = 3;
+  google.protobuf.Timestamp receipt_daily_limit_refresh_time = 4;
+  int64 current_receipt_bucket_token_amount = 5;
+  google.protobuf.Timestamp receipt_bucket_update_time = 6;
+}
+
+message SwapLimitChanged {
+  option (aelf.is_event) = true;
+  string symbol = 1;
+  string targetChainId = 2;
+  int64 current_swap_daily_limit_amount = 3;
+  google.protobuf.Timestamp swap_daily_limit_refresh_time = 4;
+  int64 current_swap_bucket_token_amount = 5;
+  google.protobuf.Timestamp swap_bucket_update_time = 6;
 }
