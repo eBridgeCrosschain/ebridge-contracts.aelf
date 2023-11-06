@@ -39,112 +39,7 @@ public partial class BridgeContractTests
             Spender = BridgeContractAddress,
             Symbol = "USDT"
         });
-        await BridgeContractStub.SetTokenMaximumAmount.SendAsync(new SetMaximumAmountInput
-        {
-            Value =
-            {
-                new TokenMaximumAmount
-                {
-                    Symbol = "ELF",
-                    MaximumAmount = 400000000
-                },
-                new TokenMaximumAmount
-                {
-                    Symbol = "USDT",
-                    MaximumAmount = 400000000
-                }
-            }
-        });
-        {
-            var tokenMaximumAmount = await BridgeContractStub.GetTokenMaximumAmount.CallAsync(new StringValue
-            {
-                Value = "ELF"
-            });
-            tokenMaximumAmount.Value.ShouldBe(400000000);
-        }
         return organization;
-    }
-
-    [Fact]
-    public async Task SetTokenMaximumAmount_NoPermission()
-    {
-        var executionResult = await BridgeContractSetFeeRatioStub.SetTokenMaximumAmount.SendWithExceptionAsync(
-            new SetMaximumAmountInput
-            {
-                Value =
-                {
-                    new TokenMaximumAmount
-                    {
-                        Symbol = "ELF",
-                        MaximumAmount = 4000000000_00000000
-                    },
-                    new TokenMaximumAmount
-                    {
-                        Symbol = "USDT",
-                        MaximumAmount = 4000000000_00000000
-                    }
-                }
-            });
-        executionResult.TransactionResult.Error.ShouldContain("No permission.");
-    }
-
-    [Fact]
-    public async Task SetTokenMaximumAmount_Duplicate()
-    {
-        await InitialBridgeContractAsync();
-        await BridgeContractStub.SetTokenMaximumAmount.SendAsync(
-            new SetMaximumAmountInput
-            {
-                Value =
-                {
-                    new TokenMaximumAmount
-                    {
-                        Symbol = "ELF",
-                        MaximumAmount = 4000000000_00000000
-                    },
-                    new TokenMaximumAmount
-                    {
-                        Symbol = "ELF",
-                        MaximumAmount = 5000000000_00000000
-                    },
-                    new TokenMaximumAmount
-                    {
-                        Symbol = "USDT",
-                        MaximumAmount = 4000000000_00000000
-                    }
-                }
-            });
-        {
-            var tokenMaximumAmount = await BridgeContractStub.GetTokenMaximumAmount.CallAsync(new StringValue
-            {
-                Value = "ELF"
-            });
-            tokenMaximumAmount.Value.ShouldBe(5000000000_00000000);
-        }
-    }
-    
-    [Fact]
-    public async Task SetTokenMaximumAmount_Invalid()
-    {
-        await InitialBridgeContractAsync();
-        var executionResult = await BridgeContractStub.SetTokenMaximumAmount.SendWithExceptionAsync(
-            new SetMaximumAmountInput
-            {
-                Value =
-                {
-                    new TokenMaximumAmount
-                    {
-                        Symbol = "ELF",
-                        MaximumAmount = 4000000000_00000000
-                    },
-                    new TokenMaximumAmount
-                    {
-                        Symbol = "ELF",
-                        MaximumAmount = -1
-                    },
-                }
-            });
-        executionResult.TransactionResult.Error.ShouldContain("invalid MaximumAmount");
     }
 
     private async Task OracleQueryCommitAndReveal()
@@ -227,15 +122,6 @@ public partial class BridgeContractTests
             await CheckBalanceAsync(BridgeContractAddress,"ELF", bridgeBalance.Balance - 10000000L);
         }
         {
-            {
-                var executionResult = await BridgeContractStub.ApproveTransfer.SendAsync(new ApproveTransferInput
-                {
-                    ReceiptId = SampleSwapInfo.SwapInfos[1].ReceiptId
-                });
-                var log = ApproveTransfer.Parser.ParseFrom(executionResult.TransactionResult.Logs.First(l => l.Name == nameof(ApproveTransfer)).NonIndexed);
-                log.ReceiptId.ShouldBe(SampleSwapInfo.SwapInfos[1].ReceiptId);
-                log.Sender.ShouldBe(DefaultSenderAddress);
-            }
             // Swap
             await BridgeContractStub.SwapToken.SendAsync(new SwapTokenInput
             {
@@ -265,28 +151,6 @@ public partial class BridgeContractTests
                 SwapId = _swapHashOfElf
             });
             executionResult.TransactionResult.Error.ShouldContain("Waiting for admin authorization");
-            {
-                var executionResult1 = await BridgeContractSetFeeRatioStub.ApproveTransfer.SendWithExceptionAsync(
-                    new ApproveTransferInput
-                    {
-                        ReceiptId = SampleSwapInfo.SwapInfos[4].ReceiptId
-                    });
-                executionResult1.TransactionResult.Error.ShouldContain("No permission.");
-            }
-            {
-                await BridgeContractStub.ApproveTransfer.SendAsync(new ApproveTransferInput
-                {
-                    ReceiptId = SampleSwapInfo.SwapInfos[4].ReceiptId
-                });
-            }
-            {
-                var executionResult1 = await BridgeContractStub.ApproveTransfer.SendWithExceptionAsync(
-                    new ApproveTransferInput
-                    {
-                        ReceiptId = SampleSwapInfo.SwapInfos[4].ReceiptId
-                    });
-                executionResult1.TransactionResult.Error.ShouldContain("The receipt has been approved");
-            }
             await BridgeContractStub.SwapToken.SendAsync(new SwapTokenInput
             {
                 ReceiverAddress = Receivers[4].Address,
@@ -379,12 +243,6 @@ public partial class BridgeContractTests
                         SwapId = _swapHashOfUsdt
                     });
                 executionResult.TransactionResult.Error.ShouldContain("Waiting for admin authorization");
-                {
-                    await BridgeContractStub.ApproveTransfer.SendAsync(new ApproveTransferInput
-                    {
-                        ReceiptId = SampleSwapInfo.SwapInfos[9].ReceiptId
-                    });
-                }
             }
             await ReceiverBridgeContractStubs[4].SwapToken.SendAsync(new SwapTokenInput
             {
@@ -913,57 +771,6 @@ public partial class BridgeContractTests
             Result = new StringValue().ToByteString()
         });
         executionResult.TransactionResult.Error.ShouldContain("No permission.");
-    }
-
-    [Fact]
-    public async Task IsTransferCanReceive_Test()
-    {
-        await CreateSwapTestAsync();
-        await OracleQueryCommitAndReveal();
-        {
-            var result = await BridgeContractStub.IsTransferCanReceive.CallAsync(new IsTransferCanReceiveInput
-            {
-                ReceiptId = SampleSwapInfo.SwapInfos[0].ReceiptId,
-                Symbol = "ELF",
-                Amount = (long.Parse(SampleSwapInfo.SwapInfos[0].OriginAmount)/10000000000).ToString()
-            });
-            result.Value.ShouldBe(true);
-        }
-        {
-            var result = await BridgeContractStub.IsTransferCanReceive.CallAsync(new IsTransferCanReceiveInput
-            {
-                ReceiptId = SampleSwapInfo.SwapInfos[4].ReceiptId,
-                Symbol = "ELF",
-                Amount = SampleSwapInfo.SwapInfos[4].OriginAmount
-            });
-            result.Value.ShouldBe(false);
-        }
-        await BridgeContractStub.ApproveTransfer.SendAsync(new ApproveTransferInput
-        {
-            ReceiptId = SampleSwapInfo.SwapInfos[4].ReceiptId
-        });
-        {
-            var result = await BridgeContractStub.IsTransferCanReceive.CallAsync(new IsTransferCanReceiveInput
-            {
-                ReceiptId = SampleSwapInfo.SwapInfos[4].ReceiptId,
-                Symbol = "ELF",
-                Amount = SampleSwapInfo.SwapInfos[4].OriginAmount
-            });
-            result.Value.ShouldBe(true);
-        }
-    }
-
-    [Fact]
-    public async Task ApproveTransfer_Test_NoPermission()
-    {
-        await CreateSwapTestAsync();
-        await OracleQueryCommitAndReveal();
-        var execution = await BridgeContractSetFeeRatioStub.ApproveTransfer.SendWithExceptionAsync(
-            new ApproveTransferInput
-            {
-                ReceiptId = SampleSwapInfo.SwapInfos[4].ReceiptId
-            });
-        execution.TransactionResult.Error.ShouldContain("No permission.");
     }
 
     [Fact]

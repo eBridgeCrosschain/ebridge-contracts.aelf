@@ -97,7 +97,7 @@ public partial class BridgeContract
         ValidateSwapTokenInput(input);
         Assert(TryGetReceiptIndex(input.ReceiptId, out var receiptIndex), "Incorrect receipt index.");
         Assert(TryGetOriginTokenAmount(input.OriginAmount, out var amount), "Invalid amount.");
-        AssertTokenAmount(input.SwapId, input.ReceiptId, amount);
+        AssertSwapAmount(input.SwapId, amount);
         var leafHash = ComputeLeafHash(amount, receiverAddress, input.ReceiptId);
 
         var spaceId = State.SwapSpaceIdMap[input.SwapId];
@@ -131,15 +131,29 @@ public partial class BridgeContract
         return new Empty();
     }
 
-    private void AssertTokenAmount(Hash swapId, string receiptId, decimal amount)
+    private void AssertSwapAmount(Hash swapId, decimal amount)
     {
         var swapInfo = GetTokenSwapInfo(swapId);
-        var tokenSymbol = swapInfo.SwapTargetToken.Symbol;
-        var maximumAmount = State.TokenMaximumAmount[tokenSymbol];
-        var actualAmount = GetTargetTokenAmount(amount, swapInfo.SwapTargetToken.SwapRatio);
-        if (actualAmount <= maximumAmount) return;
-        Assert(State.ApproveTransfer[receiptId],
-            $"{tokenSymbol} swap amount higher than maximum amount. Waiting for admin authorization. ReceiptId:{receiptId}");
+        var actualAmount = GetTargetTokenAmount(amount, swapInfo.SwapTargetToken?.SwapRatio);
+        var dailyLimit = State.DailySwapLimit[swapId];
+        dailyLimit = AssertDailyLimit(dailyLimit, actualAmount);
+        var currentBucket = State.SwapTokenBucketInfo[swapId];  
+        currentBucket = AssertTokenBucketAmount(currentBucket, actualAmount);
+        
+        if (dailyLimit == null && currentBucket == null) 
+        {
+            return;
+        }
+        
+        Context.Fire(new SwapLimitChanged
+        {
+            Symbol = swapInfo.SwapTargetToken?.Symbol,
+            TargetChainId = swapInfo.SwapTargetToken?.FromChainId,
+            CurrentSwapDailyLimitAmount = dailyLimit?.TokenAmount ?? long.MaxValue,
+            SwapDailyLimitRefreshTime = dailyLimit?.RefreshTime,
+            CurrentSwapBucketTokenAmount = currentBucket?.CurrentTokenAmount ?? long.MaxValue,
+            SwapBucketUpdateTime = currentBucket?.LastUpdatedTime
+        });
     }
 
     private void PerformTransferToken(Hash swapId, Address receiverAddress, decimal amount, string receiptId)
