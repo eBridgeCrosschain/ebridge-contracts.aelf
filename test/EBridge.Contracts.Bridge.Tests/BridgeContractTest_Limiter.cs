@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AElf.ContractTestKit;
+using AElf.Kernel;
 using Google.Protobuf.WellKnownTypes;
 using Shouldly;
 using Xunit;
@@ -15,7 +16,7 @@ public partial class BridgeContractTests
     public async Task SetDailyReceiptLimit_Success()
     {
         await InitialBridgeContractAsync();
-        var time = DateTime.UtcNow.Date;
+        var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
         var input = new List<DailyReceiptLimitInfo>
         {
             new DailyReceiptLimitInfo
@@ -123,7 +124,7 @@ public partial class BridgeContractTests
     public async Task SetDailyReceiptLimit_Success_Reset()
     {
         await SetDailyReceiptLimit_Success();
-        var time = DateTime.UtcNow.AddHours(2).Date;
+        var time = TimestampHelper.GetUtcNow().ToDateTime().AddHours(2).Date;
         var input = new List<DailyReceiptLimitInfo>
         {
             new DailyReceiptLimitInfo
@@ -163,7 +164,7 @@ public partial class BridgeContractTests
     public async Task SetDailyReceiptLimit_Failed_NoPermission()
     {
         await InitialBridgeContractAsync();
-        var time = DateTime.UtcNow.Date;
+        var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
         var input = new List<DailyReceiptLimitInfo>
         {
             new DailyReceiptLimitInfo
@@ -185,7 +186,7 @@ public partial class BridgeContractTests
     public async Task SetDailyReceiptLimit_Failed_InvalidInput()
     {
         await InitialBridgeContractAsync();
-        var time = DateTime.UtcNow.Date;
+        var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
         {
             var input = new List<DailyReceiptLimitInfo>();
             var result = await BridgeContractImplStub.SetDailyReceiptLimit.SendWithExceptionAsync(new SetDailyReceiptLimitInput
@@ -244,7 +245,7 @@ public partial class BridgeContractTests
             result.TransactionResult.Error.ShouldContain("Invalid input daily receipt limit info.");
         }
         {
-            var time1 = DateTime.UtcNow;
+            var time1 = TimestampHelper.GetUtcNow().ToDateTime();
             var input = new List<DailyReceiptLimitInfo>
             {
                 new DailyReceiptLimitInfo
@@ -267,7 +268,7 @@ public partial class BridgeContractTests
     public async Task SetDailySwapLimit_Success()
     {
         await CreateSwapTestAsync();
-        var time = DateTime.UtcNow.Date;
+        var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
         var input = new List<DailySwapLimitInfo>
         {
             new DailySwapLimitInfo
@@ -316,7 +317,7 @@ public partial class BridgeContractTests
     public async Task SetDailySwapLimit_Success_Reset()
     {
         await SetDailySwapLimit_Success();
-        var time = DateTime.UtcNow.AddHours(2).Date;
+        var time = TimestampHelper.GetUtcNow().ToDateTime().AddHours(2).Date;
         var input = new List<DailySwapLimitInfo>
         {
             new DailySwapLimitInfo
@@ -350,7 +351,7 @@ public partial class BridgeContractTests
     public async Task SetDailySwapLimit_Failed_NoPermission()
     {
         await InitialBridgeContractAsync();
-        var time = DateTime.UtcNow.Date;
+        var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
         var input = new List<DailySwapLimitInfo>
         {
             new DailySwapLimitInfo
@@ -371,7 +372,7 @@ public partial class BridgeContractTests
     public async Task SetDailySwapLimit_Failed_InvalidInput()
     {
         await InitialBridgeContractAsync();
-        var time = DateTime.UtcNow.Date;
+        var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
         {
             var input = new List<DailySwapLimitInfo>();
             var result = await BridgeContractImplStub.SetDailySwapLimit.SendWithExceptionAsync(new SetDailySwapLimitInput
@@ -412,7 +413,7 @@ public partial class BridgeContractTests
             result.TransactionResult.Error.ShouldContain("Invalid input daily swap limit info.");
         }
         {
-            var time1 = DateTime.UtcNow;
+            var time1 = TimestampHelper.GetUtcNow().ToDateTime();
             var input = new List<DailySwapLimitInfo>
             {
                 new DailySwapLimitInfo
@@ -434,7 +435,7 @@ public partial class BridgeContractTests
     public async Task ConfigReceiptTokenBucket_Success()
     {
         await InitialBridgeContractAsync();
-        var time = DateTime.UtcNow;
+        var time = TimestampHelper.GetUtcNow().ToDateTime();
         var input = new List<ReceiptTokenBucketConfig>()
         {
             new ReceiptTokenBucketConfig
@@ -565,7 +566,7 @@ public partial class BridgeContractTests
     public async Task ConfigReceiptTokenBucket_Success_Reset()
     {
         await ConfigReceiptTokenBucket_Success();
-        var time = DateTime.UtcNow;
+        var time = TimestampHelper.GetUtcNow().ToDateTime();
         var input = new List<ReceiptTokenBucketConfig>()
         {
             new ReceiptTokenBucketConfig
@@ -612,7 +613,7 @@ public partial class BridgeContractTests
     public async Task ConfigReceiptTokenBucket_Failed_NoPermission()
     {
         await InitialBridgeContractAsync();
-        var time = DateTime.UtcNow;
+        var time = TimestampHelper.GetUtcNow().ToDateTime();
         var input = new List<ReceiptTokenBucketConfig>()
         {
             new ReceiptTokenBucketConfig
@@ -636,7 +637,7 @@ public partial class BridgeContractTests
     public async Task ConfigReceiptTokenBucket_Failed_InvalidInput()
     {
         await InitialBridgeContractAsync();
-        var time = DateTime.UtcNow.Date;
+        var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
         {
             var input = new List<ReceiptTokenBucketConfig>();
             var result = await BridgeContractImplStub.ConfigReceiptTokenBucket.SendWithExceptionAsync(new ConfigReceiptTokenBucketInput
@@ -721,7 +722,7 @@ public partial class BridgeContractTests
     public async Task ConfigSwapTokenBucket_Success()
     {
         await CreateSwapTestAsync();
-        var time = DateTime.UtcNow;
+        var time = TimestampHelper.GetUtcNow().ToDateTime();
         var input = new List<SwapTokenBucketConfig>()
         {
             new SwapTokenBucketConfig
@@ -782,7 +783,7 @@ public partial class BridgeContractTests
     public async Task ConfigSwapTokenBucket_Success_Reset()
     {
         await ConfigSwapTokenBucket_Success();
-        var time = DateTime.UtcNow;
+        var time = TimestampHelper.GetUtcNow().ToDateTime();
         var input = new List<SwapTokenBucketConfig>()
         {
             new SwapTokenBucketConfig
@@ -842,7 +843,7 @@ public partial class BridgeContractTests
     public async Task ConfigSwapTokenBucket_Failed_NoPermission()
     {
         await InitialBridgeContractAsync();
-        var time = DateTime.UtcNow;
+        var time = TimestampHelper.GetUtcNow().ToDateTime();
         var input = new List<SwapTokenBucketConfig>()
         {
             new SwapTokenBucketConfig
@@ -864,7 +865,7 @@ public partial class BridgeContractTests
     public async Task ConfigSwapTokenBucket_Failed_InvalidInput()
     {
         await CreateSwapTestAsync();
-        var time = DateTime.UtcNow.Date;
+        var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
         {
             var input = new List<SwapTokenBucketConfig>();
             var result = await BridgeContractImplStub.ConfigSwapTokenBucket.SendWithExceptionAsync(new ConfigSwapTokenBucketInput
