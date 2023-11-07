@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AElf;
@@ -81,18 +82,70 @@ public partial class BridgeContractTests
             await CommitAndRevealAsync(queryId, _swapHashOfUsdt, "Ploygon", "USDT", 5, 5);
         }
     }
+    
+    private async Task<DateTime> SetSwapLimit()
+    {
+        var time = DateTime.UtcNow.Date;
+        var input = new List<DailySwapLimitInfo>
+        {
+            new DailySwapLimitInfo
+            {
+                SwapId = _swapHashOfElf,
+                DefaultTokenAmount = 10_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            },
+            new DailySwapLimitInfo
+            {
+                SwapId = _swapHashOfUsdt,
+                DefaultTokenAmount = 5_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            }
+        };
+
+        await BridgeContractImplStub.SetDailySwapLimit.SendAsync(new SetDailySwapLimitInput
+        {
+            DailySwapLimitInfos = { input }
+        });
+
+        var input1 = new List<SwapTokenBucketConfig>()
+        {
+            new SwapTokenBucketConfig
+            {
+                SwapId = _swapHashOfElf,
+                IsEnable = true,
+                TokenCapacity = 5_0000_00000000,
+                Rate = 1_00000000
+            },
+            new SwapTokenBucketConfig
+            {
+                SwapId = _swapHashOfUsdt,
+                IsEnable = true,
+                TokenCapacity = 2_0000_00000000,
+                Rate = 100_00000000
+            }
+        };
+        await BridgeContractImplStub.ConfigSwapTokenBucket.SendAsync(new ConfigSwapTokenBucketInput
+        {
+            SwapTokenBucketConfigs = { input1 }
+        });
+        return time;
+    }
 
     [Fact]
     public async Task ToAElfPipelineTest()
     {
         await CreateSwapTestAsync();
         await OracleQueryCommitAndReveal();
+        var time = await SetSwapLimit();
+
         var bridgeBalance = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
         {
             Symbol = "ELF",
             Owner = BridgeContractAddress
         });
         {
+            var swapTime = DateTime.UtcNow;
+            blockTimeProvider.SetBlockTime(Timestamp.FromDateTime(swapTime));
             var executionResult = await ReceiverBridgeContractStubs.First().SwapToken.SendAsync(new SwapTokenInput
             {
                 OriginAmount = SampleSwapInfo.SwapInfos[0].OriginAmount,
@@ -103,6 +156,23 @@ public partial class BridgeContractTests
                 .First(l => l.Name == nameof(TokenSwapped)).NonIndexed);
             log.FromChainId.ShouldBe("Ethereum");
             await CheckBalanceAsync(Receivers.First().Address, "ELF", 10000000L);
+            {
+                var log1 = SwapLimitChanged.Parser.ParseFrom(executionResult.TransactionResult.Logs
+                    .FirstOrDefault(l => l.Name == nameof(SwapLimitChanged))?.NonIndexed);
+                log1.Symbol.ShouldBe("ELF");
+                log1.FromChainId.ShouldBe("Ethereum");
+                log1.CurrentSwapDailyLimitAmount.ShouldBe(10_0000_00000000 - 10000000);
+                log1.CurrentSwapBucketTokenAmount.ShouldBe(5_0000_00000000 - 10000000);
+                log1.SwapDailyLimitRefreshTime.ShouldBe(Timestamp.FromDateTime(time.Date));
+                log1.SwapBucketUpdateTime.ShouldBe(Timestamp.FromDateTime(swapTime));
+            }
+            {
+                var dailyLimit = await BridgeContractImplStub.GetDailySwapLimit.CallAsync(_swapHashOfElf);
+                dailyLimit.TokenAmount.ShouldBe(10_0000_00000000 - 10000000);
+                blockTimeProvider.SetBlockTime(Timestamp.FromDateTime(swapTime.AddMinutes(1)));
+                var bucket = await BridgeContractImplStub.GetCurrentSwapTokenBucketState.CallAsync(_swapHashOfElf);
+                bucket.CurrentTokenAmount.ShouldBe(5_0000_00000000); 
+            }
             var swapAmount = await ReceiverBridgeContractStubs.First().GetSwapAmounts.CallAsync(new GetSwapAmountsInput
             {
                 SwapId = _swapHashOfElf,
@@ -119,7 +189,7 @@ public partial class BridgeContractTests
             result.SwappedTimes.ShouldBe(1);
             result.SwappedAmount.ShouldBe(10000000L);
             result.DepositAmount.ShouldBe(10_0000_00000000);
-            await CheckBalanceAsync(BridgeContractAddress,"ELF", bridgeBalance.Balance - 10000000L);
+            await CheckBalanceAsync(BridgeContractAddress, "ELF", bridgeBalance.Balance - 10000000L);
         }
         {
             // Swap
@@ -143,14 +213,6 @@ public partial class BridgeContractTests
         }
         {
             // Swap
-            var executionResult = await BridgeContractStub.SwapToken.SendWithExceptionAsync(new SwapTokenInput
-            {
-                ReceiverAddress = Receivers[4].Address,
-                OriginAmount = (long.Parse(SampleSwapInfo.SwapInfos[4].OriginAmount) * 10).ToString(),
-                ReceiptId = SampleSwapInfo.SwapInfos[4].ReceiptId,
-                SwapId = _swapHashOfElf
-            });
-            executionResult.TransactionResult.Error.ShouldContain("Waiting for admin authorization");
             await BridgeContractStub.SwapToken.SendAsync(new SwapTokenInput
             {
                 ReceiverAddress = Receivers[4].Address,
@@ -234,16 +296,6 @@ public partial class BridgeContractTests
         }
         {
             // Swap
-            {
-                var executionResult = await ReceiverBridgeContractStubs[4].SwapToken.SendWithExceptionAsync(
-                    new SwapTokenInput
-                    {
-                        OriginAmount = (long.Parse(SampleSwapInfo.SwapInfos[9].OriginAmount)*10).ToString(),
-                        ReceiptId = SampleSwapInfo.SwapInfos[9].ReceiptId,
-                        SwapId = _swapHashOfUsdt
-                    });
-                executionResult.TransactionResult.Error.ShouldContain("Waiting for admin authorization");
-            }
             await ReceiverBridgeContractStubs[4].SwapToken.SendAsync(new SwapTokenInput
             {
                 OriginAmount = SampleSwapInfo.SwapInfos[9].OriginAmount,
@@ -722,7 +774,47 @@ public partial class BridgeContractTests
             await CommitAndReveal_IncorrectReceiptIndex(queryId, _swapHashOfElf, "Ethereum", "ELF", 2, 3);
         }
     }
-    
+
+    [Fact]
+    public async Task ToAElfTest_ExceedDailyLimit()
+    {
+        await CreateSwapTestAsync();
+        {
+            // Query
+            var queryId = await MakeQueryAsync(_swapHashOfElf.ToString(), 1, 3);
+
+            // Commit
+            await CommitAndRevealAsync(queryId, _swapHashOfElf, "Ethereum", "ELF", 1, 3);
+        }
+        {
+            // Query
+            var queryId = await MakeQueryAsync(_swapHashOfElf.ToString(), 2, 3);
+
+            // Commit
+            await CommitAndReveal_IncorrectReceiptIndex(queryId, _swapHashOfElf, "Ethereum", "ELF", 2, 3);
+        }
+    }
+
+    [Fact]
+    public async Task ToAElfTest_ExceedBucketLimit()
+    {
+        await CreateSwapTestAsync();
+        {
+            // Query
+            var queryId = await MakeQueryAsync(_swapHashOfElf.ToString(), 1, 3);
+
+            // Commit
+            await CommitAndRevealAsync(queryId, _swapHashOfElf, "Ethereum", "ELF", 1, 3);
+        }
+        {
+            // Query
+            var queryId = await MakeQueryAsync(_swapHashOfElf.ToString(), 2, 3);
+
+            // Commit
+            await CommitAndReveal_IncorrectReceiptIndex(queryId, _swapHashOfElf, "Ethereum", "ELF", 2, 3);
+        }
+    }
+
     [Fact]
     public async Task ToAElfTest_DuplicateCommit()
     {
@@ -1160,7 +1252,7 @@ public partial class BridgeContractTests
             QueryInfo = new QueryInfo
             {
                 Title = $"record_receipts_{swapId}",
-                Options = {$"{from}", $"{end}"}
+                Options = { $"{from}", $"{end}" }
             },
             AggregatorContractAddress = StringAggregatorContractAddress,
             CallbackInfo = new CallbackInfo
@@ -1169,7 +1261,7 @@ public partial class BridgeContractTests
             },
             DesignatedNodeList = new AddressList
             {
-                Value = {_regimentAddress}
+                Value = { _regimentAddress }
             }
         };
         var executionResult = await TransmittersOracleContractStubs.First().Query.SendAsync(queryInput);
@@ -1189,8 +1281,8 @@ public partial class BridgeContractTests
             var receiptId = $"{tokenId}.{index}";
             receiptHashMap.Value.Add(receiptId,
                 chainId == "Ploygon"
-                    ? SampleSwapInfo.SwapInfos[(int) index + 4].ReceiptHash.ToHex()
-                    : SampleSwapInfo.SwapInfos[(int) index - 1].ReceiptHash.ToHex());
+                    ? SampleSwapInfo.SwapInfos[(int)index + 4].ReceiptHash.ToHex()
+                    : SampleSwapInfo.SwapInfos[(int)index - 1].ReceiptHash.ToHex());
         }
 
         var salt = HashHelper.ComputeFrom("Salt");
@@ -1233,8 +1325,8 @@ public partial class BridgeContractTests
             var receiptId = $"{tokenId}.{index}";
             receiptHashMap.Value.Add(receiptId,
                 chainId == "Ploygon"
-                    ? SampleSwapInfo.SwapInfos[(int) index + 4].ReceiptHash.ToHex()
-                    : SampleSwapInfo.SwapInfos[(int) index - 1].ReceiptHash.ToHex());
+                    ? SampleSwapInfo.SwapInfos[(int)index + 4].ReceiptHash.ToHex()
+                    : SampleSwapInfo.SwapInfos[(int)index - 1].ReceiptHash.ToHex());
         }
 
         var salt = HashHelper.ComputeFrom("Salt");
@@ -1285,8 +1377,8 @@ public partial class BridgeContractTests
             var receiptId = $"{tokenId}.{index}";
             receiptHashMap.Value.Add(receiptId,
                 chainId == "Ploygon"
-                    ? SampleSwapInfo.SwapInfos[(int) index + 4].ReceiptHash.ToHex()
-                    : SampleSwapInfo.SwapInfos[(int) index - 1].ReceiptHash.ToHex());
+                    ? SampleSwapInfo.SwapInfos[(int)index + 4].ReceiptHash.ToHex()
+                    : SampleSwapInfo.SwapInfos[(int)index - 1].ReceiptHash.ToHex());
         }
 
         var salt = HashHelper.ComputeFrom("Salt");
@@ -1323,7 +1415,7 @@ public partial class BridgeContractTests
         });
         executionResult.TransactionResult.Error.ShouldContain("Incorrect receipt index.");
     }
-    
+
     private async Task Commit_Duplicate(Hash queryId, Hash swapId, string chainId, string symbol,
         long from, long end)
     {
@@ -1337,8 +1429,8 @@ public partial class BridgeContractTests
             var receiptId = $"{tokenId}.{index}";
             receiptHashMap.Value.Add(receiptId,
                 chainId == "Ploygon"
-                    ? SampleSwapInfo.SwapInfos[(int) index + 4].ReceiptHash.ToHex()
-                    : SampleSwapInfo.SwapInfos[(int) index - 1].ReceiptHash.ToHex());
+                    ? SampleSwapInfo.SwapInfos[(int)index + 4].ReceiptHash.ToHex()
+                    : SampleSwapInfo.SwapInfos[(int)index - 1].ReceiptHash.ToHex());
         }
 
         var salt = HashHelper.ComputeFrom("Salt");
@@ -1368,8 +1460,8 @@ public partial class BridgeContractTests
             var receiptId = $"{tokenId}.{index}";
             receiptHashMap.Value.Add(receiptId,
                 chainId == "Ploygon"
-                    ? SampleSwapInfo.SwapInfos[(int) index + 4].ReceiptHash.ToHex()
-                    : SampleSwapInfo.SwapInfos[(int) index - 1].ReceiptHash.ToHex());
+                    ? SampleSwapInfo.SwapInfos[(int)index + 4].ReceiptHash.ToHex()
+                    : SampleSwapInfo.SwapInfos[(int)index - 1].ReceiptHash.ToHex());
         }
 
         var salt = HashHelper.ComputeFrom("Salt");
@@ -1420,8 +1512,8 @@ public partial class BridgeContractTests
             var receiptId = $"{tokenId}.{index}";
             receiptHashMap.Value.Add(receiptId,
                 chainId == "Ploygon"
-                    ? SampleSwapInfo.SwapInfos[(int) index + 4].ReceiptHash.ToHex()
-                    : SampleSwapInfo.SwapInfos[(int) index - 1].ReceiptHash.ToHex());
+                    ? SampleSwapInfo.SwapInfos[(int)index + 4].ReceiptHash.ToHex()
+                    : SampleSwapInfo.SwapInfos[(int)index - 1].ReceiptHash.ToHex());
         }
 
         var salt = HashHelper.ComputeFrom("Salt");

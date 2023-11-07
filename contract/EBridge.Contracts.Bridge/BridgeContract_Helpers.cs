@@ -277,15 +277,15 @@ namespace EBridge.Contracts.Bridge
             var defaultRefreshTime = State.DailyLimitRefreshTime.Value == 0
                 ? DefaultDailyRefreshTime
                 : State.DailyLimitRefreshTime.Value;
-            var count = (lastRefreshTime - Context.CurrentBlockTime).Seconds.Div(defaultRefreshTime);
+            var count = (Context.CurrentBlockTime - lastRefreshTime).Seconds.Div(defaultRefreshTime);
             if (count > 0)
             {
-                lastRefreshTime.AddSeconds(defaultRefreshTime * count);
+                lastRefreshTime = lastRefreshTime.AddSeconds(defaultRefreshTime * count);
                 dailyLimit.RefreshTime = lastRefreshTime;
                 dailyLimit.TokenAmount = dailyLimit.DefaultTokenAmount;
             }
 
-            Assert(amount > dailyLimit.TokenAmount,
+            Assert(amount <= dailyLimit.TokenAmount,
                 $"Amount exceeds daily limit amount. Current daily limit is {dailyLimit.TokenAmount}");
             dailyLimit.TokenAmount = dailyLimit.TokenAmount.Sub(amount);
             return dailyLimit;
@@ -294,7 +294,7 @@ namespace EBridge.Contracts.Bridge
         private TokenBucket AssertTokenBucketAmount(TokenBucket bucket, long amount)
         {
             if (bucket == null || !bucket.IsEnable)
-            {
+            { 
                 return null;
             }
 
@@ -312,7 +312,7 @@ namespace EBridge.Contracts.Bridge
             {
                 var minWaitInSeconds = amount.Sub(bucket.CurrentTokenAmount).Add(bucket.Rate.Sub(1)).Div(bucket.Rate);
                 throw new AssertionException(
-                    $"Amount exceeds current token amount, the minimum wait time is {minWaitInSeconds}");
+                    $"Amount exceeds current token amount, the minimum wait time is {minWaitInSeconds}s");
             }
 
             bucket.CurrentTokenAmount = bucket.CurrentTokenAmount.Sub(amount);

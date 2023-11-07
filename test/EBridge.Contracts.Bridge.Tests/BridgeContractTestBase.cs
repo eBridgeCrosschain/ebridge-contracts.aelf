@@ -119,6 +119,9 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
     internal Hash _swapOfElfSpaceId;
     internal Hash _swapOfUsdtSpaceId;
     
+    protected IBlockTimeProvider blockTimeProvider =>
+        Application.ServiceProvider.GetRequiredService<IBlockTimeProvider>();
+    
     public BridgeContractTestBase()
     {
         DefaultSenderAddress = SampleAccount.Accounts.First().Address;

@@ -29,11 +29,17 @@ service BridgeContractImpl {
   rpc ConfigReceiptTokenBucket (ConfigReceiptTokenBucketInput) returns (google.protobuf.Empty) {}
   rpc ConfigSwapTokenBucket (ConfigSwapTokenBucketInput) returns (google.protobuf.Empty) {}
   
+  rpc SetDailyLimitRefreshTime (google.protobuf.Int64Value) returns (google.protobuf.Empty){}
+  
   rpc GetDailyReceiptLimit (GetDailyReceiptLimitInput) returns (DailyLimitTokenInfo) {
     option (aelf.is_view) = true;
   }
 
   rpc GetDailySwapLimit (aelf.Hash) returns (DailyLimitTokenInfo) {
+    option (aelf.is_view) = true;
+  }
+  
+  rpc GetDailyLimitRefreshTime (google.protobuf.Empty) returns (google.protobuf.Int64Value){
     option (aelf.is_view) = true;
   }
   
@@ -76,14 +82,14 @@ message SetDailyReceiptLimitInput{
 
 message DailyReceiptLimitInfo{
   string symbol = 1;
-  string chain = 2;
+  string target_chain = 2;
   google.protobuf.Timestamp start_time = 3;
   int64 default_token_amount = 4;
 }
 
 message GetDailyReceiptLimitInput{
   string symbol = 1;
-  string chain = 2;
+  string target_chain = 2;
 }
 
 message SetDailySwapLimitInput{
@@ -102,7 +108,7 @@ message ConfigReceiptTokenBucketInput{
 
 message ReceiptTokenBucketConfig {
   string symbol = 1;
-  string chain = 2;
+  string target_chain = 2;
   bool isEnable = 3;
   int64 token_capacity = 4;
   int64 rate = 5;
@@ -110,12 +116,12 @@ message ReceiptTokenBucketConfig {
 
 message GetCurrentReceiptTokenBucketStateInput{
   string symbol = 1; 
-  string chain = 2;
+  string target_chain = 2;
 }
 
 message GetReceiptMinWaitTimeInSecondsInput{
   string symbol = 1;
-  string chain = 2;
+  string target_chain = 2;
   int64 token_amount = 3;
 }
 
@@ -158,6 +164,7 @@ message ReceiptTokenBucketSet{
   int64 receipt_capacity = 3;
   int64 receipt_refill_rate = 4;
   bool receipt_bucket_isEnable = 5;
+  google.protobuf.Timestamp receipt_bucket_update_time = 6;
 }
 
 message SwapTokenBucketSet{
@@ -167,6 +174,7 @@ message SwapTokenBucketSet{
   int64 swap_capacity = 3;
   int64 swap_refill_rate = 4;
   bool swap_bucket_isEnable = 5;
+  google.protobuf.Timestamp swap_bucket_update_time = 6;
 }
 
 message ReceiptLimitChanged {
@@ -182,7 +190,7 @@ message ReceiptLimitChanged {
 message SwapLimitChanged {
   option (aelf.is_event) = true;
   string symbol = 1;
-  string targetChainId = 2;
+  string fromChainId = 2;
   int64 current_swap_daily_limit_amount = 3;
   google.protobuf.Timestamp swap_daily_limit_refresh_time = 4;
   int64 current_swap_bucket_token_amount = 5;
