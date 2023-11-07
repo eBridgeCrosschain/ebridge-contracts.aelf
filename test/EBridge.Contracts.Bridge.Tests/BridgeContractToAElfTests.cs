@@ -87,15 +87,15 @@ public partial class BridgeContractTests
     private async Task<DateTime> SetSwapLimit()
     {
         var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
-        var input = new List<DailySwapLimitInfo>
+        var input = new List<SwapDailyLimitInfo>
         {
-            new DailySwapLimitInfo
+            new SwapDailyLimitInfo
             {
                 SwapId = _swapHashOfElf,
                 DefaultTokenAmount = 10_0000_00000000,
                 StartTime = Timestamp.FromDateTime(time)
             },
-            new DailySwapLimitInfo
+            new SwapDailyLimitInfo
             {
                 SwapId = _swapHashOfUsdt,
                 DefaultTokenAmount = 5_0000_00000000,
@@ -103,9 +103,9 @@ public partial class BridgeContractTests
             }
         };
 
-        await BridgeContractImplStub.SetDailySwapLimit.SendAsync(new SetDailySwapLimitInput
+        await BridgeContractImplStub.SetSwapDailyLimit.SendAsync(new SetSwapDailyLimitInput
         {
-            DailySwapLimitInfos = { input }
+            SwapDailyLimitInfos = { input }
         });
 
         var input1 = new List<SwapTokenBucketConfig>()
@@ -168,7 +168,7 @@ public partial class BridgeContractTests
                 log1.SwapBucketUpdateTime.ShouldBe(Timestamp.FromDateTime(swapTime.AddHours(1)));
             }
             {
-                var dailyLimit = await BridgeContractImplStub.GetDailySwapLimit.CallAsync(_swapHashOfElf);
+                var dailyLimit = await BridgeContractImplStub.GetSwapDailyLimit.CallAsync(_swapHashOfElf);
                 dailyLimit.TokenAmount.ShouldBe(10_0000_00000000 - 10000000);
                 blockTimeProvider.SetBlockTime(Timestamp.FromDateTime(swapTime.AddHours(1).AddMinutes(1)));
                 var bucket = await BridgeContractImplStub.GetCurrentSwapTokenBucketState.CallAsync(_swapHashOfElf);

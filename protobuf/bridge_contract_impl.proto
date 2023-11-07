@@ -24,18 +24,18 @@ service BridgeContractImpl {
   option (aelf.base) = "receipt_maker.proto";
   option (aelf.base) = "bridge_contract.proto";
 
-  rpc SetDailyReceiptLimit (SetDailyReceiptLimitInput) returns (google.protobuf.Empty) {}
-  rpc SetDailySwapLimit (SetDailySwapLimitInput) returns (google.protobuf.Empty) {}
+  rpc SetReceiptDailyLimit (SetReceiptDailyLimitInput) returns (google.protobuf.Empty) {}
+  rpc SetSwapDailyLimit (SetSwapDailyLimitInput) returns (google.protobuf.Empty) {}
   rpc ConfigReceiptTokenBucket (ConfigReceiptTokenBucketInput) returns (google.protobuf.Empty) {}
   rpc ConfigSwapTokenBucket (ConfigSwapTokenBucketInput) returns (google.protobuf.Empty) {}
-  
+  // for test.
   rpc SetDailyLimitRefreshTime (google.protobuf.Int64Value) returns (google.protobuf.Empty){}
   
-  rpc GetDailyReceiptLimit (GetDailyReceiptLimitInput) returns (DailyLimitTokenInfo) {
+  rpc GetReceiptDailyLimit (GetReceiptDailyLimitInput) returns (DailyLimitTokenInfo) {
     option (aelf.is_view) = true;
   }
 
-  rpc GetDailySwapLimit (aelf.Hash) returns (DailyLimitTokenInfo) {
+  rpc GetSwapDailyLimit (aelf.Hash) returns (DailyLimitTokenInfo) {
     option (aelf.is_view) = true;
   }
   
@@ -76,27 +76,27 @@ message TokenBucket {
 }
 
 // Input
-message SetDailyReceiptLimitInput{
-  repeated DailyReceiptLimitInfo daily_receipt_limit_infos = 1;
+message SetReceiptDailyLimitInput{
+  repeated ReceiptDailyLimitInfo receipt_daily_limit_infos = 1;
 }
 
-message DailyReceiptLimitInfo{
+message ReceiptDailyLimitInfo{
   string symbol = 1;
   string target_chain = 2;
   google.protobuf.Timestamp start_time = 3;
   int64 default_token_amount = 4;
 }
 
-message GetDailyReceiptLimitInput{
+message GetReceiptDailyLimitInput{
   string symbol = 1;
   string target_chain = 2;
 }
 
-message SetDailySwapLimitInput{
-  repeated DailySwapLimitInfo daily_swap_limit_infos = 1;
+message SetSwapDailyLimitInput{
+  repeated SwapDailyLimitInfo swap_daily_limit_infos = 1;
 }
 
-message DailySwapLimitInfo{
+message SwapDailyLimitInfo{
   aelf.Hash swap_id = 1;
   google.protobuf.Timestamp start_time = 2;
   int64 default_token_amount = 3;
@@ -141,19 +141,19 @@ message GetSwapMinWaitTimeInSecondsInput{
   int64 token_amount = 2;
 }
 
-message DailyReceiptLimitSet{
+message ReceiptDailyLimitSet{
   option (aelf.is_event) = true;
   string symbol = 1;
   string target_chain_id = 2;
-  int64 daily_receipt_limit = 3;
+  int64 receipt_daily_limit = 3;
   google.protobuf.Timestamp receipt_refresh_time = 4;
 }
 
-message DailySwapLimitSet{
+message SwapDailyLimitSet{
   option (aelf.is_event) = true;
   string symbol = 1;
   string from_chain_id = 2;
-  int64 daily_swap_limit = 3;
+  int64 swap_daily_limit = 3;
   google.protobuf.Timestamp swap_refresh_time = 4;
 }
 
