@@ -148,7 +148,7 @@ public partial class BridgeContract
         Context.Fire(new SwapLimitChanged
         {
             Symbol = swapInfo.SwapTargetToken?.Symbol,
-            TargetChainId = swapInfo.SwapTargetToken?.FromChainId,
+            FromChainId = swapInfo.SwapTargetToken?.FromChainId,
             CurrentSwapDailyLimitAmount = dailyLimit?.TokenAmount ?? long.MaxValue,
             SwapDailyLimitRefreshTime = dailyLimit?.RefreshTime,
             CurrentSwapBucketTokenAmount = currentBucket?.CurrentTokenAmount ?? long.MaxValue,
