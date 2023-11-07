@@ -147,7 +147,7 @@ public partial class BridgeContract
 
     private void AssertReceiptAmount(string symbol, string targetChainId, long amount)
     {
-        var dailyLimit = State.DailyReceiptLimit[symbol][targetChainId];
+        var dailyLimit = State.ReceiptDailyLimit[symbol][targetChainId];
         dailyLimit = AssertDailyLimit(dailyLimit, amount);
         var currentBucket = State.ReceiptTokenBucketInfo[symbol][targetChainId];
         currentBucket = AssertTokenBucketAmount(currentBucket, amount);
