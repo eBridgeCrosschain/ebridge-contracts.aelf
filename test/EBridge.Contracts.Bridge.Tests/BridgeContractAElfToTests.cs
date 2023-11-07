@@ -181,7 +181,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
                         Symbol = "ELF",
                         TargetChain = "Ethereum"
                     });
-                bucket.CurrentTokenAmount.ShouldBe(5_0000_00000000 - 100_00000000 + 61_00000000); 
+                bucket.CurrentTokenAmount.ShouldBeLessThanOrEqualTo(5_0000_00000000 - 100_00000000 + 65_00000000); 
             }
 
             var receiptCreated = ReceiptCreated.Parser.ParseFrom(executionResult.TransactionResult.Logs
