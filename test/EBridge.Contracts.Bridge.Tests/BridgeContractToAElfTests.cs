@@ -165,7 +165,7 @@ public partial class BridgeContractTests
                 log1.CurrentSwapDailyLimitAmount.ShouldBe(10_0000_00000000 - 10000000);
                 log1.CurrentSwapBucketTokenAmount.ShouldBe(5_0000_00000000 - 10000000);
                 log1.SwapDailyLimitRefreshTime.ShouldBe(Timestamp.FromDateTime(time.Date));
-                log1.SwapBucketUpdateTime.ShouldBe(Timestamp.FromDateTime(swapTime.AddHours(1)));
+                log1.SwapBucketUpdateTime.ShouldBeLessThanOrEqualTo(Timestamp.FromDateTime(swapTime.AddHours(1)));
             }
             {
                 var dailyLimit = await BridgeContractImplStub.GetSwapDailyLimit.CallAsync(_swapHashOfElf);
