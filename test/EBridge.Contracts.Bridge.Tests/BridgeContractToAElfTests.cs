@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using AElf;
 using AElf.Contracts.MultiToken;
+using AElf.Kernel;
 using AElf.Types;
 using EBridge.Contracts.Oracle;
 using Google.Protobuf;
@@ -85,7 +86,7 @@ public partial class BridgeContractTests
     
     private async Task<DateTime> SetSwapLimit()
     {
-        var time = DateTime.UtcNow.Date;
+        var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
         var input = new List<DailySwapLimitInfo>
         {
             new DailySwapLimitInfo
@@ -144,8 +145,8 @@ public partial class BridgeContractTests
             Owner = BridgeContractAddress
         });
         {
-            var swapTime = DateTime.UtcNow;
-            blockTimeProvider.SetBlockTime(Timestamp.FromDateTime(swapTime));
+            var swapTime = TimestampHelper.GetUtcNow().ToDateTime();
+            blockTimeProvider.SetBlockTime(Timestamp.FromDateTime(swapTime.AddHours(1)));
             var executionResult = await ReceiverBridgeContractStubs.First().SwapToken.SendAsync(new SwapTokenInput
             {
                 OriginAmount = SampleSwapInfo.SwapInfos[0].OriginAmount,
@@ -164,12 +165,12 @@ public partial class BridgeContractTests
                 log1.CurrentSwapDailyLimitAmount.ShouldBe(10_0000_00000000 - 10000000);
                 log1.CurrentSwapBucketTokenAmount.ShouldBe(5_0000_00000000 - 10000000);
                 log1.SwapDailyLimitRefreshTime.ShouldBe(Timestamp.FromDateTime(time.Date));
-                log1.SwapBucketUpdateTime.ShouldBe(Timestamp.FromDateTime(swapTime));
+                log1.SwapBucketUpdateTime.ShouldBe(Timestamp.FromDateTime(swapTime.AddHours(1)));
             }
             {
                 var dailyLimit = await BridgeContractImplStub.GetDailySwapLimit.CallAsync(_swapHashOfElf);
                 dailyLimit.TokenAmount.ShouldBe(10_0000_00000000 - 10000000);
-                blockTimeProvider.SetBlockTime(Timestamp.FromDateTime(swapTime.AddMinutes(1)));
+                blockTimeProvider.SetBlockTime(Timestamp.FromDateTime(swapTime.AddHours(1).AddMinutes(1)));
                 var bucket = await BridgeContractImplStub.GetCurrentSwapTokenBucketState.CallAsync(_swapHashOfElf);
                 bucket.CurrentTokenAmount.ShouldBe(5_0000_00000000); 
             }

@@ -6,6 +6,7 @@ using AElf;
 using AElf.Contracts.MultiToken;
 using AElf.ContractTestBase.ContractTestKit;
 using AElf.CSharp.Core;
+using AElf.Kernel;
 using AElf.Types;
 using EBridge.Contracts.Bridge.Helpers;
 using EBridge.Contracts.Report;
@@ -93,7 +94,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
 
     private async Task<DateTime> SetLimit()
     {
-        var time = DateTime.UtcNow.Date;
+        var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
         var input = new List<DailyReceiptLimitInfo>
         {
             new DailyReceiptLimitInfo
@@ -148,7 +149,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
     {
         await InitialAElfTo();
         var time = await SetLimit();
-        var creatReceiptTime = DateTime.UtcNow; 
+        var creatReceiptTime = TimestampHelper.GetUtcNow().ToDateTime();; 
         await InitialSetGas();
         {
             var balance = (await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
@@ -157,7 +158,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
                 Owner = DefaultSenderAddress
             })).Balance;
 
-            blockTimeProvider.SetBlockTime(Timestamp.FromDateTime(creatReceiptTime));
+            blockTimeProvider.SetBlockTime(creatReceiptTime.AddMilliseconds(5).ToTimestamp());
             var executionResult = await BridgeContractStub.CreateReceipt.SendAsync(new CreateReceiptInput
             {
                 Symbol = "ELF",
@@ -173,7 +174,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
                         TargetChain = "Ethereum"
                     });
                 dailyLimit.TokenAmount.ShouldBe(10_0000_00000000 - 100_00000000);
-                blockTimeProvider.SetBlockTime(Timestamp.FromDateTime(creatReceiptTime.AddMinutes(1).AddSeconds(1)));
+                blockTimeProvider.SetBlockTime(creatReceiptTime.AddMilliseconds(5).AddMinutes(1).AddSeconds(1).ToTimestamp());
                 var bucket = await BridgeContractImplStub.GetCurrentReceiptTokenBucketState.CallAsync(
                     new GetCurrentReceiptTokenBucketStateInput
                     {
@@ -375,7 +376,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
     public async Task AElfToPipeline_DailyLimit_Test()
     {
         await InitialAElfTo();
-        var time = DateTime.UtcNow.Date;
+        var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
         var input = new List<DailyReceiptLimitInfo>
         {
             new DailyReceiptLimitInfo
@@ -399,7 +400,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
             DailyReceiptLimitInfos = { input }
         });
         
-        var creatReceiptTime = DateTime.UtcNow; 
+        var creatReceiptTime = TimestampHelper.GetUtcNow().ToDateTime(); 
         await InitialSetGas();
         {
             blockTimeProvider.SetBlockTime(Timestamp.FromDateTime(creatReceiptTime));
@@ -478,7 +479,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
     public async Task AElfToPipeline_BucketLimit_Test()
     {
         await InitialAElfTo();
-        var time = DateTime.UtcNow.Date;
+        var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
         var input1 = new List<ReceiptTokenBucketConfig>()
         {
             new ReceiptTokenBucketConfig
@@ -503,7 +504,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
             ReceiptTokenBucketConfigs = { input1 }
         });
         
-        var creatReceiptTime = DateTime.UtcNow; 
+        var creatReceiptTime = TimestampHelper.GetUtcNow().ToDateTime(); 
         blockTimeProvider.SetBlockTime(Timestamp.FromDateTime(creatReceiptTime));
         var result = await BridgeContractStub.CreateReceipt.SendWithExceptionAsync(new CreateReceiptInput
         {
