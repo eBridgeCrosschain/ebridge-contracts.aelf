@@ -171,13 +171,13 @@ public partial class BridgeContractState : ContractState
     /// Daily receipt limit per token.Refresh daily at 0:00
     /// token symbol -> target chain -> { amount,refresh time }
     /// </summary>
-    public MappedState<string, string, DailyLimitTokenInfo> DailyReceiptLimit { get; set; }
+    public MappedState<string, string, DailyLimitTokenInfo> ReceiptDailyLimit { get; set; }
     
     /// <summary>
     /// Daily swap limit per token.Refresh daily at 0:00
     /// swap id -> { amount,refresh time }
     /// </summary>
-    public MappedState<Hash, DailyLimitTokenInfo> DailySwapLimit { get; set; }
+    public MappedState<Hash, DailyLimitTokenInfo> SwapDailyLimit { get; set; }
 
     /// <summary>
     /// token symbol -> target chain -> token bucket

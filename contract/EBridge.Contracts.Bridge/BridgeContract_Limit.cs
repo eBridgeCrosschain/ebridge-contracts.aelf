@@ -10,29 +10,29 @@ public partial class BridgeContract
 {
     #region DailyLimit
 
-    public override Empty SetDailyReceiptLimit(SetDailyReceiptLimitInput input)
+    public override Empty SetReceiptDailyLimit(SetReceiptDailyLimitInput input)
     {
         Assert(Context.Sender == State.Admin.Value, "No permission.");
-        Assert(input.DailyReceiptLimitInfos.Count > 0, "Invalid input.");
-        foreach (var dailyReceiptLimitInfo in input.DailyReceiptLimitInfos)
+        Assert(input.ReceiptDailyLimitInfos.Count > 0, "Invalid input.");
+        foreach (var receiptDailyLimitInfo in input.ReceiptDailyLimitInfos)
         {
             Assert(
-                dailyReceiptLimitInfo.DefaultTokenAmount > 0 &&
-                !string.IsNullOrEmpty(dailyReceiptLimitInfo.TargetChain) &&
-                !string.IsNullOrEmpty(dailyReceiptLimitInfo.Symbol) &&
-                dailyReceiptLimitInfo.StartTime.Seconds % DefaultDailyRefreshTime == 0,
+                receiptDailyLimitInfo.DefaultTokenAmount > 0 &&
+                !string.IsNullOrEmpty(receiptDailyLimitInfo.TargetChain) &&
+                !string.IsNullOrEmpty(receiptDailyLimitInfo.Symbol) &&
+                receiptDailyLimitInfo.StartTime.Seconds % DefaultDailyRefreshTime == 0,
                 "Invalid input daily receipt limit info.");
-            var symbol = dailyReceiptLimitInfo.Symbol;
-            var targetChain = dailyReceiptLimitInfo.TargetChain;
-            var dailyLimit = State.DailyReceiptLimit[symbol][targetChain] ?? new DailyLimitTokenInfo();
-            dailyLimit = SetDailyLimit(dailyLimit, dailyReceiptLimitInfo.DefaultTokenAmount,
-                dailyReceiptLimitInfo.StartTime);
-            State.DailyReceiptLimit[symbol][targetChain] = dailyLimit;
-            Context.Fire(new DailyReceiptLimitSet
+            var symbol = receiptDailyLimitInfo.Symbol;
+            var targetChain = receiptDailyLimitInfo.TargetChain;
+            var dailyLimit = State.ReceiptDailyLimit[symbol][targetChain] ?? new DailyLimitTokenInfo();
+            dailyLimit = SetDailyLimit(dailyLimit, receiptDailyLimitInfo.DefaultTokenAmount,
+                receiptDailyLimitInfo.StartTime);
+            State.ReceiptDailyLimit[symbol][targetChain] = dailyLimit;
+            Context.Fire(new ReceiptDailyLimitSet
             {
                 Symbol = symbol,
                 TargetChainId = targetChain,
-                DailyReceiptLimit = dailyLimit.DefaultTokenAmount,
+                ReceiptDailyLimit = dailyLimit.DefaultTokenAmount,
                 ReceiptRefreshTime = dailyLimit.RefreshTime
             });
         }
@@ -40,26 +40,26 @@ public partial class BridgeContract
         return new Empty();
     }
 
-    public override Empty SetDailySwapLimit(SetDailySwapLimitInput input)
+    public override Empty SetSwapDailyLimit(SetSwapDailyLimitInput input)
     {
         Assert(Context.Sender == State.Admin.Value, "No permission.");
-        Assert(input.DailySwapLimitInfos.Count > 0, "Invalid input.");
-        foreach (var dailySwapLimitInfo in input.DailySwapLimitInfos)
+        Assert(input.SwapDailyLimitInfos.Count > 0, "Invalid input.");
+        foreach (var swapDailyLimitInfo in input.SwapDailyLimitInfos)
         {
             Assert(
-                dailySwapLimitInfo.DefaultTokenAmount > 0 && dailySwapLimitInfo.SwapId != null &&
-                dailySwapLimitInfo.StartTime.Seconds % DefaultDailyRefreshTime == 0,
+                swapDailyLimitInfo.DefaultTokenAmount > 0 && swapDailyLimitInfo.SwapId != null &&
+                swapDailyLimitInfo.StartTime.Seconds % DefaultDailyRefreshTime == 0,
                 "Invalid input daily swap limit info.");
-            var swapInfo = State.SwapInfo[dailySwapLimitInfo.SwapId];
+            var swapInfo = State.SwapInfo[swapDailyLimitInfo.SwapId];
             Assert(swapInfo != null, "Invalid swap id.");
-            var dailyLimit = State.DailySwapLimit[dailySwapLimitInfo.SwapId] ?? new DailyLimitTokenInfo();
-            dailyLimit = SetDailyLimit(dailyLimit, dailySwapLimitInfo.DefaultTokenAmount, dailySwapLimitInfo.StartTime);
-            State.DailySwapLimit[dailySwapLimitInfo.SwapId] = dailyLimit;
-            Context.Fire(new DailySwapLimitSet
+            var dailyLimit = State.SwapDailyLimit[swapDailyLimitInfo.SwapId] ?? new DailyLimitTokenInfo();
+            dailyLimit = SetDailyLimit(dailyLimit, swapDailyLimitInfo.DefaultTokenAmount, swapDailyLimitInfo.StartTime);
+            State.SwapDailyLimit[swapDailyLimitInfo.SwapId] = dailyLimit;
+            Context.Fire(new SwapDailyLimitSet
             {
                 Symbol = swapInfo?.SwapTargetToken?.Symbol,
                 FromChainId = swapInfo?.SwapTargetToken?.FromChainId,
-                DailySwapLimit = dailyLimit.DefaultTokenAmount,
+                SwapDailyLimit = dailyLimit.DefaultTokenAmount,
                 SwapRefreshTime = dailyLimit.RefreshTime
             });
         }
@@ -89,14 +89,14 @@ public partial class BridgeContract
         return dailyLimit;
     }
 
-    public override DailyLimitTokenInfo GetDailyReceiptLimit(GetDailyReceiptLimitInput input)
+    public override DailyLimitTokenInfo GetReceiptDailyLimit(GetReceiptDailyLimitInput input)
     {
-        return State.DailyReceiptLimit[input.Symbol][input.TargetChain] ?? new DailyLimitTokenInfo();
+        return State.ReceiptDailyLimit[input.Symbol][input.TargetChain] ?? new DailyLimitTokenInfo();
     }
 
-    public override DailyLimitTokenInfo GetDailySwapLimit(Hash input)
+    public override DailyLimitTokenInfo GetSwapDailyLimit(Hash input)
     {
-        return State.DailySwapLimit[input] ?? new DailyLimitTokenInfo();
+        return State.SwapDailyLimit[input] ?? new DailyLimitTokenInfo();
     }
 
     public override Empty SetDailyLimitRefreshTime(Int64Value input)

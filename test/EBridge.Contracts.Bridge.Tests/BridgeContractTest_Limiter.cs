@@ -13,34 +13,34 @@ namespace EBridge.Contracts.Bridge;
 public partial class BridgeContractTests
 {
     [Fact]
-    public async Task SetDailyReceiptLimit_Success()
+    public async Task SetReceiptDailyLimit_Success()
     {
         await InitialBridgeContractAsync();
         var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
-        var input = new List<DailyReceiptLimitInfo>
+        var input = new List<ReceiptDailyLimitInfo>
         {
-            new DailyReceiptLimitInfo
+            new ReceiptDailyLimitInfo
             {
                 Symbol = "ELF",
                 TargetChain = "Ethereum",
                 DefaultTokenAmount = 10_0000_00000000,
                 StartTime = Timestamp.FromDateTime(time)
             },
-            new DailyReceiptLimitInfo
+            new ReceiptDailyLimitInfo
             {
                 Symbol = "USDT",
                 TargetChain = "Ethereum",
                 DefaultTokenAmount = 5_0000_00000000,
                 StartTime = Timestamp.FromDateTime(time)
             },
-            new DailyReceiptLimitInfo
+            new ReceiptDailyLimitInfo
             {
                 Symbol = "ELF",
                 TargetChain = "BSC",
                 DefaultTokenAmount = 10_0000_00000000,
                 StartTime = Timestamp.FromDateTime(time)
             },
-            new DailyReceiptLimitInfo
+            new ReceiptDailyLimitInfo
             {
                 Symbol = "USDT",
                 TargetChain = "BSC",
@@ -48,72 +48,72 @@ public partial class BridgeContractTests
                 StartTime = Timestamp.FromDateTime(time)
             }
         };
-        var result = await BridgeContractImplStub.SetDailyReceiptLimit.SendAsync(new SetDailyReceiptLimitInput
+        var result = await BridgeContractImplStub.SetReceiptDailyLimit.SendAsync(new SetReceiptDailyLimitInput
         {
-            DailyReceiptLimitInfos = { input }
+            ReceiptDailyLimitInfos = { input }
         });
 
         {
-            var dailyReceiptLimit = await BridgeContractImplStub.GetDailyReceiptLimit.CallAsync(
-                new GetDailyReceiptLimitInput
+            var receiptDailyLimit = await BridgeContractImplStub.GetReceiptDailyLimit.CallAsync(
+                new GetReceiptDailyLimitInput
                 {
                     Symbol = "ELF",
                     TargetChain = "Ethereum"
                 });
-            dailyReceiptLimit.DefaultTokenAmount.ShouldBe(10_0000_00000000);
-            dailyReceiptLimit.RefreshTime.ShouldBe(Timestamp.FromDateTime(time));
-            dailyReceiptLimit.TokenAmount.ShouldBe(10_0000_00000000);
+            receiptDailyLimit.DefaultTokenAmount.ShouldBe(10_0000_00000000);
+            receiptDailyLimit.RefreshTime.ShouldBe(Timestamp.FromDateTime(time));
+            receiptDailyLimit.TokenAmount.ShouldBe(10_0000_00000000);
         }
         {
-            var dailyReceiptLimit = await BridgeContractImplStub.GetDailyReceiptLimit.CallAsync(
-                new GetDailyReceiptLimitInput
+            var receiptDailyLimit = await BridgeContractImplStub.GetReceiptDailyLimit.CallAsync(
+                new GetReceiptDailyLimitInput
                 {
                     Symbol = "ELF",
                     TargetChain = "BSC"
                 });
-            dailyReceiptLimit.DefaultTokenAmount.ShouldBe(10_0000_00000000);
-            dailyReceiptLimit.RefreshTime.ShouldBe(Timestamp.FromDateTime(time));
-            dailyReceiptLimit.TokenAmount.ShouldBe(10_0000_00000000);
+            receiptDailyLimit.DefaultTokenAmount.ShouldBe(10_0000_00000000);
+            receiptDailyLimit.RefreshTime.ShouldBe(Timestamp.FromDateTime(time));
+            receiptDailyLimit.TokenAmount.ShouldBe(10_0000_00000000);
         }
         {
-            var dailyReceiptLimit = await BridgeContractImplStub.GetDailyReceiptLimit.CallAsync(
-                new GetDailyReceiptLimitInput
+            var receiptDailyLimit = await BridgeContractImplStub.GetReceiptDailyLimit.CallAsync(
+                new GetReceiptDailyLimitInput
                 {
                     Symbol = "USDT",
                     TargetChain = "Ethereum"
                 });
-            dailyReceiptLimit.DefaultTokenAmount.ShouldBe(5_0000_00000000);
-            dailyReceiptLimit.RefreshTime.ShouldBe(Timestamp.FromDateTime(time));
-            dailyReceiptLimit.TokenAmount.ShouldBe(5_0000_00000000);
+            receiptDailyLimit.DefaultTokenAmount.ShouldBe(5_0000_00000000);
+            receiptDailyLimit.RefreshTime.ShouldBe(Timestamp.FromDateTime(time));
+            receiptDailyLimit.TokenAmount.ShouldBe(5_0000_00000000);
         }
         {
-            var dailyReceiptLimit = await BridgeContractImplStub.GetDailyReceiptLimit.CallAsync(
-                new GetDailyReceiptLimitInput
+            var receiptDailyLimit = await BridgeContractImplStub.GetReceiptDailyLimit.CallAsync(
+                new GetReceiptDailyLimitInput
                 {
                     Symbol = "USDT",
                     TargetChain = "BSC"
                 });
-            dailyReceiptLimit.DefaultTokenAmount.ShouldBe(5_0000_00000000);
-            dailyReceiptLimit.RefreshTime.ShouldBe(Timestamp.FromDateTime(time));
-            dailyReceiptLimit.TokenAmount.ShouldBe(5_0000_00000000);
+            receiptDailyLimit.DefaultTokenAmount.ShouldBe(5_0000_00000000);
+            receiptDailyLimit.RefreshTime.ShouldBe(Timestamp.FromDateTime(time));
+            receiptDailyLimit.TokenAmount.ShouldBe(5_0000_00000000);
         }
         {
-            var limitLogList = (from log in result.TransactionResult.Logs where log.Name == nameof(DailyReceiptLimitSet) select DailyReceiptLimitSet.Parser.ParseFrom(log.NonIndexed)).ToList();
+            var limitLogList = (from log in result.TransactionResult.Logs where log.Name == nameof(ReceiptDailyLimitSet) select ReceiptDailyLimitSet.Parser.ParseFrom(log.NonIndexed)).ToList();
             limitLogList[0].Symbol.ShouldBe("ELF");
             limitLogList[0].TargetChainId.ShouldBe("Ethereum");
-            limitLogList[0].DailyReceiptLimit.ShouldBe(10_0000_00000000);
+            limitLogList[0].ReceiptDailyLimit.ShouldBe(10_0000_00000000);
             limitLogList[0].ReceiptRefreshTime.ShouldBe(Timestamp.FromDateTime(time));
             limitLogList[1].Symbol.ShouldBe("USDT");
             limitLogList[1].TargetChainId.ShouldBe("Ethereum");
-            limitLogList[1].DailyReceiptLimit.ShouldBe(5_0000_00000000);
+            limitLogList[1].ReceiptDailyLimit.ShouldBe(5_0000_00000000);
             limitLogList[1].ReceiptRefreshTime.ShouldBe(Timestamp.FromDateTime(time));
             limitLogList[2].Symbol.ShouldBe("ELF");
             limitLogList[2].TargetChainId.ShouldBe("BSC");
-            limitLogList[2].DailyReceiptLimit.ShouldBe(10_0000_00000000);
+            limitLogList[2].ReceiptDailyLimit.ShouldBe(10_0000_00000000);
             limitLogList[2].ReceiptRefreshTime.ShouldBe(Timestamp.FromDateTime(time));
             limitLogList[3].Symbol.ShouldBe("USDT");
             limitLogList[3].TargetChainId.ShouldBe("BSC");
-            limitLogList[3].DailyReceiptLimit.ShouldBe(5_0000_00000000);
+            limitLogList[3].ReceiptDailyLimit.ShouldBe(5_0000_00000000);
             limitLogList[3].ReceiptRefreshTime.ShouldBe(Timestamp.FromDateTime(time));
 
         }
@@ -121,13 +121,13 @@ public partial class BridgeContractTests
     }
     
     [Fact]
-    public async Task SetDailyReceiptLimit_Success_Reset()
+    public async Task SetReceiptDailyLimit_Success_Reset()
     {
-        await SetDailyReceiptLimit_Success();
+        await SetReceiptDailyLimit_Success();
         var time = TimestampHelper.GetUtcNow().ToDateTime().AddHours(2).Date;
-        var input = new List<DailyReceiptLimitInfo>
+        var input = new List<ReceiptDailyLimitInfo>
         {
-            new DailyReceiptLimitInfo
+            new ReceiptDailyLimitInfo
             {
                 Symbol = "ELF",
                 TargetChain = "Ethereum",
@@ -135,39 +135,39 @@ public partial class BridgeContractTests
                 StartTime = Timestamp.FromDateTime(time)
             }
         };
-        var result = await BridgeContractImplStub.SetDailyReceiptLimit.SendAsync(new SetDailyReceiptLimitInput
+        var result = await BridgeContractImplStub.SetReceiptDailyLimit.SendAsync(new SetReceiptDailyLimitInput
         {
-            DailyReceiptLimitInfos = { input }
+            ReceiptDailyLimitInfos = { input }
         });
         {
-            var dailyReceiptLimit = await BridgeContractImplStub.GetDailyReceiptLimit.CallAsync(
-                new GetDailyReceiptLimitInput
+            var receiptDailyLimit = await BridgeContractImplStub.GetReceiptDailyLimit.CallAsync(
+                new GetReceiptDailyLimitInput
                 {
                     Symbol = "ELF",
                     TargetChain = "Ethereum"
                 });
-            dailyReceiptLimit.DefaultTokenAmount.ShouldBe(5_0000_00000000);
-            dailyReceiptLimit.RefreshTime.ShouldBe(Timestamp.FromDateTime(time));
-            dailyReceiptLimit.TokenAmount.ShouldBe(5_0000_00000000);
+            receiptDailyLimit.DefaultTokenAmount.ShouldBe(5_0000_00000000);
+            receiptDailyLimit.RefreshTime.ShouldBe(Timestamp.FromDateTime(time));
+            receiptDailyLimit.TokenAmount.ShouldBe(5_0000_00000000);
         }
         {
-            var limitLogList = (from log in result.TransactionResult.Logs where log.Name == nameof(DailyReceiptLimitSet) select DailyReceiptLimitSet.Parser.ParseFrom(log.NonIndexed)).ToList();
+            var limitLogList = (from log in result.TransactionResult.Logs where log.Name == nameof(ReceiptDailyLimitSet) select ReceiptDailyLimitSet.Parser.ParseFrom(log.NonIndexed)).ToList();
             limitLogList[0].Symbol.ShouldBe("ELF");
             limitLogList[0].TargetChainId.ShouldBe("Ethereum");
-            limitLogList[0].DailyReceiptLimit.ShouldBe(5_0000_00000000);
+            limitLogList[0].ReceiptDailyLimit.ShouldBe(5_0000_00000000);
             limitLogList[0].ReceiptRefreshTime.ShouldBe(Timestamp.FromDateTime(time));
         }
 
     }
     
     [Fact]
-    public async Task SetDailyReceiptLimit_Failed_NoPermission()
+    public async Task SetReceiptDailyLimit_Failed_NoPermission()
     {
         await InitialBridgeContractAsync();
         var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
-        var input = new List<DailyReceiptLimitInfo>
+        var input = new List<ReceiptDailyLimitInfo>
         {
-            new DailyReceiptLimitInfo
+            new ReceiptDailyLimitInfo
             {
                 Symbol = "ELF",
                 TargetChain = "Ethereum",
@@ -175,62 +175,62 @@ public partial class BridgeContractTests
                 StartTime = Timestamp.FromDateTime(time)
             }
         };
-        var result = await BridgeContractImplUserStub.SetDailyReceiptLimit.SendWithExceptionAsync(new SetDailyReceiptLimitInput
+        var result = await BridgeContractImplUserStub.SetReceiptDailyLimit.SendWithExceptionAsync(new SetReceiptDailyLimitInput
         {
-            DailyReceiptLimitInfos = { input }
+            ReceiptDailyLimitInfos = { input }
         });
         result.TransactionResult.Error.ShouldContain("No permission.");
     }
     
     [Fact]
-    public async Task SetDailyReceiptLimit_Failed_InvalidInput()
+    public async Task SetReceiptDailyLimit_Failed_InvalidInput()
     {
         await InitialBridgeContractAsync();
         var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
         {
-            var input = new List<DailyReceiptLimitInfo>();
-            var result = await BridgeContractImplStub.SetDailyReceiptLimit.SendWithExceptionAsync(new SetDailyReceiptLimitInput
+            var input = new List<ReceiptDailyLimitInfo>();
+            var result = await BridgeContractImplStub.SetReceiptDailyLimit.SendWithExceptionAsync(new SetReceiptDailyLimitInput
             {
-                DailyReceiptLimitInfos = { input }
+                ReceiptDailyLimitInfos = { input }
             });
             result.TransactionResult.Error.ShouldContain("Invalid input.");
         }
         {
-            var input = new List<DailyReceiptLimitInfo>
+            var input = new List<ReceiptDailyLimitInfo>
             {
-                new DailyReceiptLimitInfo
+                new ReceiptDailyLimitInfo
                 {
                     TargetChain = "Ethereum",
                     DefaultTokenAmount = 10_0000_00000000,
                     StartTime = Timestamp.FromDateTime(time)
                 }
             };
-            var result = await BridgeContractImplStub.SetDailyReceiptLimit.SendWithExceptionAsync(new SetDailyReceiptLimitInput
+            var result = await BridgeContractImplStub.SetReceiptDailyLimit.SendWithExceptionAsync(new SetReceiptDailyLimitInput
             {
-                DailyReceiptLimitInfos = { input }
+                ReceiptDailyLimitInfos = { input }
             });
             result.TransactionResult.Error.ShouldContain("Invalid input daily receipt limit info.");
         }
         {
-            var input = new List<DailyReceiptLimitInfo>
+            var input = new List<ReceiptDailyLimitInfo>
             {
-                new DailyReceiptLimitInfo
+                new ReceiptDailyLimitInfo
                 {
                     Symbol = "ELF",
                     DefaultTokenAmount = 10_0000_00000000,
                     StartTime = Timestamp.FromDateTime(time)
                 }
             };
-            var result = await BridgeContractImplStub.SetDailyReceiptLimit.SendWithExceptionAsync(new SetDailyReceiptLimitInput
+            var result = await BridgeContractImplStub.SetReceiptDailyLimit.SendWithExceptionAsync(new SetReceiptDailyLimitInput
             {
-                DailyReceiptLimitInfos = { input }
+                ReceiptDailyLimitInfos = { input }
             });
             result.TransactionResult.Error.ShouldContain("Invalid input daily receipt limit info.");
         }
         {
-            var input = new List<DailyReceiptLimitInfo>
+            var input = new List<ReceiptDailyLimitInfo>
             {
-                new DailyReceiptLimitInfo
+                new ReceiptDailyLimitInfo
                 {
                     Symbol = "ELF",
                     TargetChain = "Ethereum",
@@ -238,17 +238,17 @@ public partial class BridgeContractTests
                     StartTime = Timestamp.FromDateTime(time)
                 }
             };
-            var result = await BridgeContractImplStub.SetDailyReceiptLimit.SendWithExceptionAsync(new SetDailyReceiptLimitInput
+            var result = await BridgeContractImplStub.SetReceiptDailyLimit.SendWithExceptionAsync(new SetReceiptDailyLimitInput
             {
-                DailyReceiptLimitInfos = { input }
+                ReceiptDailyLimitInfos = { input }
             });
             result.TransactionResult.Error.ShouldContain("Invalid input daily receipt limit info.");
         }
         {
             var time1 = TimestampHelper.GetUtcNow().ToDateTime();
-            var input = new List<DailyReceiptLimitInfo>
+            var input = new List<ReceiptDailyLimitInfo>
             {
-                new DailyReceiptLimitInfo
+                new ReceiptDailyLimitInfo
                 {
                     Symbol = "ELF",
                     TargetChain = "Ethereum",
@@ -256,176 +256,176 @@ public partial class BridgeContractTests
                     StartTime = Timestamp.FromDateTime(time1)
                 }
             };
-            var result = await BridgeContractImplStub.SetDailyReceiptLimit.SendWithExceptionAsync(new SetDailyReceiptLimitInput
+            var result = await BridgeContractImplStub.SetReceiptDailyLimit.SendWithExceptionAsync(new SetReceiptDailyLimitInput
             {
-                DailyReceiptLimitInfos = { input }
+                ReceiptDailyLimitInfos = { input }
             });
             result.TransactionResult.Error.ShouldContain("Invalid input daily receipt limit info.");
         }
     }
 
     [Fact]
-    public async Task SetDailySwapLimit_Success()
+    public async Task SetSwapDailyLimit_Success()
     {
         await CreateSwapTestAsync();
         var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
-        var input = new List<DailySwapLimitInfo>
+        var input = new List<SwapDailyLimitInfo>
         {
-            new DailySwapLimitInfo
+            new SwapDailyLimitInfo
             {
                 SwapId = _swapHashOfElf,
                 DefaultTokenAmount = 10_0000_00000000,
                 StartTime = Timestamp.FromDateTime(time)
             },
-            new DailySwapLimitInfo
+            new SwapDailyLimitInfo
             {
                 SwapId = _swapHashOfUsdt,
                 DefaultTokenAmount = 5_0000_00000000,
                 StartTime = Timestamp.FromDateTime(time)
             }
         };
-        var result = await BridgeContractImplStub.SetDailySwapLimit.SendAsync(new SetDailySwapLimitInput
+        var result = await BridgeContractImplStub.SetSwapDailyLimit.SendAsync(new SetSwapDailyLimitInput
         {
-            DailySwapLimitInfos = { input }
+            SwapDailyLimitInfos = { input }
         });
         {
-            var dailySwapLimit = await BridgeContractImplStub.GetDailySwapLimit.CallAsync(_swapHashOfElf);
-            dailySwapLimit.RefreshTime.ShouldBe(Timestamp.FromDateTime(time));
-            dailySwapLimit.TokenAmount.ShouldBe(10_0000_00000000);
-            dailySwapLimit.DefaultTokenAmount.ShouldBe(10_0000_00000000);
+            var swapDailyLimit = await BridgeContractImplStub.GetSwapDailyLimit.CallAsync(_swapHashOfElf);
+            swapDailyLimit.RefreshTime.ShouldBe(Timestamp.FromDateTime(time));
+            swapDailyLimit.TokenAmount.ShouldBe(10_0000_00000000);
+            swapDailyLimit.DefaultTokenAmount.ShouldBe(10_0000_00000000);
         }
         {
-            var dailySwapLimit = await BridgeContractImplStub.GetDailySwapLimit.CallAsync(_swapHashOfUsdt);
-            dailySwapLimit.RefreshTime.ShouldBe(Timestamp.FromDateTime(time));
-            dailySwapLimit.TokenAmount.ShouldBe(5_0000_00000000);
-            dailySwapLimit.DefaultTokenAmount.ShouldBe(5_0000_00000000);
+            var swapDailyLimit = await BridgeContractImplStub.GetSwapDailyLimit.CallAsync(_swapHashOfUsdt);
+            swapDailyLimit.RefreshTime.ShouldBe(Timestamp.FromDateTime(time));
+            swapDailyLimit.TokenAmount.ShouldBe(5_0000_00000000);
+            swapDailyLimit.DefaultTokenAmount.ShouldBe(5_0000_00000000);
         }
         {
-            var limitLogList = (from log in result.TransactionResult.Logs where log.Name == nameof(DailySwapLimitSet) select DailySwapLimitSet.Parser.ParseFrom(log.NonIndexed)).ToList();
+            var limitLogList = (from log in result.TransactionResult.Logs where log.Name == nameof(SwapDailyLimitSet) select SwapDailyLimitSet.Parser.ParseFrom(log.NonIndexed)).ToList();
             limitLogList[0].Symbol.ShouldBe("ELF"); 
             limitLogList[0].FromChainId.ShouldBe("Ethereum"); 
-            limitLogList[0].DailySwapLimit.ShouldBe(10_0000_00000000);
+            limitLogList[0].SwapDailyLimit.ShouldBe(10_0000_00000000);
             limitLogList[0].SwapRefreshTime.ShouldBe(Timestamp.FromDateTime(time));
             limitLogList[1].Symbol.ShouldBe("USDT"); 
             limitLogList[1].FromChainId.ShouldBe("Polygon"); 
-            limitLogList[1].DailySwapLimit.ShouldBe(5_0000_00000000);
+            limitLogList[1].SwapDailyLimit.ShouldBe(5_0000_00000000);
             limitLogList[1].SwapRefreshTime.ShouldBe(Timestamp.FromDateTime(time));
         }
 
     }
     [Fact]
-    public async Task SetDailySwapLimit_Success_Reset()
+    public async Task SetSwapDailyLimit_Success_Reset()
     {
-        await SetDailySwapLimit_Success();
+        await SetSwapDailyLimit_Success();
         var time = TimestampHelper.GetUtcNow().ToDateTime().AddHours(2).Date;
-        var input = new List<DailySwapLimitInfo>
+        var input = new List<SwapDailyLimitInfo>
         {
-            new DailySwapLimitInfo
+            new SwapDailyLimitInfo
             {
                 SwapId = _swapHashOfElf,
                 DefaultTokenAmount = 6_0000_00000000,
                 StartTime = Timestamp.FromDateTime(time)
             }
         };
-        var result = await BridgeContractImplStub.SetDailySwapLimit.SendAsync(new SetDailySwapLimitInput
+        var result = await BridgeContractImplStub.SetSwapDailyLimit.SendAsync(new SetSwapDailyLimitInput
         {
-            DailySwapLimitInfos = { input }
+            SwapDailyLimitInfos = { input }
         });
         {
-            var dailySwapLimit = await BridgeContractImplStub.GetDailySwapLimit.CallAsync(_swapHashOfElf);
-            dailySwapLimit.RefreshTime.ShouldBe(Timestamp.FromDateTime(time));
-            dailySwapLimit.TokenAmount.ShouldBe(6_0000_00000000);
-            dailySwapLimit.DefaultTokenAmount.ShouldBe(6_0000_00000000);
+            var swapDailyLimit = await BridgeContractImplStub.GetSwapDailyLimit.CallAsync(_swapHashOfElf);
+            swapDailyLimit.RefreshTime.ShouldBe(Timestamp.FromDateTime(time));
+            swapDailyLimit.TokenAmount.ShouldBe(6_0000_00000000);
+            swapDailyLimit.DefaultTokenAmount.ShouldBe(6_0000_00000000);
         }
         {
-            var limitLogList = (from log in result.TransactionResult.Logs where log.Name == nameof(DailySwapLimitSet) select DailySwapLimitSet.Parser.ParseFrom(log.NonIndexed)).ToList();
+            var limitLogList = (from log in result.TransactionResult.Logs where log.Name == nameof(SwapDailyLimitSet) select SwapDailyLimitSet.Parser.ParseFrom(log.NonIndexed)).ToList();
             limitLogList[0].Symbol.ShouldBe("ELF"); 
             limitLogList[0].FromChainId.ShouldBe("Ethereum"); 
-            limitLogList[0].DailySwapLimit.ShouldBe(6_0000_00000000);
+            limitLogList[0].SwapDailyLimit.ShouldBe(6_0000_00000000);
             limitLogList[0].SwapRefreshTime.ShouldBe(Timestamp.FromDateTime(time));
         }
 
     }
     
     [Fact]
-    public async Task SetDailySwapLimit_Failed_NoPermission()
+    public async Task SetSwapDailyLimit_Failed_NoPermission()
     {
         await InitialBridgeContractAsync();
         var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
-        var input = new List<DailySwapLimitInfo>
+        var input = new List<SwapDailyLimitInfo>
         {
-            new DailySwapLimitInfo
+            new SwapDailyLimitInfo
             {
                 SwapId = _swapHashOfElf,
                 DefaultTokenAmount = 10_0000_00000000,
                 StartTime = Timestamp.FromDateTime(time)
             }
         };
-        var result = await BridgeContractImplUserStub.SetDailySwapLimit.SendWithExceptionAsync(new SetDailySwapLimitInput
+        var result = await BridgeContractImplUserStub.SetSwapDailyLimit.SendWithExceptionAsync(new SetSwapDailyLimitInput
         {
-            DailySwapLimitInfos = { input }
+            SwapDailyLimitInfos = { input }
         });
         result.TransactionResult.Error.ShouldContain("No permission.");
     }
     
     [Fact]
-    public async Task SetDailySwapLimit_Failed_InvalidInput()
+    public async Task SetSwapDailyLimit_Failed_InvalidInput()
     {
         await InitialBridgeContractAsync();
         var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
         {
-            var input = new List<DailySwapLimitInfo>();
-            var result = await BridgeContractImplStub.SetDailySwapLimit.SendWithExceptionAsync(new SetDailySwapLimitInput
+            var input = new List<SwapDailyLimitInfo>();
+            var result = await BridgeContractImplStub.SetSwapDailyLimit.SendWithExceptionAsync(new SetSwapDailyLimitInput
             {
-                DailySwapLimitInfos = { input }
+                SwapDailyLimitInfos = { input }
             });
             result.TransactionResult.Error.ShouldContain("Invalid input.");
         }
         {
-            var input = new List<DailySwapLimitInfo>
+            var input = new List<SwapDailyLimitInfo>
             {
-                new DailySwapLimitInfo
+                new SwapDailyLimitInfo
                 {
                     DefaultTokenAmount = 10_0000_00000000,
                     StartTime = Timestamp.FromDateTime(time)
                 }
             };
-            var result = await BridgeContractImplStub.SetDailySwapLimit.SendWithExceptionAsync(new SetDailySwapLimitInput
+            var result = await BridgeContractImplStub.SetSwapDailyLimit.SendWithExceptionAsync(new SetSwapDailyLimitInput
             {
-                DailySwapLimitInfos = { input }
+                SwapDailyLimitInfos = { input }
             });
             result.TransactionResult.Error.ShouldContain("Invalid input daily swap limit info.");
         }
         {
-            var input = new List<DailySwapLimitInfo>
+            var input = new List<SwapDailyLimitInfo>
             {
-                new DailySwapLimitInfo
+                new SwapDailyLimitInfo
                 {
                     SwapId = _swapHashOfElf,
                     DefaultTokenAmount = 0,
                     StartTime = Timestamp.FromDateTime(time)
                 }
             };
-            var result = await BridgeContractImplStub.SetDailySwapLimit.SendWithExceptionAsync(new SetDailySwapLimitInput
+            var result = await BridgeContractImplStub.SetSwapDailyLimit.SendWithExceptionAsync(new SetSwapDailyLimitInput
             {
-                DailySwapLimitInfos = { input }
+                SwapDailyLimitInfos = { input }
             });
             result.TransactionResult.Error.ShouldContain("Invalid input daily swap limit info.");
         }
         {
             var time1 = TimestampHelper.GetUtcNow().ToDateTime();
-            var input = new List<DailySwapLimitInfo>
+            var input = new List<SwapDailyLimitInfo>
             {
-                new DailySwapLimitInfo
+                new SwapDailyLimitInfo
                 {
                     SwapId = _swapHashOfElf,
                     DefaultTokenAmount = 10_0000_00000000,
                     StartTime = Timestamp.FromDateTime(time1)
                 }
             };
-            var result = await BridgeContractImplStub.SetDailySwapLimit.SendWithExceptionAsync(new SetDailySwapLimitInput
+            var result = await BridgeContractImplStub.SetSwapDailyLimit.SendWithExceptionAsync(new SetSwapDailyLimitInput
             {
-                DailySwapLimitInfos = { input }
+                SwapDailyLimitInfos = { input }
             });
             result.TransactionResult.Error.ShouldContain("Invalid input daily swap limit info.");
         }
