@@ -280,7 +280,7 @@ namespace EBridge.Contracts.Bridge
             var count = (Context.CurrentBlockTime - lastRefreshTime).Seconds.Div(defaultRefreshTime);
             if (count > 0)
             {
-                lastRefreshTime = lastRefreshTime.AddSeconds(defaultRefreshTime * count);
+                lastRefreshTime = lastRefreshTime.AddSeconds(defaultRefreshTime.Mul(count));
                 dailyLimit.RefreshTime = lastRefreshTime;
                 dailyLimit.TokenAmount = dailyLimit.DefaultTokenAmount;
             }
