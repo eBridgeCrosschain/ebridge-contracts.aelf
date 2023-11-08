@@ -73,8 +73,10 @@ public partial class BridgeContract
         var defaultRefreshTime = State.DailyLimitRefreshTime.Value == 0
             ? DefaultDailyRefreshTime
             : State.DailyLimitRefreshTime.Value;
+        Assert(Context.CurrentBlockTime >= dailyLimit.RefreshTime,
+            $"Invalid time,current refresh time is {dailyLimit.RefreshTime}");
         if (dailyLimit.RefreshTime != null &&
-            (dailyLimit.RefreshTime - Context.CurrentBlockTime).Seconds.Div(defaultRefreshTime) <= 0)
+            (Context.CurrentBlockTime - dailyLimit.RefreshTime).Seconds.Div(defaultRefreshTime) <= 0)
         {
             var useAmount = dailyLimit.DefaultTokenAmount.Sub(dailyLimit.TokenAmount);
             dailyLimit.TokenAmount = defaultTokenAmount.Sub(useAmount) < 0 ? 0 : defaultTokenAmount.Sub(useAmount);
