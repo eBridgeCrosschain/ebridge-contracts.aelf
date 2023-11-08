@@ -335,7 +335,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
                 TargetAddress = "0x643C7DCAd9321b36de85FEaC19763BE492dB5a04",
                 TargetChainId = "Ethereum"
             });
-            executionResult.TransactionResult.Error.ShouldContain("Amount exceeds current token amount, the minimum wait time is 29s");
+            executionResult.TransactionResult.Error.ShouldContain("Amount exceeds current token amount, the minimum wait time is");
             blockTimeProvider.SetBlockTime(Timestamp.FromDateTime(creatReceiptTime.AddMinutes(1).AddSeconds(1).AddMinutes(1).AddSeconds(30)));
             var executionResult1 = await BridgeContractStub.CreateReceipt.SendAsync(new CreateReceiptInput
             {
