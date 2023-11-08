@@ -26,6 +26,11 @@ public partial class BridgeContractState : ContractState
     public SingletonState<AuthorityInfo> MethodFeeController { get; set; }
 
     /// <summary>
+    /// Controller who can approve transfer.
+    /// </summary>
+    public SingletonState<Address> ApproveTransferController { get; set; }
+    
+    /// <summary>
     /// Is contract pause (true->pause/false=>start).
     /// </summary>
     public SingletonState<bool> IsContractPause { get; set; }
@@ -40,6 +45,10 @@ public partial class BridgeContractState : ContractState
     /// </summary>
     public SingletonState<Address> PauseController { get; set; }
     
+    /// <summary>
+    /// The maximum amount of transfers per token.
+    /// </summary>
+    public MappedState<string, long> TokenMaximumAmount { get; set; }
 
     /// <summary>
     /// Contract method name -> MethodFees

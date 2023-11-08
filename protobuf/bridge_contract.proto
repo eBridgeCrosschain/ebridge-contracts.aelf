@@ -12,17 +12,25 @@ option csharp_namespace = "EBridge.Contracts.Bridge";
 
 service BridgeContract {
     rpc Initialize (InitializeInput) returns (google.protobuf.Empty) {}
-    
+
     //Contract permission.
     rpc ChangeController(aelf.Address) returns (google.protobuf.Empty){}
     rpc ChangeAdmin(aelf.Address) returns (google.protobuf.Empty) {}
     rpc ChangeTransactionFeeController(AuthorityInfo) returns (google.protobuf.Empty){}
     rpc ChangeRestartOrganization(aelf.Address) returns (google.protobuf.Empty){}
     rpc ChangePauseController(aelf.Address) returns (google.protobuf.Empty){}
-    
+    rpc ChangeApproveTransferController(aelf.Address) returns (google.protobuf.Empty){}
+
     rpc Pause(google.protobuf.Empty) returns (google.protobuf.Empty){}
     rpc Restart(google.protobuf.Empty) returns (google.protobuf.Empty){}
-    
+
+    //Contract admin : Approve
+    rpc SetTokenMaximumAmount(SetMaximumAmountInput) returns (google.protobuf.Empty){}
+    rpc ApproveTransfer(ApproveTransferInput) returns (google.protobuf.Empty){}
+
+    rpc IsTransferCanReceive(IsTransferCanReceiveInput) returns(google.protobuf.BoolValue){
+        option (aelf.is_view) = true;
+    }
     rpc GetContractController(google.protobuf.Empty) returns (aelf.Address){
         option (aelf.is_view) = true;
     }
@@ -41,7 +49,16 @@ service BridgeContract {
     rpc GetRestartOrganization(google.protobuf.Empty) returns (aelf.Address){
         option (aelf.is_view) = true;
     }
-    
+    rpc GetTokenMaximumAmount (google.protobuf.StringValue) returns (google.protobuf.Int64Value){
+        option (aelf.is_view) = true;
+    }
+    rpc GetApproveReceiptIdList (google.protobuf.Empty) returns (ReceiptIdList){
+        option (aelf.is_view) = true;
+    }
+    rpc GetApproveTransferController(google.protobuf.Empty) returns (aelf.Address){
+        option (aelf.is_view) = true;
+    }
+
     //Others to AElf.
     //Action methods.
     rpc CreateSwap (CreateSwapInput) returns (aelf.Hash) {
@@ -75,7 +92,7 @@ service BridgeContract {
     rpc GetSpaceIdBySwapId (aelf.Hash) returns (aelf.Hash){
         option (aelf.is_view) = true;
     }
-    
+
     //AElf to others.
     //Action methods.
     rpc AddToken(AddTokenInput) returns(google.protobuf.Empty){
@@ -128,7 +145,7 @@ service BridgeContract {
     rpc GetTokenWhitelist(google.protobuf.StringValue) returns (TokenSymbolList){
         option (aelf.is_view) = true;
     }
-    
+
 }
 
 message InitializeInput {
@@ -141,6 +158,25 @@ message InitializeInput {
     aelf.Address organization_address = 7;
     aelf.Address pause_controller = 8;
     aelf.Address approve_transfer_controller = 9;
+}
+
+message SetMaximumAmountInput{
+    repeated TokenMaximumAmount value = 1;
+}
+
+message TokenMaximumAmount{
+    string symbol = 1;
+    int64 maximum_amount = 2;
+}
+
+message ApproveTransferInput{
+    string receipt_id = 1;
+}
+
+message IsTransferCanReceiveInput{
+    string receipt_id = 1;
+    string symbol = 2;
+    string amount = 3;
 }
 
 //To AElf message.
@@ -385,4 +421,10 @@ message Paused{
 message Unpaused{
     option (aelf.is_event) = true;
     aelf.Address sender = 1;
+}
+
+message ApproveTransfer{
+    option (aelf.is_event) = true;
+    aelf.Address sender = 1;
+    string receipt_id = 2;
 }
