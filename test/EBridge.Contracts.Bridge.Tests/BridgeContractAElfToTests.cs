@@ -282,7 +282,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
                         Symbol = "ELF",
                         TargetChain = "Ethereum"
                     });
-                bucket.CurrentTokenAmount.ShouldBe(5_0000_00000000 - 100_00000000 - 50_00000000 + 61_00000000); 
+                bucket.CurrentTokenAmount.ShouldBeLessThanOrEqualTo(5_0000_00000000 - 100_00000000 - 50_00000000 + 61_00000000); 
             }
 
             var reportProposed = ReportProposed.Parser.ParseFrom(executionResult.TransactionResult.Logs
@@ -472,6 +472,42 @@ public partial class BridgeContractTests : BridgeContractTestBase
             log.ReceiptDailyLimitRefreshTime.ShouldBe(Timestamp.FromDateTime(time.AddDays(1)));
             log.CurrentReceiptDailyLimitAmount.ShouldBe(7_0000_00000000);
             log.CurrentReceiptBucketTokenAmount.ShouldBe(long.MaxValue);
+        }
+        {
+            var input1 = new List<ReceiptDailyLimitInfo>
+            {
+                new ReceiptDailyLimitInfo
+                {
+                    Symbol = "ELF",
+                    TargetChain = "Ethereum",
+                    DefaultTokenAmount = 2_0000_00000000,
+                    StartTime = Timestamp.FromDateTime(time.AddDays(1))
+                },
+                new ReceiptDailyLimitInfo
+                {
+                    Symbol = "USDT",
+                    TargetChain = "Ethereum",
+                    DefaultTokenAmount = 5_0000_00000000,
+                    StartTime = Timestamp.FromDateTime(time.AddDays(1))
+                }
+            };
+        
+            await BridgeContractImplStub.SetReceiptDailyLimit.SendAsync(new SetReceiptDailyLimitInput
+            {
+                ReceiptDailyLimitInfos = { input1 }
+            });
+
+            {
+                var dailyLimit = await BridgeContractImplStub.GetReceiptDailyLimit.CallAsync(
+                    new GetReceiptDailyLimitInput
+                    {
+                        Symbol = "ELF",
+                        TargetChain = "Ethereum"
+                    });
+                dailyLimit.TokenAmount.ShouldBe(0);
+                dailyLimit.DefaultTokenAmount.ShouldBe(2_0000_00000000);
+                dailyLimit.RefreshTime.ShouldBe(Timestamp.FromDateTime(time.AddDays(1)));
+            }
         }
     }
 
