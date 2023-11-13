@@ -1,5 +1,6 @@
 using System;
 using AElf.CSharp.Core;
+using AElf.CSharp.Core.Extension;
 using AElf.Sdk.CSharp;
 using AElf.Types;
 using Google.Protobuf.WellKnownTypes;
@@ -93,12 +94,36 @@ public partial class BridgeContract
 
     public override DailyLimitTokenInfo GetReceiptDailyLimit(GetReceiptDailyLimitInput input)
     {
-        return State.ReceiptDailyLimit[input.Symbol][input.TargetChain] ?? new DailyLimitTokenInfo();
+        var dailyLimit = State.ReceiptDailyLimit[input.Symbol][input.TargetChain];
+        return dailyLimit == null ? new DailyLimitTokenInfo() : GetDailyLimitTokenInfo(dailyLimit);
     }
 
     public override DailyLimitTokenInfo GetSwapDailyLimit(Hash input)
     {
-        return State.SwapDailyLimit[input] ?? new DailyLimitTokenInfo();
+        var dailyLimit = State.SwapDailyLimit[input];
+        return dailyLimit == null ? new DailyLimitTokenInfo() : GetDailyLimitTokenInfo(dailyLimit);
+
+    }
+
+    private DailyLimitTokenInfo GetDailyLimitTokenInfo(DailyLimitTokenInfo dailyLimit)
+    {
+        var defaultRefreshTime = State.DailyLimitRefreshTime.Value == 0
+            ? DefaultDailyRefreshTime
+            : State.DailyLimitRefreshTime.Value;
+        var refreshTime = dailyLimit.RefreshTime;
+        var tokenAmount = dailyLimit.TokenAmount;
+        var count = (Context.CurrentBlockTime - dailyLimit.RefreshTime).Seconds.Div(defaultRefreshTime);
+        if (count > 0)
+        {
+            refreshTime = dailyLimit.RefreshTime.AddSeconds(defaultRefreshTime.Mul(count));
+            tokenAmount = dailyLimit.DefaultTokenAmount;
+        }
+        return new DailyLimitTokenInfo
+        {
+            TokenAmount = tokenAmount,
+            DefaultTokenAmount = dailyLimit.DefaultTokenAmount,
+            RefreshTime = refreshTime
+        };
     }
 
     public override Empty SetDailyLimitRefreshTime(Int64Value input)
