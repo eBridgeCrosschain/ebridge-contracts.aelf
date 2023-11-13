@@ -147,6 +147,7 @@ message ReceiptDailyLimitSet{
   string target_chain_id = 2;
   int64 receipt_daily_limit = 3;
   google.protobuf.Timestamp receipt_refresh_time = 4;
+  int64 current_receipt_daily_limit = 5;
 }
 
 message SwapDailyLimitSet{
@@ -155,6 +156,7 @@ message SwapDailyLimitSet{
   string from_chain_id = 2;
   int64 swap_daily_limit = 3;
   google.protobuf.Timestamp swap_refresh_time = 4;
+  int64 current_swap_daily_limit = 5;
 }
 
 message ReceiptTokenBucketSet{
@@ -165,6 +167,7 @@ message ReceiptTokenBucketSet{
   int64 receipt_refill_rate = 4;
   bool receipt_bucket_isEnable = 5;
   google.protobuf.Timestamp receipt_bucket_update_time = 6;
+  int64 current_receipt_bucket_token_amount = 7;
 }
 
 message SwapTokenBucketSet{
@@ -175,6 +178,7 @@ message SwapTokenBucketSet{
   int64 swap_refill_rate = 4;
   bool swap_bucket_isEnable = 5;
   google.protobuf.Timestamp swap_bucket_update_time = 6;
+  int64 current_swap_bucket_token_amount = 7;
 }
 
 message ReceiptLimitChanged {

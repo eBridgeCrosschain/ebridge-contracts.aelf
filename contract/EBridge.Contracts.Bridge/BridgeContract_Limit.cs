@@ -34,7 +34,8 @@ public partial class BridgeContract
                 Symbol = symbol,
                 TargetChainId = targetChain,
                 ReceiptDailyLimit = dailyLimit.DefaultTokenAmount,
-                ReceiptRefreshTime = dailyLimit.RefreshTime
+                ReceiptRefreshTime = dailyLimit.RefreshTime,
+                CurrentReceiptDailyLimit = dailyLimit.TokenAmount
             });
         }
 
@@ -61,7 +62,8 @@ public partial class BridgeContract
                 Symbol = swapInfo?.SwapTargetToken?.Symbol,
                 FromChainId = swapInfo?.SwapTargetToken?.FromChainId,
                 SwapDailyLimit = dailyLimit.DefaultTokenAmount,
-                SwapRefreshTime = dailyLimit.RefreshTime
+                SwapRefreshTime = dailyLimit.RefreshTime,
+                CurrentSwapDailyLimit = dailyLimit.TokenAmount
             });
         }
 
@@ -164,7 +166,8 @@ public partial class BridgeContract
                 ReceiptBucketIsEnable = bucketConfig.IsEnable,
                 ReceiptCapacity = bucketConfig.TokenCapacity,
                 ReceiptRefillRate = bucketConfig.Rate,
-                ReceiptBucketUpdateTime = Context.CurrentBlockTime
+                ReceiptBucketUpdateTime = Context.CurrentBlockTime,
+                CurrentReceiptBucketTokenAmount = bucketConfig.CurrentTokenAmount
             });
         }
 
@@ -190,7 +193,8 @@ public partial class BridgeContract
                 SwapBucketIsEnable = bucketConfig.IsEnable,
                 SwapCapacity = bucketConfig.TokenCapacity,
                 SwapRefillRate = bucketConfig.Rate,
-                SwapBucketUpdateTime = Context.CurrentBlockTime
+                SwapBucketUpdateTime = Context.CurrentBlockTime,
+                CurrentSwapBucketTokenAmount = bucketConfig.CurrentTokenAmount
             });
         }
 
@@ -225,39 +229,31 @@ public partial class BridgeContract
     public override TokenBucket GetCurrentReceiptTokenBucketState(GetCurrentReceiptTokenBucketStateInput input)
     {
         var tokenBucket = State.ReceiptTokenBucketInfo[input.Symbol][input.TargetChain];
-        if (tokenBucket != null)
-        {
-            tokenBucket.CurrentTokenAmount = CalculateRefill(tokenBucket.TokenCapacity, tokenBucket.CurrentTokenAmount,
-                Context.CurrentBlockTime.Seconds.Sub(tokenBucket.LastUpdatedTime.Seconds), tokenBucket.Rate);
-        }
-
+        tokenBucket = GetCurrentTokenBucket(tokenBucket);
         return tokenBucket ?? new TokenBucket();
     }
 
     public override TokenBucket GetCurrentSwapTokenBucketState(Hash input)
     {
         var tokenBucket = State.SwapTokenBucketInfo[input];
-        if (tokenBucket != null)
-        {
-            tokenBucket.CurrentTokenAmount = CalculateRefill(tokenBucket.TokenCapacity, tokenBucket.CurrentTokenAmount,
-                Context.CurrentBlockTime.Seconds.Sub(tokenBucket.LastUpdatedTime.Seconds), tokenBucket.Rate);
-        }
-
+        tokenBucket = GetCurrentTokenBucket(tokenBucket);
         return tokenBucket ?? new TokenBucket();
     }
 
     public override Int64Value GetReceiptMinWaitTimeInSeconds(GetReceiptMinWaitTimeInSecondsInput input)
     {
-        var bucket = State.ReceiptTokenBucketInfo[input.Symbol][input.TargetChain];
+        var tokenBucket = State.ReceiptTokenBucketInfo[input.Symbol][input.TargetChain];
+        tokenBucket = GetCurrentTokenBucket(tokenBucket);
         return new Int64Value
         {
-            Value = GetMinWaitTimeInSeconds(bucket, input.TokenAmount)
+            Value = GetMinWaitTimeInSeconds(tokenBucket, input.TokenAmount)
         };
     }
 
     public override Int64Value GetSwapMinWaitTimeInSeconds(GetSwapMinWaitTimeInSecondsInput input)
     {
         var bucket = State.SwapTokenBucketInfo[input.SwapId];
+        bucket = GetCurrentTokenBucket(bucket);
         return new Int64Value
         {
             Value = GetMinWaitTimeInSeconds(bucket, input.TokenAmount)
@@ -274,6 +270,17 @@ public partial class BridgeContract
         }
 
         return minWaitInSeconds;
+    }
+    
+    private TokenBucket GetCurrentTokenBucket(TokenBucket tokenBucket)
+    {
+        if (tokenBucket != null)
+        {
+            tokenBucket.CurrentTokenAmount = CalculateRefill(tokenBucket.TokenCapacity, tokenBucket.CurrentTokenAmount,
+                Context.CurrentBlockTime.Seconds.Sub(tokenBucket.LastUpdatedTime.Seconds), tokenBucket.Rate);
+        }
+
+        return tokenBucket;
     }
 
     #endregion
