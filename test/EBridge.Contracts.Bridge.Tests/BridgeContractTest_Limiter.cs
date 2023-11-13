@@ -103,19 +103,22 @@ public partial class BridgeContractTests
             limitLogList[0].TargetChainId.ShouldBe("Ethereum");
             limitLogList[0].ReceiptDailyLimit.ShouldBe(10_0000_00000000);
             limitLogList[0].ReceiptRefreshTime.ShouldBe(Timestamp.FromDateTime(time));
+            limitLogList[0].CurrentReceiptDailyLimit.ShouldBe(10_0000_00000000);
             limitLogList[1].Symbol.ShouldBe("USDT");
             limitLogList[1].TargetChainId.ShouldBe("Ethereum");
             limitLogList[1].ReceiptDailyLimit.ShouldBe(5_0000_00000000);
             limitLogList[1].ReceiptRefreshTime.ShouldBe(Timestamp.FromDateTime(time));
+            limitLogList[1].CurrentReceiptDailyLimit.ShouldBe(5_0000_00000000);
             limitLogList[2].Symbol.ShouldBe("ELF");
             limitLogList[2].TargetChainId.ShouldBe("BSC");
             limitLogList[2].ReceiptDailyLimit.ShouldBe(10_0000_00000000);
             limitLogList[2].ReceiptRefreshTime.ShouldBe(Timestamp.FromDateTime(time));
+            limitLogList[2].CurrentReceiptDailyLimit.ShouldBe(10_0000_00000000);
             limitLogList[3].Symbol.ShouldBe("USDT");
             limitLogList[3].TargetChainId.ShouldBe("BSC");
             limitLogList[3].ReceiptDailyLimit.ShouldBe(5_0000_00000000);
             limitLogList[3].ReceiptRefreshTime.ShouldBe(Timestamp.FromDateTime(time));
-
+            limitLogList[3].CurrentReceiptDailyLimit.ShouldBe(5_0000_00000000);
         }
 
     }
@@ -156,6 +159,8 @@ public partial class BridgeContractTests
             limitLogList[0].TargetChainId.ShouldBe("Ethereum");
             limitLogList[0].ReceiptDailyLimit.ShouldBe(5_0000_00000000);
             limitLogList[0].ReceiptRefreshTime.ShouldBe(Timestamp.FromDateTime(time));
+            limitLogList[0].CurrentReceiptDailyLimit.ShouldBe(5_0000_00000000);
+
         }
 
     }
@@ -306,10 +311,12 @@ public partial class BridgeContractTests
             limitLogList[0].FromChainId.ShouldBe("Ethereum"); 
             limitLogList[0].SwapDailyLimit.ShouldBe(10_0000_00000000);
             limitLogList[0].SwapRefreshTime.ShouldBe(Timestamp.FromDateTime(time));
+            limitLogList[0].CurrentSwapDailyLimit.ShouldBe(10_0000_00000000);
             limitLogList[1].Symbol.ShouldBe("USDT"); 
             limitLogList[1].FromChainId.ShouldBe("Polygon"); 
             limitLogList[1].SwapDailyLimit.ShouldBe(5_0000_00000000);
             limitLogList[1].SwapRefreshTime.ShouldBe(Timestamp.FromDateTime(time));
+            limitLogList[1].CurrentSwapDailyLimit.ShouldBe(5_0000_00000000);
         }
 
     }
@@ -343,6 +350,7 @@ public partial class BridgeContractTests
             limitLogList[0].FromChainId.ShouldBe("Ethereum"); 
             limitLogList[0].SwapDailyLimit.ShouldBe(6_0000_00000000);
             limitLogList[0].SwapRefreshTime.ShouldBe(Timestamp.FromDateTime(time));
+            limitLogList[0].CurrentSwapDailyLimit.ShouldBe(6_0000_00000000);
         }
 
     }

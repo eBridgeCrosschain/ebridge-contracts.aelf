@@ -136,9 +136,9 @@ public partial class BridgeContract
         var swapInfo = GetTokenSwapInfo(swapId);
         var actualAmount = GetTargetTokenAmount(amount, swapInfo.SwapTargetToken?.SwapRatio);
         var dailyLimit = State.SwapDailyLimit[swapId];
-        dailyLimit = AssertDailyLimit(dailyLimit, actualAmount);
+        dailyLimit = GetDailyLimit(dailyLimit, actualAmount);
         var currentBucket = State.SwapTokenBucketInfo[swapId];  
-        currentBucket = AssertTokenBucketAmount(currentBucket, actualAmount);
+        currentBucket = GetTokenBucketAmount(currentBucket, actualAmount);
         
         if (dailyLimit == null && currentBucket == null) 
         {

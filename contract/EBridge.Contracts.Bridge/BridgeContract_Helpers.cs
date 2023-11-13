@@ -266,7 +266,7 @@ namespace EBridge.Contracts.Bridge
 
         #region limiter
 
-        private DailyLimitTokenInfo AssertDailyLimit(DailyLimitTokenInfo dailyLimit, long amount)
+        private DailyLimitTokenInfo GetDailyLimit(DailyLimitTokenInfo dailyLimit, long amount)
         {
             if (dailyLimit == null)
             {
@@ -291,7 +291,7 @@ namespace EBridge.Contracts.Bridge
             return dailyLimit;
         }
 
-        private TokenBucket AssertTokenBucketAmount(TokenBucket bucket, long amount)
+        private TokenBucket GetTokenBucketAmount(TokenBucket bucket, long amount)
         {
             if (bucket == null || !bucket.IsEnable)
             { 

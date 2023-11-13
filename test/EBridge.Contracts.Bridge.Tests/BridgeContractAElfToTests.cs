@@ -502,10 +502,18 @@ public partial class BridgeContractTests : BridgeContractTestBase
                 }
             };
         
-            await BridgeContractImplStub.SetReceiptDailyLimit.SendAsync(new SetReceiptDailyLimitInput
+            var executionResult = await BridgeContractImplStub.SetReceiptDailyLimit.SendAsync(new SetReceiptDailyLimitInput
             {
                 ReceiptDailyLimitInfos = { input1 }
             });
+            {
+                var limitLogList = (from log in executionResult.TransactionResult.Logs where log.Name == nameof(ReceiptDailyLimitSet) select ReceiptDailyLimitSet.Parser.ParseFrom(log.NonIndexed)).ToList();
+                limitLogList[0].Symbol.ShouldBe("ELF"); 
+                limitLogList[0].TargetChainId.ShouldBe("Ethereum"); 
+                limitLogList[0].ReceiptDailyLimit.ShouldBe(2_0000_00000000);
+                limitLogList[0].ReceiptRefreshTime.ShouldBe(Timestamp.FromDateTime(time.AddDays(1)));
+                limitLogList[0].CurrentReceiptDailyLimit.ShouldBe(0);
+            }
 
             {
                 var dailyLimit = await BridgeContractImplStub.GetReceiptDailyLimit.CallAsync(
@@ -598,7 +606,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
                         TargetChain = "Ethereum",
                         TokenAmount = 3700_00000000
                     });
-                minWait.Value.ShouldBe(3700);
+                minWait.Value.ShouldBe(100);
             }
             executionResult.TransactionResult.Error.ShouldContain("Amount exceeds current token amount, the minimum wait time is 100s");
             {
