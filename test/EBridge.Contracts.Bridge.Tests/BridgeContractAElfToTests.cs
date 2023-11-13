@@ -432,6 +432,16 @@ public partial class BridgeContractTests : BridgeContractTestBase
                     });
                 dailyLimit.TokenAmount.ShouldBe(10_0000_00000000 - 8_0000_00000000);
             }
+            {
+                blockTimeProvider.SetBlockTime(Timestamp.FromDateTime(creatReceiptTime.AddDays(2)));
+                var dailyLimit = await BridgeContractImplStub.GetReceiptDailyLimit.CallAsync(
+                    new GetReceiptDailyLimitInput
+                    {
+                        Symbol = "ELF",
+                        TargetChain = "Ethereum"
+                    });
+                dailyLimit.TokenAmount.ShouldBe(10_0000_00000000);
+            }
         }
         {
             blockTimeProvider.SetBlockTime(Timestamp.FromDateTime(creatReceiptTime.AddHours(1)));
