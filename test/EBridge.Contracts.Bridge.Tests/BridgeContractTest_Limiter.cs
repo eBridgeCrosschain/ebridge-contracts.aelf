@@ -166,6 +166,29 @@ public partial class BridgeContractTests
     }
     
     [Fact]
+    public async Task SetReceiptDailyLimit_Success_Reset_Failed()
+    {
+        await SetReceiptDailyLimit_Success();
+        var time = TimestampHelper.GetUtcNow().ToDateTime().AddDays(2).Date;
+        var input = new List<ReceiptDailyLimitInfo>
+        {
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "ELF",
+                TargetChain = "Ethereum",
+                DefaultTokenAmount = 5_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            }
+        };
+        var result = await BridgeContractImplStub.SetReceiptDailyLimit.SendWithExceptionAsync(new SetReceiptDailyLimitInput
+        {
+            ReceiptDailyLimitInfos = { input }
+        });
+        result.TransactionResult.Error.ShouldContain("Invalid time,current refresh time is");
+
+    }
+    
+    [Fact]
     public async Task SetReceiptDailyLimit_Failed_NoPermission()
     {
         await InitialBridgeContractAsync();
@@ -257,7 +280,7 @@ public partial class BridgeContractTests
                 {
                     Symbol = "ELF",
                     TargetChain = "Ethereum",
-                    DefaultTokenAmount = 0,
+                    DefaultTokenAmount = 100,
                     StartTime = Timestamp.FromDateTime(time1)
                 }
             };
@@ -265,7 +288,7 @@ public partial class BridgeContractTests
             {
                 ReceiptDailyLimitInfos = { input }
             });
-            result.TransactionResult.Error.ShouldContain("Invalid input daily receipt limit info.");
+            result.TransactionResult.Error.ShouldContain("Invalid refresh time.");
         }
     }
 
