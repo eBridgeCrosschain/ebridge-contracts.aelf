@@ -198,6 +198,4 @@ public partial class BridgeContractState : ContractState
     /// </summary>
     public MappedState<Hash, TokenBucket> SwapTokenBucketInfo { get; set; }
 
-    public SingletonState<long> DailyLimitRefreshTime { get; set; }
-
 }

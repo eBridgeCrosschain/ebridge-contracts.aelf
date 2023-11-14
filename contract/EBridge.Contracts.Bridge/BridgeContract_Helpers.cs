@@ -274,13 +274,10 @@ namespace EBridge.Contracts.Bridge
             }
 
             var lastRefreshTime = dailyLimit.RefreshTime;
-            var defaultRefreshTime = State.DailyLimitRefreshTime.Value == 0
-                ? DefaultDailyRefreshTime
-                : State.DailyLimitRefreshTime.Value;
-            var count = (Context.CurrentBlockTime - lastRefreshTime).Seconds.Div(defaultRefreshTime);
+            var count = (Context.CurrentBlockTime - lastRefreshTime).Seconds.Div(DefaultDailyRefreshTime);
             if (count > 0)
             {
-                lastRefreshTime = lastRefreshTime.AddSeconds(defaultRefreshTime.Mul(count));
+                lastRefreshTime = lastRefreshTime.AddSeconds(DefaultDailyRefreshTime.Mul(count));
                 dailyLimit.RefreshTime = lastRefreshTime;
                 dailyLimit.TokenAmount = dailyLimit.DefaultTokenAmount;
             }

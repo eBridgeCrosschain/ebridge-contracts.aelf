@@ -20,8 +20,7 @@ public partial class BridgeContract
             Assert(
                 receiptDailyLimitInfo.DefaultTokenAmount > 0 &&
                 !string.IsNullOrEmpty(receiptDailyLimitInfo.TargetChain) &&
-                !string.IsNullOrEmpty(receiptDailyLimitInfo.Symbol) &&
-                receiptDailyLimitInfo.StartTime.Seconds % DefaultDailyRefreshTime == 0,
+                !string.IsNullOrEmpty(receiptDailyLimitInfo.Symbol),
                 "Invalid input daily receipt limit info.");
             var symbol = receiptDailyLimitInfo.Symbol;
             var targetChain = receiptDailyLimitInfo.TargetChain;
@@ -49,8 +48,7 @@ public partial class BridgeContract
         foreach (var swapDailyLimitInfo in input.SwapDailyLimitInfos)
         {
             Assert(
-                swapDailyLimitInfo.DefaultTokenAmount > 0 && swapDailyLimitInfo.SwapId != null &&
-                swapDailyLimitInfo.StartTime.Seconds % DefaultDailyRefreshTime == 0,
+                swapDailyLimitInfo.DefaultTokenAmount > 0 && swapDailyLimitInfo.SwapId != null,
                 "Invalid input daily swap limit info.");
             var swapInfo = State.SwapInfo[swapDailyLimitInfo.SwapId];
             Assert(swapInfo != null, "Invalid swap id.");
@@ -73,13 +71,11 @@ public partial class BridgeContract
     private DailyLimitTokenInfo SetDailyLimit(DailyLimitTokenInfo dailyLimit, long defaultTokenAmount,
         Timestamp startTime)
     {
-        var defaultRefreshTime = State.DailyLimitRefreshTime.Value == 0
-            ? DefaultDailyRefreshTime
-            : State.DailyLimitRefreshTime.Value;
-        Assert(Context.CurrentBlockTime >= dailyLimit.RefreshTime,
+        Assert(startTime.Seconds % DefaultDailyRefreshTime == 0, "Invalid refresh time.");
+        Assert(Context.CurrentBlockTime >= dailyLimit.RefreshTime && (Context.CurrentBlockTime - startTime).Seconds <= DefaultDailyRefreshTime,
             $"Invalid time,current refresh time is {dailyLimit.RefreshTime}");
         if (dailyLimit.RefreshTime != null &&
-            (Context.CurrentBlockTime - dailyLimit.RefreshTime).Seconds.Div(defaultRefreshTime) <= 0)
+            (Context.CurrentBlockTime - dailyLimit.RefreshTime).Seconds.Div(DefaultDailyRefreshTime) < 1)
         {
             var useAmount = dailyLimit.DefaultTokenAmount.Sub(dailyLimit.TokenAmount);
             dailyLimit.TokenAmount = defaultTokenAmount.Sub(useAmount) < 0 ? 0 : defaultTokenAmount.Sub(useAmount);
@@ -104,20 +100,16 @@ public partial class BridgeContract
     {
         var dailyLimit = State.SwapDailyLimit[input];
         return dailyLimit == null ? new DailyLimitTokenInfo() : GetDailyLimitTokenInfo(dailyLimit);
-
     }
 
     private DailyLimitTokenInfo GetDailyLimitTokenInfo(DailyLimitTokenInfo dailyLimit)
     {
-        var defaultRefreshTime = State.DailyLimitRefreshTime.Value == 0
-            ? DefaultDailyRefreshTime
-            : State.DailyLimitRefreshTime.Value;
         var refreshTime = dailyLimit.RefreshTime;
         var tokenAmount = dailyLimit.TokenAmount;
-        var count = (Context.CurrentBlockTime - dailyLimit.RefreshTime).Seconds.Div(defaultRefreshTime);
+        var count = (Context.CurrentBlockTime - dailyLimit.RefreshTime).Seconds.Div(DefaultDailyRefreshTime);
         if (count > 0)
         {
-            refreshTime = dailyLimit.RefreshTime.AddSeconds(defaultRefreshTime.Mul(count));
+            refreshTime = dailyLimit.RefreshTime.AddSeconds(DefaultDailyRefreshTime.Mul(count));
             tokenAmount = dailyLimit.DefaultTokenAmount;
         }
         return new DailyLimitTokenInfo
@@ -125,20 +117,6 @@ public partial class BridgeContract
             TokenAmount = tokenAmount,
             DefaultTokenAmount = dailyLimit.DefaultTokenAmount,
             RefreshTime = refreshTime
-        };
-    }
-
-    public override Empty SetDailyLimitRefreshTime(Int64Value input)
-    {
-        State.DailyLimitRefreshTime.Value = input.Value;
-        return new Empty();
-    }
-
-    public override Int64Value GetDailyLimitRefreshTime(Empty input)
-    {
-        return new Int64Value
-        {
-            Value = State.DailyLimitRefreshTime.Value
         };
     }
 
