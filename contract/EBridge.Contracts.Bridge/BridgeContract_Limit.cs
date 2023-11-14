@@ -75,7 +75,7 @@ public partial class BridgeContract
         Assert(
             Context.CurrentBlockTime >= dailyLimit.RefreshTime && Context.CurrentBlockTime >= startTime &&
             (Context.CurrentBlockTime - startTime).Seconds <= DefaultDailyRefreshTime,
-            $"Invalid time,current refresh time is {dailyLimit.RefreshTime},current block time is {Context.CurrentBlockTime},new refresh time is {startTime}");
+            $"Only daily limits are supported within the contract,current refresh time is {dailyLimit.RefreshTime},current block time is {Context.CurrentBlockTime},new refresh time is {startTime}");
         if (dailyLimit.RefreshTime != null &&
             (Context.CurrentBlockTime - dailyLimit.RefreshTime).Seconds.Div(DefaultDailyRefreshTime) < 1)
         {
@@ -114,6 +114,7 @@ public partial class BridgeContract
             refreshTime = dailyLimit.RefreshTime.AddSeconds(DefaultDailyRefreshTime.Mul(count));
             tokenAmount = dailyLimit.DefaultTokenAmount;
         }
+
         return new DailyLimitTokenInfo
         {
             TokenAmount = tokenAmount,
@@ -251,7 +252,7 @@ public partial class BridgeContract
 
         return minWaitInSeconds;
     }
-    
+
     private TokenBucket GetCurrentTokenBucket(TokenBucket tokenBucket)
     {
         if (tokenBucket != null)
