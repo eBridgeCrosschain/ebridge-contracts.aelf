@@ -184,7 +184,7 @@ public partial class BridgeContractTests
         {
             ReceiptDailyLimitInfos = { input }
         });
-        result.TransactionResult.Error.ShouldContain("Invalid time,current refresh time is");
+        result.TransactionResult.Error.ShouldContain("Only daily limits are supported within the contract,current refresh time is");
 
     }
     
