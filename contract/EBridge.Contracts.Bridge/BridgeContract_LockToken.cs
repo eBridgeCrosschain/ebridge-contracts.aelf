@@ -82,7 +82,7 @@ public partial class BridgeContract
         Assert(State.ChainTokenWhitelist[input.TargetChainId].Symbol.Contains(input.Symbol),
             $"Token {input.Symbol} is not in whitelist.");
         AssertPriceRatioFluctuation(input.TargetChainId);
-        AssertReceiptAmount(input.Symbol, input.TargetChainId, input.Amount);
+        ConsumeReceiptAmount(input.Symbol, input.TargetChainId, input.Amount);
         var receipt = new Receipt
         {
             Symbol = input.Symbol,
@@ -145,17 +145,20 @@ public partial class BridgeContract
         return new Empty();
     }
 
-    private void AssertReceiptAmount(string symbol, string targetChainId, long amount)
+    private void ConsumeReceiptAmount(string symbol, string targetChainId, long amount)
     {
         var dailyLimit = State.ReceiptDailyLimit[symbol][targetChainId];
-        dailyLimit = GetDailyLimit(dailyLimit, amount);
+        dailyLimit = GetDailyLimit(dailyLimit);
+        
         var currentBucket = State.ReceiptTokenBucketInfo[symbol][targetChainId];
-        currentBucket = GetTokenBucketAmount(currentBucket, amount);
+        currentBucket = GetTokenBucketAmount(currentBucket);
 
         if (dailyLimit == null && currentBucket == null) 
         {
             return;
         }
+        
+        AssertTokenAmount(dailyLimit,currentBucket,amount);
 
         Context.Fire(new ReceiptLimitChanged
         {
@@ -167,6 +170,8 @@ public partial class BridgeContract
             ReceiptBucketUpdateTime = currentBucket?.LastUpdatedTime
         });
     }
+
+
 
     public override Empty WithdrawTransactionFee(Int64Value input)
     {

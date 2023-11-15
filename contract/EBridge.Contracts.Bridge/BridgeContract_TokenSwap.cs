@@ -97,7 +97,7 @@ public partial class BridgeContract
         ValidateSwapTokenInput(input);
         Assert(TryGetReceiptIndex(input.ReceiptId, out var receiptIndex), "Incorrect receipt index.");
         Assert(TryGetOriginTokenAmount(input.OriginAmount, out var amount), "Invalid amount.");
-        AssertSwapAmount(input.SwapId, amount);
+        ConsumeSwapAmount(input.SwapId, amount);
         var leafHash = ComputeLeafHash(amount, receiverAddress, input.ReceiptId);
 
         var spaceId = State.SwapSpaceIdMap[input.SwapId];
@@ -131,19 +131,20 @@ public partial class BridgeContract
         return new Empty();
     }
 
-    private void AssertSwapAmount(Hash swapId, decimal amount)
+    private void ConsumeSwapAmount(Hash swapId, decimal amount)
     {
         var swapInfo = GetTokenSwapInfo(swapId);
         var actualAmount = GetTargetTokenAmount(amount, swapInfo.SwapTargetToken?.SwapRatio);
         var dailyLimit = State.SwapDailyLimit[swapId];
-        dailyLimit = GetDailyLimit(dailyLimit, actualAmount);
+        dailyLimit = GetDailyLimit(dailyLimit);
         var currentBucket = State.SwapTokenBucketInfo[swapId];  
-        currentBucket = GetTokenBucketAmount(currentBucket, actualAmount);
+        currentBucket = GetTokenBucketAmount(currentBucket);
         
         if (dailyLimit == null && currentBucket == null) 
         {
             return;
         }
+        AssertTokenAmount(dailyLimit,currentBucket,actualAmount);
         
         Context.Fire(new SwapLimitChanged
         {
