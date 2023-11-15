@@ -66,7 +66,7 @@ message TokenBucket {
   google.protobuf.Timestamp last_updated_time = 2;
   int64 token_capacity = 3; 
   int64 rate = 4;
-  bool isEnable = 5;
+  bool is_enable = 5;
 }
 
 // Input
@@ -103,7 +103,7 @@ message ConfigReceiptTokenBucketInput{
 message ReceiptTokenBucketConfig {
   string symbol = 1;
   string target_chain = 2;
-  bool isEnable = 3;
+  bool is_enable = 3;
   int64 token_capacity = 4;
   int64 rate = 5;
 }
@@ -125,7 +125,7 @@ message ConfigSwapTokenBucketInput{
 
 message SwapTokenBucketConfig {
   aelf.Hash swap_id = 1;
-  bool isEnable = 2; 
+  bool is_enable = 2; 
   int64 token_capacity = 3;
   int64 rate = 4; 
 }
@@ -159,7 +159,7 @@ message ReceiptTokenBucketSet{
   string target_chain_id = 2;
   int64 receipt_capacity = 3;
   int64 receipt_refill_rate = 4;
-  bool receipt_bucket_isEnable = 5;
+  bool receipt_bucket_is_enable = 5;
   google.protobuf.Timestamp receipt_bucket_update_time = 6;
   int64 current_receipt_bucket_token_amount = 7;
 }
@@ -170,7 +170,7 @@ message SwapTokenBucketSet{
   string from_chain_id = 2;
   int64 swap_capacity = 3;
   int64 swap_refill_rate = 4;
-  bool swap_bucket_isEnable = 5;
+  bool swap_bucket_is_enable = 5;
   google.protobuf.Timestamp swap_bucket_update_time = 6;
   int64 current_swap_bucket_token_amount = 7;
 }
@@ -178,7 +178,7 @@ message SwapTokenBucketSet{
 message ReceiptLimitChanged {
   option (aelf.is_event) = true;
   string symbol = 1;
-  string targetChainId = 2;
+  string target_chain_id = 2;
   int64 current_receipt_daily_limit_amount = 3;
   google.protobuf.Timestamp receipt_daily_limit_refresh_time = 4;
   int64 current_receipt_bucket_token_amount = 5;
@@ -188,7 +188,7 @@ message ReceiptLimitChanged {
 message SwapLimitChanged {
   option (aelf.is_event) = true;
   string symbol = 1;
-  string fromChainId = 2;
+  string from_chain_id = 2;
   int64 current_swap_daily_limit_amount = 3;
   google.protobuf.Timestamp swap_daily_limit_refresh_time = 4;
   int64 current_swap_bucket_token_amount = 5;
