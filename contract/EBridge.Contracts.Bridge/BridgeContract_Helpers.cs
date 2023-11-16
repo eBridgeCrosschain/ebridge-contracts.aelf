@@ -65,7 +65,7 @@ namespace EBridge.Contracts.Bridge
 
         private void TryGetNativeToken(decimal amount, long priceRatio, out decimal nativeAmount)
         {
-            var priceRatioDecimal = (decimal) priceRatio / 100000000;
+            var priceRatioDecimal = (decimal)priceRatio / 100000000;
             nativeAmount = amount * priceRatioDecimal;
         }
 
@@ -270,7 +270,7 @@ namespace EBridge.Contracts.Bridge
         {
             if (dailyLimit == null)
             {
-                return null;
+                return new DailyLimitTokenInfo();
             }
 
             var lastRefreshTime = dailyLimit.RefreshTime;
@@ -288,7 +288,7 @@ namespace EBridge.Contracts.Bridge
         private TokenBucket GetTokenBucketAmount(TokenBucket bucket)
         {
             if (bucket == null || !bucket.IsEnable)
-            { 
+            {
                 return null;
             }
 
@@ -300,24 +300,23 @@ namespace EBridge.Contracts.Bridge
                     CalculateRefill(bucket.TokenCapacity, bucket.CurrentTokenAmount, timeDiff, bucket.Rate);
                 bucket.LastUpdatedTime = Context.CurrentBlockTime;
             }
-            
+
             return bucket;
         }
-        
-        private void AssertTokenAmount(DailyLimitTokenInfo dailyLimitTokenInfo,TokenBucket tokenBucket,long amount)
+
+        private void AssertTokenAmount(DailyLimitTokenInfo dailyLimitTokenInfo, TokenBucket tokenBucket, long amount)
         {
-            if (dailyLimitTokenInfo != null)
-            {
-                Assert(amount <= dailyLimitTokenInfo.TokenAmount,
-                    $"Amount exceeds daily limit amount. Current daily limit is {dailyLimitTokenInfo.TokenAmount}");
-                dailyLimitTokenInfo.TokenAmount = dailyLimitTokenInfo.TokenAmount.Sub(amount);
-            }
+            Assert(amount <= dailyLimitTokenInfo.TokenAmount,
+                $"Amount exceeds daily limit amount. Current daily limit is {dailyLimitTokenInfo.TokenAmount}");
+            dailyLimitTokenInfo.TokenAmount = dailyLimitTokenInfo.TokenAmount.Sub(amount);
+            
             if (tokenBucket != null)
             {
                 Assert(amount <= tokenBucket.TokenCapacity, "Amount exceeds token max capacity.");
                 if (amount > tokenBucket.CurrentTokenAmount)
                 {
-                    var minWaitInSeconds = amount.Sub(tokenBucket.CurrentTokenAmount).Add(tokenBucket.Rate.Sub(1)).Div(tokenBucket.Rate);
+                    var minWaitInSeconds = amount.Sub(tokenBucket.CurrentTokenAmount).Add(tokenBucket.Rate.Sub(1))
+                        .Div(tokenBucket.Rate);
                     throw new AssertionException(
                         $"Amount exceeds current token amount, the minimum wait time is {minWaitInSeconds}s");
                 }

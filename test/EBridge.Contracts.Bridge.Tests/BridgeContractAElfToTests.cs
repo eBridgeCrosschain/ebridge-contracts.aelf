@@ -534,6 +534,28 @@ public partial class BridgeContractTests : BridgeContractTestBase
     {
         await InitialAElfTo();
         var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
+        var input = new List<ReceiptDailyLimitInfo>
+        {
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "ELF",
+                TargetChain = "Ethereum",
+                DefaultTokenAmount = 10_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            },
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "USDT",
+                TargetChain = "Ethereum",
+                DefaultTokenAmount = 5_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            }
+        };
+        
+        await BridgeContractImplStub.SetReceiptDailyLimit.SendAsync(new SetReceiptDailyLimitInput
+        {
+            ReceiptDailyLimitInfos = { input }
+        });
         var input1 = new List<ReceiptTokenBucketConfig>()
         {
             new ReceiptTokenBucketConfig
@@ -637,6 +659,42 @@ public partial class BridgeContractTests : BridgeContractTestBase
     {
         await InitialAElfTo();
         await InitialSetGas();
+        var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
+        var input = new List<ReceiptDailyLimitInfo>
+        {
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "ELF",
+                TargetChain = "Ethereum",
+                DefaultTokenAmount = 10_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            },
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "USDT",
+                TargetChain = "Ethereum",
+                DefaultTokenAmount = 5_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            },
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "ELF",
+                TargetChain = "BSC",
+                DefaultTokenAmount = 10_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            },
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "USDT",
+                TargetChain = "BSC",
+                DefaultTokenAmount = 5_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            }
+        };
+        await BridgeContractImplStub.SetReceiptDailyLimit.SendAsync(new SetReceiptDailyLimitInput
+        {
+            ReceiptDailyLimitInfos = { input }
+        });
         {
             await BridgeContractStub.CreateReceipt.SendAsync(new CreateReceiptInput
             {
@@ -816,6 +874,20 @@ public partial class BridgeContractTests : BridgeContractTestBase
             });
             _swapHashOfElf = createSwapResult.Output;
             _swapOfElfSpaceId = await BridgeContractStub.GetSpaceIdBySwapId.CallAsync(_swapHashOfElf);
+            var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
+            var input = new List<SwapDailyLimitInfo>
+            {
+                new SwapDailyLimitInfo
+                {
+                    SwapId = _swapHashOfElf,
+                    DefaultTokenAmount = 10_0000_00000000,
+                    StartTime = Timestamp.FromDateTime(time)
+                }
+            };
+            var result = await BridgeContractImplStub.SetSwapDailyLimit.SendAsync(new SetSwapDailyLimitInput
+            {
+                SwapDailyLimitInfos = { input }
+            });
             {
                 // Query
                 var queryId = await MakeQueryAsync(_swapHashOfElf.ToString(), 1, 3);
@@ -1322,6 +1394,42 @@ public partial class BridgeContractTests : BridgeContractTestBase
     public async Task AElfToSetFeeTest()
     {
         await InitialAElfTo();
+        var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
+        var input = new List<ReceiptDailyLimitInfo>
+        {
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "ELF",
+                TargetChain = "Ethereum",
+                DefaultTokenAmount = 10_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            },
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "USDT",
+                TargetChain = "Ethereum",
+                DefaultTokenAmount = 5_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            },
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "ELF",
+                TargetChain = "BSC",
+                DefaultTokenAmount = 10_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            },
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "USDT",
+                TargetChain = "BSC",
+                DefaultTokenAmount = 5_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            }
+        };
+        var result = await BridgeContractImplStub.SetReceiptDailyLimit.SendAsync(new SetReceiptDailyLimitInput
+        {
+            ReceiptDailyLimitInfos = { input }
+        });
         await BridgeContractStub.SetGasLimit.SendAsync(new SetGasLimitInput
         {
             GasLimitList =
@@ -1610,6 +1718,42 @@ public partial class BridgeContractTests : BridgeContractTestBase
     {
         await InitialAElfTo();
         await InitialSetGas();
+        var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
+        var input = new List<ReceiptDailyLimitInfo>
+        {
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "ELF",
+                TargetChain = "Ethereum",
+                DefaultTokenAmount = 10_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            },
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "USDT",
+                TargetChain = "Ethereum",
+                DefaultTokenAmount = 5_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            },
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "ELF",
+                TargetChain = "BSC",
+                DefaultTokenAmount = 10_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            },
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "USDT",
+                TargetChain = "BSC",
+                DefaultTokenAmount = 5_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            }
+        };
+        var result = await BridgeContractImplStub.SetReceiptDailyLimit.SendAsync(new SetReceiptDailyLimitInput
+        {
+            ReceiptDailyLimitInfos = { input }
+        });
         {
             await BridgeContractStub.SetPriceRatio.SendAsync(new SetRatioInput
             {
@@ -1737,6 +1881,42 @@ public partial class BridgeContractTests : BridgeContractTestBase
     {
         var organization = await InitialAElfTo();
         await InitialSetGas();
+        var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
+        var input = new List<ReceiptDailyLimitInfo>
+        {
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "ELF",
+                TargetChain = "Ethereum",
+                DefaultTokenAmount = 10_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            },
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "USDT",
+                TargetChain = "Ethereum",
+                DefaultTokenAmount = 5_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            },
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "ELF",
+                TargetChain = "BSC",
+                DefaultTokenAmount = 10_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            },
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "USDT",
+                TargetChain = "BSC",
+                DefaultTokenAmount = 5_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            }
+        };
+        var result = await BridgeContractImplStub.SetReceiptDailyLimit.SendAsync(new SetReceiptDailyLimitInput
+        {
+            ReceiptDailyLimitInfos = { input }
+        });
         {
             await BridgeContractStub.Pause.SendAsync(new Empty());
             var state = await BridgeContractStub.IsContractPause.CallAsync(new Empty());
@@ -1814,6 +1994,42 @@ public partial class BridgeContractTests : BridgeContractTestBase
     public async Task AElfToSetFeeTest_NotSetPriceRatio()
     {
         await InitialAElfTo();
+        var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
+        var input = new List<ReceiptDailyLimitInfo>
+        {
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "ELF",
+                TargetChain = "Ethereum",
+                DefaultTokenAmount = 10_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            },
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "USDT",
+                TargetChain = "Ethereum",
+                DefaultTokenAmount = 5_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            },
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "ELF",
+                TargetChain = "BSC",
+                DefaultTokenAmount = 10_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            },
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "USDT",
+                TargetChain = "BSC",
+                DefaultTokenAmount = 5_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            }
+        };
+        var result = await BridgeContractImplStub.SetReceiptDailyLimit.SendAsync(new SetReceiptDailyLimitInput
+        {
+            ReceiptDailyLimitInfos = { input }
+        });
         await BridgeContractStub.SetGasPrice.SendAsync(new SetGasPriceInput
         {
             GasPriceList =
@@ -1845,6 +2061,42 @@ public partial class BridgeContractTests : BridgeContractTestBase
     public async Task AElfToSetFeeTest_GasLimitIsZero()
     {
         await InitialAElfTo();
+        var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
+        var input = new List<ReceiptDailyLimitInfo>
+        {
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "ELF",
+                TargetChain = "Ethereum",
+                DefaultTokenAmount = 10_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            },
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "USDT",
+                TargetChain = "Ethereum",
+                DefaultTokenAmount = 5_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            },
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "ELF",
+                TargetChain = "BSC",
+                DefaultTokenAmount = 10_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            },
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "USDT",
+                TargetChain = "BSC",
+                DefaultTokenAmount = 5_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            }
+        };
+        await BridgeContractImplStub.SetReceiptDailyLimit.SendAsync(new SetReceiptDailyLimitInput
+        {
+            ReceiptDailyLimitInfos = { input }
+        });
         var gasFee = await BridgeContractStub.GetGasLimit.CallAsync(new StringValue
         {
             Value = "Ethereum"
@@ -1898,6 +2150,42 @@ public partial class BridgeContractTests : BridgeContractTestBase
     public async Task AElfToSetFeeTest_GasPriceIsZero()
     {
         await InitialAElfTo();
+        var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
+        var input = new List<ReceiptDailyLimitInfo>
+        {
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "ELF",
+                TargetChain = "Ethereum",
+                DefaultTokenAmount = 10_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            },
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "USDT",
+                TargetChain = "Ethereum",
+                DefaultTokenAmount = 5_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            },
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "ELF",
+                TargetChain = "BSC",
+                DefaultTokenAmount = 10_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            },
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "USDT",
+                TargetChain = "BSC",
+                DefaultTokenAmount = 5_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            }
+        };
+        var result = await BridgeContractImplStub.SetReceiptDailyLimit.SendAsync(new SetReceiptDailyLimitInput
+        {
+            ReceiptDailyLimitInfos = { input }
+        });
         await BridgeContractStub.SetGasLimit.SendAsync(new SetGasLimitInput
         {
             GasLimitList =

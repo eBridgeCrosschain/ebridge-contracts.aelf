@@ -26,11 +26,6 @@ public partial class BridgeContractState : ContractState
     public SingletonState<AuthorityInfo> MethodFeeController { get; set; }
 
     /// <summary>
-    /// Controller who can approve transfer.
-    /// </summary>
-    public SingletonState<Address> ApproveTransferController { get; set; }
-    
-    /// <summary>
     /// Is contract pause (true->pause/false=>start).
     /// </summary>
     public SingletonState<bool> IsContractPause { get; set; }
@@ -44,11 +39,6 @@ public partial class BridgeContractState : ContractState
     /// Controller who can pause the contract.
     /// </summary>
     public SingletonState<Address> PauseController { get; set; }
-    
-    /// <summary>
-    /// The maximum amount of transfers per token.
-    /// </summary>
-    public MappedState<string, long> TokenMaximumAmount { get; set; }
 
     /// <summary>
     /// Contract method name -> MethodFees
@@ -102,11 +92,6 @@ public partial class BridgeContractState : ContractState
     /// Swap Id -> Tree index
     /// </summary>
     public MappedState<Hash, long> RecordedTreeLeafIndex { get; set; }
-    
-    /// <summary>
-    /// Receipt Id -> true/false(whether the receipt can be received)
-    /// </summary>
-    public MappedState<string, bool> ApproveTransfer { get; set; }
 
     #endregion
 

@@ -40,21 +40,8 @@ public partial class BridgeContract
         return State.FeeRatioController.Value;
     }
     
-    public override Address GetApproveTransferController(Empty input)
-    {
-        return State.ApproveTransferController.Value;
-    }
-    
     #endregion
     
-    #region Admin approve transfer
-
-    public override Int64Value GetTokenMaximumAmount(StringValue input)
-    {
-        return new Int64Value { Value = State.TokenMaximumAmount[input.Value] };
-    }
-    
-    #endregion
 
     #region Others to aelf
 
@@ -91,15 +78,6 @@ public partial class BridgeContract
     public override TokenSymbolList GetTokenWhitelist(StringValue input)
     {
         return State.ChainTokenWhitelist[input.Value] ?? new TokenSymbolList();
-    }
-
-    public override BoolValue IsTransferCanReceive(IsTransferCanReceiveInput input)
-    {
-        TryGetOriginTokenAmount(input.Amount, out var amount);
-        var result = amount <= State.TokenMaximumAmount[input.Symbol];
-        if (result) return new BoolValue {Value = true};
-        var approved = State.ApproveTransfer[input.ReceiptId];
-        return new BoolValue{Value = approved};
     }
 
     #endregion

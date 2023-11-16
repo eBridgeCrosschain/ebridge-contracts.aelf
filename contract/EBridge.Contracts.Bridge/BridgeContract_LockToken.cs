@@ -153,11 +153,6 @@ public partial class BridgeContract
         var currentBucket = State.ReceiptTokenBucketInfo[symbol][targetChainId];
         currentBucket = GetTokenBucketAmount(currentBucket);
 
-        if (dailyLimit == null && currentBucket == null) 
-        {
-            return;
-        }
-        
         AssertTokenAmount(dailyLimit,currentBucket,amount);
 
         Context.Fire(new ReceiptLimitChanged
