@@ -304,7 +304,7 @@ namespace EBridge.Contracts.Bridge
             return bucket;
         }
 
-        private void AssertTokenAmount(DailyLimitTokenInfo dailyLimitTokenInfo, TokenBucket tokenBucket, long amount)
+        private void ConsumeTokenAmount(DailyLimitTokenInfo dailyLimitTokenInfo, TokenBucket tokenBucket, long amount)
         {
             Assert(amount <= dailyLimitTokenInfo.TokenAmount,
                 $"Amount exceeds daily limit amount. Current daily limit is {dailyLimitTokenInfo.TokenAmount}");

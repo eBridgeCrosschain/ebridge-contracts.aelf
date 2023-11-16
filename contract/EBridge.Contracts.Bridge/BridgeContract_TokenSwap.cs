@@ -144,7 +144,7 @@ public partial class BridgeContract
         {
             return;
         }
-        AssertTokenAmount(dailyLimit,currentBucket,actualAmount);
+        ConsumeTokenAmount(dailyLimit,currentBucket,actualAmount);
         
         Context.Fire(new SwapLimitChanged
         {
