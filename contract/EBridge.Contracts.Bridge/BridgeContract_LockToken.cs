@@ -153,7 +153,7 @@ public partial class BridgeContract
         var currentBucket = State.ReceiptTokenBucketInfo[symbol][targetChainId];
         currentBucket = GetTokenBucketAmount(currentBucket);
 
-        AssertTokenAmount(dailyLimit,currentBucket,amount);
+        ConsumeTokenAmount(dailyLimit,currentBucket,amount);
 
         Context.Fire(new ReceiptLimitChanged
         {
