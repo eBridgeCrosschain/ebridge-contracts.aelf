@@ -36,7 +36,6 @@ public partial class BridgeContract
                 $"Incorrect receipt index. Current leaf index: {treeIndex}, Receive receipt index: {receiptIndex}");
             State.RecorderReceiptHashMap[spaceId][receiptIndex.Sub(1)] = Hash.LoadFromHex(receiptHash);
             State.RecordedTreeLeafIndex[spaceId] += 1;
-            State.ApproveTransfer[receiptId] = false;
         }
 
         //Get received first and last receipt index.

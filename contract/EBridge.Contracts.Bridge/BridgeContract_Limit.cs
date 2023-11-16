@@ -73,8 +73,7 @@ public partial class BridgeContract
     {
         Assert(startTime.Seconds % DefaultDailyRefreshTime == 0, "Invalid refresh time.");
         Assert(
-            Context.CurrentBlockTime >= dailyLimit.RefreshTime && Context.CurrentBlockTime >= startTime &&
-            (Context.CurrentBlockTime - startTime).Seconds <= DefaultDailyRefreshTime,
+            Context.CurrentBlockTime >= startTime && (Context.CurrentBlockTime - startTime).Seconds <= DefaultDailyRefreshTime,
             $"Only daily limits are supported within the contract,current refresh time is {dailyLimit.RefreshTime},current block time is {Context.CurrentBlockTime},new refresh time is {startTime}");
         if (dailyLimit.RefreshTime != null &&
             (Context.CurrentBlockTime - dailyLimit.RefreshTime).Seconds.Div(DefaultDailyRefreshTime) < 1)

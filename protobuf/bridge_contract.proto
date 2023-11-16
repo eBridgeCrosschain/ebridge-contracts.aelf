@@ -19,18 +19,10 @@ service BridgeContract {
     rpc ChangeTransactionFeeController(AuthorityInfo) returns (google.protobuf.Empty){}
     rpc ChangeRestartOrganization(aelf.Address) returns (google.protobuf.Empty){}
     rpc ChangePauseController(aelf.Address) returns (google.protobuf.Empty){}
-    rpc ChangeApproveTransferController(aelf.Address) returns (google.protobuf.Empty){}
 
     rpc Pause(google.protobuf.Empty) returns (google.protobuf.Empty){}
     rpc Restart(google.protobuf.Empty) returns (google.protobuf.Empty){}
-
-    //Contract admin : Approve
-    rpc SetTokenMaximumAmount(SetMaximumAmountInput) returns (google.protobuf.Empty){}
-    rpc ApproveTransfer(ApproveTransferInput) returns (google.protobuf.Empty){}
-
-    rpc IsTransferCanReceive(IsTransferCanReceiveInput) returns(google.protobuf.BoolValue){
-        option (aelf.is_view) = true;
-    }
+    
     rpc GetContractController(google.protobuf.Empty) returns (aelf.Address){
         option (aelf.is_view) = true;
     }
@@ -47,15 +39,6 @@ service BridgeContract {
         option (aelf.is_view) = true;
     }
     rpc GetRestartOrganization(google.protobuf.Empty) returns (aelf.Address){
-        option (aelf.is_view) = true;
-    }
-    rpc GetTokenMaximumAmount (google.protobuf.StringValue) returns (google.protobuf.Int64Value){
-        option (aelf.is_view) = true;
-    }
-    rpc GetApproveReceiptIdList (google.protobuf.Empty) returns (ReceiptIdList){
-        option (aelf.is_view) = true;
-    }
-    rpc GetApproveTransferController(google.protobuf.Empty) returns (aelf.Address){
         option (aelf.is_view) = true;
     }
 
