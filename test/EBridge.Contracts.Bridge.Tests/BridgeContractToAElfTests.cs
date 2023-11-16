@@ -887,6 +887,26 @@ public partial class BridgeContractTests
     public async Task SwapTokenTest_Restart()
     {
         var organization = await SwapTokenTest_Pause();
+        var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
+        var input = new List<SwapDailyLimitInfo>
+        {
+            new SwapDailyLimitInfo
+            {
+                SwapId = _swapHashOfElf,
+                DefaultTokenAmount = 10_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            },
+            new SwapDailyLimitInfo
+            {
+                SwapId = _swapHashOfUsdt,
+                DefaultTokenAmount = 5_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            }
+        };
+        await BridgeContractImplStub.SetSwapDailyLimit.SendAsync(new SetSwapDailyLimitInput
+        {
+            SwapDailyLimitInfos = { input }
+        });
         var proposalId = await ProposalToRestartContract(organization);
         await AssociationContractImplStub.Release.SendAsync(proposalId);
         var bridgeBalance = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
@@ -947,6 +967,20 @@ public partial class BridgeContractTests
         });
         _swapHashOfElf = createSwapResult.Output;
         _swapOfElfSpaceId = await BridgeContractStub.GetSpaceIdBySwapId.CallAsync(_swapHashOfElf);
+        var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
+        var input = new List<SwapDailyLimitInfo>
+        {
+            new SwapDailyLimitInfo
+            {
+                SwapId = _swapHashOfElf,
+                DefaultTokenAmount = 10_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            }
+        };
+        var result = await BridgeContractImplStub.SetSwapDailyLimit.SendAsync(new SetSwapDailyLimitInput
+        {
+            SwapDailyLimitInfos = { input }
+        });
         await PortTokenCreate();
         {
             // Query
@@ -972,6 +1006,26 @@ public partial class BridgeContractTests
     public async Task SwapTokenTest_ProofFail_IncorrectReceiptId()
     {
         await CreateSwapTestAsync();
+        var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
+        var input = new List<SwapDailyLimitInfo>
+        {
+            new SwapDailyLimitInfo
+            {
+                SwapId = _swapHashOfElf,
+                DefaultTokenAmount = 10_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            },
+            new SwapDailyLimitInfo
+            {
+                SwapId = _swapHashOfUsdt,
+                DefaultTokenAmount = 5_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            }
+        };
+        var result = await BridgeContractImplStub.SetSwapDailyLimit.SendAsync(new SetSwapDailyLimitInput
+        {
+            SwapDailyLimitInfos = { input }
+        });
         {
             // Query
             var queryId = await MakeQueryAsync(_swapHashOfElf.ToString(), 1, 3);
@@ -1041,6 +1095,26 @@ public partial class BridgeContractTests
     public async Task SwapTokenTest_IncorrectAmount()
     {
         await CreateSwapTestAsync();
+        var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
+        var input = new List<SwapDailyLimitInfo>
+        {
+            new SwapDailyLimitInfo
+            {
+                SwapId = _swapHashOfElf,
+                DefaultTokenAmount = 10_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            },
+            new SwapDailyLimitInfo
+            {
+                SwapId = _swapHashOfUsdt,
+                DefaultTokenAmount = 5_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            }
+        };
+        var result = await BridgeContractImplStub.SetSwapDailyLimit.SendAsync(new SetSwapDailyLimitInput
+        {
+            SwapDailyLimitInfos = { input }
+        });
         {
             // Query
             var queryId = await MakeQueryAsync(_swapHashOfElf.ToString(), 1, 3);
