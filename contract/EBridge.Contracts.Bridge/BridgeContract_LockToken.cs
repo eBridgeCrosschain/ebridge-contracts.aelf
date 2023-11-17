@@ -1,14 +1,10 @@
-using System;
 using System.Linq;
 using AElf;
 using AElf.Contracts.MultiToken;
 using AElf.CSharp.Core;
-using AElf.CSharp.Core.Extension;
 using AElf.Sdk.CSharp;
-using AElf.Types;
 using EBridge.Contracts.Report;
 using Google.Protobuf.WellKnownTypes;
-using SmartContractBridgeContextExtensions = AElf.Sdk.CSharp.SmartContractBridgeContextExtensions;
 
 namespace EBridge.Contracts.Bridge;
 
@@ -149,11 +145,11 @@ public partial class BridgeContract
     {
         var dailyLimit = State.ReceiptDailyLimit[symbol][targetChainId];
         dailyLimit = GetDailyLimit(dailyLimit);
-        
+
         var currentBucket = State.ReceiptTokenBucketInfo[symbol][targetChainId];
         currentBucket = GetTokenBucketAmount(currentBucket);
 
-        ConsumeTokenAmount(dailyLimit,currentBucket,amount);
+        ConsumeTokenAmount(dailyLimit, currentBucket, amount);
 
         Context.Fire(new ReceiptLimitChanged
         {
@@ -165,7 +161,6 @@ public partial class BridgeContract
             ReceiptBucketUpdateTime = currentBucket?.LastUpdatedTime
         });
     }
-
 
 
     public override Empty WithdrawTransactionFee(Int64Value input)
