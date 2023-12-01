@@ -182,5 +182,4 @@ public partial class BridgeContractState : ContractState
     /// swap id -> token bucket
     /// </summary>
     public MappedState<Hash, TokenBucket> SwapTokenBucketInfo { get; set; }
-
 }
