@@ -1,4 +1,4 @@
-﻿using AElf.Sdk.CSharp;
+using AElf.Sdk.CSharp;
 using AElf.Standards.ACS3;
 using AElf.Types;
 using Google.Protobuf.WellKnownTypes;

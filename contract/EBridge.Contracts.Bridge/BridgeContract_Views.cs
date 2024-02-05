@@ -39,7 +39,12 @@ public partial class BridgeContract
     {
         return State.FeeRatioController.Value;
     }
-    
+
+    public override Address GetApproveTransferController(Empty input)
+    {
+        return State.ApproveTransferController.Value;
+    }
+
     #endregion
     
 

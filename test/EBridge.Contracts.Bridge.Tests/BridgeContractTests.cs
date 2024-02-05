@@ -144,6 +144,22 @@ public partial class BridgeContractTests : BridgeContractTestBase
                 .Item2);
         execution.TransactionResult.Error.ShouldContain("No permission.");
     }
+    
+    [Fact]
+    public async Task ChangeApproveTransferController()
+    {
+        await InitialBridgeContractAsync();
+        await BridgeContractStub.ChangeApproveTransferController.SendAsync(SampleAccount.Accounts[5].Address);
+        var controller = await BridgeContractStub.GetApproveTransferController.CallAsync(new Empty());
+        controller.ShouldBe(SampleAccount.Accounts[5].Address);
+    }
+    [Fact]
+    public async Task ChangeApproveTransferController_NoPermission()
+    {
+        var executionResult =
+            await BridgeContractSetFeeRatioStub.ChangeApproveTransferController.SendWithExceptionAsync(SampleAccount.Accounts[5].Address);
+        executionResult.TransactionResult.Error.ShouldContain("No permission.");
+    }
 
     #endregion
 
