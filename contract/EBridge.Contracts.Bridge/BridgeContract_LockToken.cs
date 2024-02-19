@@ -5,7 +5,6 @@ using AElf.CSharp.Core;
 using AElf.Sdk.CSharp;
 using EBridge.Contracts.Report;
 using Google.Protobuf.WellKnownTypes;
-using SmartContractBridgeContextExtensions = AElf.Sdk.CSharp.SmartContractBridgeContextExtensions;
 
 namespace EBridge.Contracts.Bridge;
 
@@ -22,12 +21,13 @@ public partial class BridgeContract
             {
                 Symbol = chainToken.Symbol
             });
-            Assert(!string.IsNullOrEmpty(tokenInfo.Symbol),$"Token {chainToken.Symbol} info is not exist.");
+            Assert(!string.IsNullOrEmpty(tokenInfo.Symbol), $"Token {chainToken.Symbol} info is not exist.");
 
             if (tokenWhitelist.Symbol.Contains(chainToken.Symbol))
             {
                 continue;
             }
+
             tokenWhitelist.Symbol.Add(chainToken.Symbol);
             addedChainToken.Value.Add(new ChainToken
             {
@@ -36,6 +36,7 @@ public partial class BridgeContract
             });
             State.ChainTokenWhitelist[chainToken.ChainId] = tokenWhitelist;
         }
+
         Context.Fire(new TokenWhitelistAdded
         {
             ChainTokenList = addedChainToken
@@ -71,12 +72,13 @@ public partial class BridgeContract
 
     public override Empty CreateReceipt(CreateReceiptInput input)
     {
-        Assert(!State.IsContractPause.Value,"Contract is paused.");
+        Assert(!State.IsContractPause.Value, "Contract is paused.");
         Assert(State.ChainTokenWhitelist[input.TargetChainId] != null,
             $"No symbol list under the chain id {input.TargetChainId}.");
         Assert(State.ChainTokenWhitelist[input.TargetChainId].Symbol.Contains(input.Symbol),
             $"Token {input.Symbol} is not in whitelist.");
         AssertPriceRatioFluctuation(input.TargetChainId);
+        ConsumeReceiptAmount(input.Symbol, input.TargetChainId, input.Amount);
         var receipt = new Receipt
         {
             Symbol = input.Symbol,
@@ -107,10 +109,11 @@ public partial class BridgeContract
             floatingRatio = 1;
         }
 
-        var nativeTokenFee = CalculateTransactionFee(State.GasLimit[input.TargetChainId], State.GasPrice[input.TargetChainId],
+        var nativeTokenFee = CalculateTransactionFee(State.GasLimit[input.TargetChainId],
+            State.GasPrice[input.TargetChainId],
             State.PriceRatio[input.TargetChainId], floatingRatio);
         State.TransactionFee.Value = State.TransactionFee.Value.Add(nativeTokenFee);
-        TransferFee(DefaultFeeSymbol, nativeTokenFee, Context.Sender,Context.Self);
+        TransferFee(DefaultFeeSymbol, nativeTokenFee, Context.Sender, Context.Self);
 
         Context.Fire(new ReceiptCreated
         {
@@ -129,7 +132,7 @@ public partial class BridgeContract
             QueryInfo = new OffChainQueryInfo
             {
                 Title = $"lock_token_{receiptId}",
-                Options = {receiptHash.ToHex()}
+                Options = { receiptHash.ToHex() }
             },
             ChainId = input.TargetChainId,
             Payment = State.QueryPayment.Value
@@ -138,14 +141,36 @@ public partial class BridgeContract
         return new Empty();
     }
 
+    private void ConsumeReceiptAmount(string symbol, string targetChainId, long amount)
+    {
+        var dailyLimit = State.ReceiptDailyLimit[symbol][targetChainId];
+        dailyLimit = GetDailyLimit(dailyLimit);
+
+        var currentBucket = State.ReceiptTokenBucketInfo[symbol][targetChainId];
+        currentBucket = GetTokenBucketAmount(currentBucket);
+
+        ConsumeTokenAmount(dailyLimit, currentBucket, amount);
+
+        Context.Fire(new ReceiptLimitChanged
+        {
+            Symbol = symbol,
+            TargetChainId = targetChainId,
+            CurrentReceiptDailyLimitAmount = dailyLimit?.TokenAmount ?? long.MaxValue,
+            ReceiptDailyLimitRefreshTime = dailyLimit?.RefreshTime,
+            CurrentReceiptBucketTokenAmount = currentBucket?.CurrentTokenAmount ?? long.MaxValue,
+            ReceiptBucketUpdateTime = currentBucket?.LastUpdatedTime
+        });
+    }
+
+
     public override Empty WithdrawTransactionFee(Int64Value input)
     {
-        Assert(State.Admin.Value != null,"Admin is null.");
+        Assert(State.Admin.Value != null, "Admin is null.");
         Assert(input.Value > 0, $"Invalid withdraw amount.{input.Value}");
-        Assert(input.Value <= State.TransactionFee.Value,$"Insufficient amount. Current amount:{State.TransactionFee.Value}");
-        DoTransferFee(DefaultFeeSymbol,input.Value,State.Admin.Value);
+        Assert(input.Value <= State.TransactionFee.Value,
+            $"Insufficient amount. Current amount:{State.TransactionFee.Value}");
+        DoTransferFee(DefaultFeeSymbol, input.Value, State.Admin.Value);
         State.TransactionFee.Value = State.TransactionFee.Value.Sub(input.Value);
         return new Empty();
     }
-
 }

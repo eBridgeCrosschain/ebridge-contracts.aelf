@@ -1,4 +1,4 @@
-﻿using AElf.Sdk.CSharp;
+using AElf.Sdk.CSharp;
 using AElf.Standards.ACS3;
 using AElf.Types;
 using Google.Protobuf.WellKnownTypes;
@@ -35,7 +35,6 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
         State.IsContractPause.Value = false;
         State.RestartOrganizationAddress.Value = input.OrganizationAddress;
         State.PauseController.Value = input.PauseController;
-        State.ApproveTransferController.Value = input.ApproveTransferController;
         return new Empty();
     }
 
@@ -87,13 +86,6 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
         return new Empty();
     }
 
-    public override Empty ChangeApproveTransferController(Address input)
-    {
-        Assert(Context.Sender == State.Admin.Value, "No permission.");
-        State.ApproveTransferController.Value = input;
-        return new Empty();
-    }
-
     private bool ValidateOrganizationExists(Address contractAddress, Address ownerAddress)
     {
         return Context.Call<BoolValue>(contractAddress,
@@ -130,34 +122,5 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
     }
 
     #endregion
-
-    #region Approve transfer
-
-    public override Empty SetTokenMaximumAmount(SetMaximumAmountInput input)
-    {
-        Assert(Context.Sender == State.Admin.Value, "No permission.");
-        foreach (var tokenMaximumAmount in input.Value)
-        {
-            Assert(tokenMaximumAmount.MaximumAmount > 0, $"invalid MaximumAmount ${tokenMaximumAmount.MaximumAmount}");
-            State.TokenMaximumAmount[tokenMaximumAmount.Symbol] = tokenMaximumAmount.MaximumAmount;
-        }
-
-        return new Empty();
-    }
-
-    public override Empty ApproveTransfer(ApproveTransferInput input)
-    {
-        Assert(Context.Sender == State.ApproveTransferController.Value, "No permission.");
-        Assert(!State.ApproveTransfer[input.ReceiptId],
-            "The receipt has been approved");
-        State.ApproveTransfer[input.ReceiptId] = true;
-        Context.Fire(new ApproveTransfer()
-        {
-            Sender = Context.Sender,
-            ReceiptId = input.ReceiptId
-        });
-        return new Empty();
-    }
-
-    #endregion
+    
 }
