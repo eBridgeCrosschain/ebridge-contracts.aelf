@@ -3,6 +3,7 @@ using System.IO;
 using AElf.Boilerplate.TestBase;
 using AElf.ContractTestBase;
 using AElf.ContractTestBase.ContractTestKit;
+using AElf.Kernel.SmartContract;
 using AElf.Kernel.SmartContract.Application;
 using EBridge.Contracts.MerkleTreeContract.ContractInitializationProvider;
 using EBridge.Contracts.Regiment;
@@ -22,6 +23,7 @@ public class MerkleTreeContractTestModule : MainChainDAppContractTestModule
         context.Services.AddSingleton<IBlockTimeProvider, BlockTimeProvider>();
         context.Services
             .AddSingleton<IContractDeploymentListProvider, MainChainDAppContractTestDeploymentListProvider>();
+        Configure<ContractOptions>(o => o.ContractDeploymentAuthorityRequired = false);
     }
 
     public override void OnPreApplicationInitialization(ApplicationInitializationContext context)

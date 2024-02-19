@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AElf;
@@ -88,6 +89,23 @@ public partial class MerkleTreeContractTests : MerkleTreeContractTestBase
     }
 
     [Fact]
+    public async Task DuplicateCreateRegiment()
+    {
+        await InitializeMerkleTreeTest();
+        await MerkleTreeContractStub.CreateRegiment.SendAsync(new CreateRegimentInput
+        {
+            Manager = DefaultSenderAddress,
+            IsApproveToJoin = true
+        });
+        var executionResult = await MerkleTreeContractStub.CreateRegiment.SendWithExceptionAsync(new CreateRegimentInput
+        {
+            Manager = DefaultSenderAddress,
+            IsApproveToJoin = true
+        });
+        executionResult.TransactionResult.Error.ShouldContain("RegimentId already exists");
+    }
+
+    [Fact]
     public async Task<Hash> CreateSpaceTest()
     {
         await InitialRegiment();
@@ -96,14 +114,14 @@ public partial class MerkleTreeContractTests : MerkleTreeContractTestBase
             Value = new SpaceInfo
             {
                 MaxLeafCount = 4,
-                Operators = _regimentId
+                Operator = _regimentId
             }
         });
         var spaceId = SpaceCreated.Parser.ParseFrom(executionResult.TransactionResult.Logs
             .First(l => l.Name == nameof(SpaceCreated)).NonIndexed).SpaceId;
         {
             var spaceInfo = await MerkleTreeContractStub.GetSpaceInfo.CallAsync(spaceId);
-            spaceInfo.Operators.ShouldBe(_regimentId);
+            spaceInfo.Operator.ShouldBe(_regimentId);
             spaceInfo.MaxLeafCount.ShouldBe(4);
 
             var spaceCount = await MerkleTreeContractStub.GetRegimentSpaceCount.CallAsync(_regimentId);
@@ -113,7 +131,40 @@ public partial class MerkleTreeContractTests : MerkleTreeContractTestBase
     }
 
     [Fact]
-    public async Task CreateSpace_LeafCountIsZero()
+    public async Task NextSpaceId_Test()
+    {
+        await InitialRegiment();
+        var input = new CreateSpaceInput
+        {
+            Value = new SpaceInfo
+            {
+                MaxLeafCount = 4,
+                Operator = _regimentId
+            }
+        };
+        var spaceInfoMap = new Dictionary<Hash, Hash>();
+        long id = 1;
+        var spaceId =
+            HashHelper.ConcatAndCompute(HashHelper.ComputeFrom(input.Value.Operator), HashHelper.ComputeFrom(id));
+        spaceInfoMap.GetOrDefault(spaceId).ShouldBe(null);
+        spaceInfoMap[spaceId] = spaceId;
+        
+        var baseId = long.MaxValue >> 4;
+        for (var i = 1; i <= 3; i++)
+        {
+            var nextId = baseId + 15 * (id - 1) + i;
+            spaceId =
+                HashHelper.ConcatAndCompute(HashHelper.ComputeFrom(input.Value.Operator), HashHelper.ComputeFrom(nextId));
+            if (spaceInfoMap.GetOrDefault(spaceId) == null)
+            {
+                break;
+            }
+        }
+        spaceInfoMap.GetOrDefault(spaceId).ShouldBe(null);
+    }
+
+    [Fact]
+    public async Task CreateSpace_LeafCountIncorrect()
     {
         await InitialRegiment();
         var executionResult = await MerkleTreeContractStub.CreateSpace.SendWithExceptionAsync(new CreateSpaceInput
@@ -121,7 +172,16 @@ public partial class MerkleTreeContractTests : MerkleTreeContractTestBase
             Value = new SpaceInfo
             {
                 MaxLeafCount = 0,
-                Operators = _regimentId
+                Operator = _regimentId
+            }
+        });
+        executionResult.TransactionResult.Error.ShouldContain("Incorrect leaf count.");
+        executionResult = await MerkleTreeContractStub.CreateSpace.SendWithExceptionAsync(new CreateSpaceInput
+        {
+            Value = new SpaceInfo
+            {
+                MaxLeafCount = 2 << 20,
+                Operator = _regimentId
             }
         });
         executionResult.TransactionResult.Error.ShouldContain("Incorrect leaf count.");
@@ -150,7 +210,7 @@ public partial class MerkleTreeContractTests : MerkleTreeContractTestBase
             Value = new SpaceInfo
             {
                 MaxLeafCount = 3,
-                Operators = new Hash()
+                Operator = new Hash()
             }
         });
         executionResult.TransactionResult.Error.ShouldContain("Regiment Address not exist.");
@@ -165,7 +225,7 @@ public partial class MerkleTreeContractTests : MerkleTreeContractTestBase
             Value = new SpaceInfo
             {
                 MaxLeafCount = 3,
-                Operators = _regimentId
+                Operator = _regimentId
             }
         });
         executionResult.TransactionResult.Error.ShouldContain("No permission.");
@@ -179,7 +239,7 @@ public partial class MerkleTreeContractTests : MerkleTreeContractTestBase
         {
             Value = new SpaceInfo
             {
-                Operators = _regimentId,
+                Operator = _regimentId,
                 MaxLeafCount = 8
             }
         });
@@ -189,7 +249,7 @@ public partial class MerkleTreeContractTests : MerkleTreeContractTestBase
         {
             Value = new SpaceInfo
             {
-                Operators = _regimentId,
+                Operator = _regimentId,
                 MaxLeafCount = 16
             }
         });

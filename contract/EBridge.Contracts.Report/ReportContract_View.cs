@@ -102,9 +102,10 @@ namespace EBridge.Contracts.Report
 
         public override BoolValue IsObserver(IsObserverInput input)
         {
+            var observerList = State.ObserverListMap[input.RegimentAddress] ?? new ObserverList();
             return new BoolValue
             {
-                Value = State.ObserverListMap[input.RegimentAddress].Value.Contains(input.OracleNodeAddress)
+                Value = observerList.Value.Contains(input.OracleNodeAddress)
             };
         }
 

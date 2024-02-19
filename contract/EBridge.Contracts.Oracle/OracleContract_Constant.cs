@@ -14,6 +14,6 @@ namespace EBridge.Contracts.Oracle
 
         private const int DefaultMinimumOracleNodesCount = 3;
 
-        private const string NotSetCallbackInfo = "NotSetCallbackInfo";
+        private const string CallbackMethodName = "FulfillQuery";
     }
 }

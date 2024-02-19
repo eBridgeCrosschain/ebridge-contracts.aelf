@@ -36,7 +36,6 @@ namespace EBridge.Contracts.Bridge
                 });
             }
         }
-
         private static readonly List<Address> Receivers =
             SampleAccount.Accounts.Skip(6).Take(5).Select(a => a.Address).ToList();
     }

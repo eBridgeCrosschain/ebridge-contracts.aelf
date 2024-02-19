@@ -57,4 +57,5 @@ public class ReportPipelineTests : ReportContractTestBase
     //     _regimentAddress = logEvent.RegimentAddress;
     //     _regimentId = logEvent.RegimentId;
     // }
+    
 }

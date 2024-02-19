@@ -1,4 +1,4 @@
-﻿using AElf.Sdk.CSharp;
+using AElf.Sdk.CSharp;
 using AElf.Standards.ACS3;
 using AElf.Types;
 using Google.Protobuf.WellKnownTypes;
@@ -10,10 +10,15 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
     public override Empty Initialize(InitializeInput input)
     {
         Assert(State.Controller.Value == null, "Already initialized.");
+        Assert(State.IsInitialized.Value == false,"Already initialized.");
+        State.GenesisContract.Value = Context.GetZeroSmartContractAddress();
+        var author = State.GenesisContract.GetContractAuthor.Call(Context.Self);
+        Assert(Context.Sender == author, "No permission.");
         State.TokenContract.Value =
             Context.GetContractAddressByName(SmartContractConstants.TokenContractSystemName);
         State.ParliamentContract.Value =
             Context.GetContractAddressByName(SmartContractConstants.ParliamentContractSystemName);
+        State.IsInitialized.Value = true;
         State.OracleContract.Value = input.OracleContractAddress;
         State.MerkleTreeContract.Value = input.MerkleTreeContractAddress;
         State.RegimentContract.Value = input.RegimentContractAddress;
@@ -30,7 +35,6 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
         State.IsContractPause.Value = false;
         State.RestartOrganizationAddress.Value = input.OrganizationAddress;
         State.PauseController.Value = input.PauseController;
-        State.ApproveTransferController.Value = input.ApproveTransferController;
         return new Empty();
     }
 
@@ -82,13 +86,6 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
         return new Empty();
     }
 
-    public override Empty ChangeApproveTransferController(Address input)
-    {
-        Assert(Context.Sender == State.Admin.Value, "No permission.");
-        State.ApproveTransferController.Value = input;
-        return new Empty();
-    }
-
     private bool ValidateOrganizationExists(Address contractAddress, Address ownerAddress)
     {
         return Context.Call<BoolValue>(contractAddress,
@@ -105,6 +102,10 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
         Assert(Context.Sender == State.PauseController.Value, "No permission.");
         Assert(!State.IsContractPause.Value, "Contract has already been paused.");
         State.IsContractPause.Value = true;
+        Context.Fire(new Paused()
+        {
+            Sender = Context.Sender
+        });
         return new Empty();
     }
 
@@ -113,32 +114,13 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
         Assert(Context.Sender == State.RestartOrganizationAddress.Value, "No permission.");
         Assert(State.IsContractPause.Value, "Contract has already been started.");
         State.IsContractPause.Value = false;
-        return new Empty();
-    }
-
-    #endregion
-
-    #region Approve transfer
-
-    public override Empty SetTokenMaximumAmount(SetMaximumAmountInput input)
-    {
-        Assert(Context.Sender == State.Admin.Value, "No permission.");
-        foreach (var tokenMaximumAmount in input.Value)
+        Context.Fire(new Unpaused()
         {
-            State.TokenMaximumAmount[tokenMaximumAmount.Symbol] = tokenMaximumAmount.MaximumAmount;
-        }
-
-        return new Empty();
-    }
-
-    public override Empty ApproveTransfer(ApproveTransferInput input)
-    {
-        Assert(Context.Sender == State.ApproveTransferController.Value, "No permission.");
-        Assert(!State.ApproveTransfer[input.ReceiptId],
-            "The receipt has been approved");
-        State.ApproveTransfer[input.ReceiptId] = true;
+            Sender = Context.Sender
+        });
         return new Empty();
     }
 
     #endregion
+    
 }

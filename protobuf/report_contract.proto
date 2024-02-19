@@ -27,11 +27,9 @@ service ReportContract {
 
   rpc RejectReport (RejectReportInput) returns (google.protobuf.Empty) {}
 
-  rpc ProposeReport (CallbackInput) returns (Report) {}
+  rpc FulfillQuery (CallbackInput) returns (Report) {}
 
-  rpc MortgageTokens (google.protobuf.Int64Value) returns (google.protobuf.Empty) {}
-
-  rpc WithdrawTokens (google.protobuf.Int64Value) returns (google.protobuf.Empty) {}
+  rpc MortgageTokens (MortgageTokensInput) returns (google.protobuf.Empty) {}
   
   rpc SetSkipMemberList (SetSkipMemberListInput) returns (google.protobuf.Empty){}
   
@@ -112,6 +110,9 @@ service ReportContract {
   rpc GetTokenByChainId(google.protobuf.StringValue) returns (google.protobuf.StringValue){
     option (aelf.is_view) = true;
   }
+  rpc GetObserverMortgagedTokenByRegiment(GetObserverMortgagedTokenByRegimentInput) returns (google.protobuf.Int64Value) {
+    option (aelf.is_view) = true;
+  }
 }
 
 message InitializeInput {
@@ -144,6 +145,11 @@ message RejectReportInput {
   int64 round_id = 2;
   repeated aelf.Address accusing_nodes = 3;
   string chain_id = 4;
+}
+
+message MortgageTokensInput {
+  int64 amount = 1;
+  aelf.Address regiment_address = 2;
 }
 
 message Report {
@@ -314,6 +320,11 @@ message GetSkipMemberListInput{
   string chain_id = 2;
 }
 
+message GetObserverMortgagedTokenByRegimentInput{
+  aelf.Address regiment_address = 1;
+  aelf.Address observer_address = 2;
+}
+
 // Events
 
 message ReportProposed {
@@ -355,4 +366,40 @@ message MerkleReportNodeAdded {
   int32 node_index = 2;
   int64 node_round_id = 3;
   string aggregated_data = 4;
+}
+
+message OffChainQueryInfoAdded{
+  option (aelf.is_event) = true;
+  string token = 1;
+  string chain_id = 2;
+  OffChainQueryInfo off_chain_query_info = 3;
+  aelf.Address sender = 4;
+}
+
+message OffChainQueryInfoRemoved{
+  option (aelf.is_event) = true;
+  string token = 1;
+  string chain_id = 2;
+  int32 remove_node_index = 3;
+  aelf.Address sender = 4;
+}
+
+message OffChainQueryInfoChanged{
+  option (aelf.is_event) = true;
+  string token = 1;
+  string chain_id = 2;
+  OffChainQueryInfo new_off_chain_query_info = 3;
+  aelf.Address sender = 4;
+}
+
+message RegisterWhiteListAdded{
+  option (aelf.is_event) = true;
+  aelf.Address sender = 1;
+  aelf.Address add_address = 2;
+}
+
+message RegisterWhiteListRemoved{
+  option (aelf.is_event) = true;
+  aelf.Address sender = 1;
+  aelf.Address remove_address = 2;
 }

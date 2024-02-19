@@ -13,9 +13,6 @@ public class MainChainDAppContractTestDeploymentListProvider : MainChainContract
     {
         var list = base.GetDeployContractNameList();
         list.Add(RegimentSmartContractAddressNameProvider.Name);
-        list.Add(ReportSmartContractAddressNameProvider.Name);
-        list.Add(OracleSmartContractAddressNameProvider.Name);
-        list.Add(RegimentSmartContractAddressNameProvider.Name);
         return list;
     }
 }

@@ -13,7 +13,6 @@ public partial class RegimentContract : RegimentContractContainer.RegimentContra
     {
         Assert(!State.IsInitialized.Value, "Already initialized.");
         State.IsInitialized.Value = true;
-
         State.Controller.Value = input.Controller ?? Context.Sender;
         State.MemberJoinLimit.Value = input.MemberJoinLimit <= 0 ? DefaultMemberJoinLimit : input.MemberJoinLimit;
         State.RegimentLimit.Value = input.RegimentLimit <= 0 ? DefaultRegimentLimit : input.RegimentLimit;
@@ -59,6 +58,7 @@ public partial class RegimentContract : RegimentContractContainer.RegimentContra
         var regimentAssociationAddress =
             State.AssociationContract.CalculateOrganizationAddress.Call(createOrganizationInput);
         var regimentId = HashHelper.ComputeFrom(regimentAssociationAddress);
+        Assert(State.RegimentIdAddressMap[regimentId] == null, "RegimentId already exists.");
         State.RegimentIdAddressMap[regimentId] = regimentAssociationAddress;
         State.RegimentAddressIdMap[regimentAssociationAddress] = regimentId;
         Assert(State.RegimentInfoMap[regimentAssociationAddress] == null, "Regiment already exists.");
