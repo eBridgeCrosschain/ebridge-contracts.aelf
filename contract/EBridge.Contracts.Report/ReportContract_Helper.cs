@@ -55,7 +55,8 @@ namespace EBridge.Contracts.Report
                 return GetByteListWithCapacity(SlotByteSize);
             var totalBytesLength = result.Length.Sub(1).Div(SlotByteSize).Add(1);
             var ret = GetByteListWithCapacity(totalBytesLength.Mul(SlotByteSize));
-            BytesCopy(result, 0, ret, 0, result.Length);
+            // Pad with zeros in front until less than 32 bytes.
+            BytesCopy(result, 0, ret, SlotByteSize-result.Length , result.Length);
             return ret;
         }
 
@@ -63,20 +64,32 @@ namespace EBridge.Contracts.Report
         private void GenerateObservation(Report report, out List<byte> observations)
         {
             observations = new List<byte>();
-            var i = 0;
-            if (report.Observations.Value.Count == 1)
+            if (report.Observations.Value.Count > 0)
             {
                 observations.AddRange(
-                    FillObservationBytes(GetReceiptIndex(report.Observations.Value.First().Key).ToString().GetBytes()));
+                    FillObservationBytes(ConvertLong(GetReceiptIndex(report.Observations.Value.First().Key)).ToArray()));
                 observations.AddRange(FillObservationBytes(ByteStringHelper
                     .FromHexString(report.Observations.Value.First().Data).ToByteArray()));
             }
-            else
+            if (report.Observations.Value.Count <= 1) return;
+            for (var i = 1; i < report.Observations.Value.Count; i++)
             {
-                foreach (var observation in report.Observations.Value)
+                if (report.Observations.Value[i].Key == DefaultReceiptInfoKey)
                 {
-                    observations.AddRange(FillObservationBytes(observation.Data.GetBytes()));
-                    i++;
+                    // first value is amount
+                    var valueArray = report.Observations.Value[i].Data.Split("-");
+                    Assert(long.TryParse(valueArray.First(), out var value), "Failed to parse.");
+                    observations.AddRange(FillObservationBytes(ConvertLong(value).ToArray()));
+                    for (var j = 1; j < valueArray.Length; j++)
+                    {
+                        observations.AddRange(FillObservationBytes(ByteStringHelper
+                            .FromHexString(valueArray[j]).ToByteArray()));
+                    }
+                }
+                else
+                {
+                    observations.AddRange(FillObservationBytes(ByteStringHelper
+                        .FromHexString(report.Observations.Value[i].Data).ToByteArray()));
                 }
             }
         }
@@ -244,7 +257,7 @@ namespace EBridge.Contracts.Report
 
         private bool IfDataOnChain(OffChainQueryInfo info)
         {
-            return info.Title.StartsWith("lock_token") && info.Options.Count == 1;
+            return info.Title.StartsWith("lock_token");
         }
     }
 }

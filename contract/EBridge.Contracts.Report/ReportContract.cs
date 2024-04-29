@@ -328,6 +328,13 @@ namespace EBridge.Contracts.Report
                             Key = queryInfo.Title.Split("_").Last(),
                             //Data -> receipt hash.
                             Data = queryInfo.Options.First()
+                        },
+                        new Observation
+                        {
+                            //Key -> get receipt info key.
+                            Key = DefaultReceiptInfoKey,
+                            //Data -> receipt hash.
+                            Data = queryInfo.Options.Last()
                         }
                     }
                 }
@@ -343,7 +350,7 @@ namespace EBridge.Contracts.Report
                 QueryInfo = new OffChainQueryInfo
                 {
                     Title = queryInfo.Title,
-                    Options = { queryInfo.Options.First() }
+                    Options = { queryInfo.Options }
                 },
                 TargetChainId = info.ChainId
             });
