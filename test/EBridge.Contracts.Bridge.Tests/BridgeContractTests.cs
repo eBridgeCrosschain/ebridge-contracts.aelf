@@ -19,7 +19,7 @@ using DeleteAdminsInput = EBridge.Contracts.Oracle.DeleteAdminsInput;
 
 namespace EBridge.Contracts.Bridge;
 
-public class BridgeContractTests : BridgeContractTestBase
+public partial class BridgeContractTests : BridgeContractTestBase
 {
     #region Permission
 
@@ -144,22 +144,6 @@ public class BridgeContractTests : BridgeContractTestBase
                 .Item2);
         execution.TransactionResult.Error.ShouldContain("No permission.");
     }
-    
-    [Fact]
-    public async Task ChangeApproveTransferController()
-    {
-        await InitialBridgeContractAsync();
-        await BridgeContractStub.ChangeApproveTransferController.SendAsync(SampleAccount.Accounts[5].Address);
-        var controller = await BridgeContractStub.GetApproveTransferController.CallAsync(new Empty());
-        controller.ShouldBe(SampleAccount.Accounts[5].Address);
-    }
-    [Fact]
-    public async Task ChangeApproveTransferController_NoPermission()
-    {
-        var executionResult =
-            await BridgeContractSetFeeRatioStub.ChangeApproveTransferController.SendWithExceptionAsync(SampleAccount.Accounts[5].Address);
-        executionResult.TransactionResult.Error.ShouldContain("No permission.");
-    }
 
     #endregion
 
@@ -210,9 +194,11 @@ public class BridgeContractTests : BridgeContractTestBase
     public async Task<(Address, Address)> PauseContract_Test()
     {
         var organizationAddress = await InitialBridgeContractAsync();
-        await BridgeContractStub.Pause.SendAsync(new Empty());
+        var executionResult = await BridgeContractStub.Pause.SendAsync(new Empty());
         var state = await BridgeContractStub.IsContractPause.CallAsync(new Empty());
         state.Value.ShouldBe(true);
+        var log = Paused.Parser.ParseFrom(executionResult.TransactionResult.Logs.First(l => l.Name == nameof(Paused)).NonIndexed);
+        log.Sender.ShouldBe(DefaultSenderAddress);
         return organizationAddress;
     }
 
@@ -230,6 +216,24 @@ public class BridgeContractTests : BridgeContractTestBase
         await InitialBridgeContractAsync();
         var execution = await BridgeContractSetFeeRatioStub.Pause.SendWithExceptionAsync(new Empty());
         execution.TransactionResult.Error.ShouldContain("No permission.");
+    }
+    
+    [Fact]
+    public async Task Pause_Restart_Contract_Test()
+    {
+        await BridgeContractStub.Initialize.SendAsync(new InitializeInput
+        {
+            PauseController = DefaultSenderAddress,
+            OrganizationAddress = DefaultSenderAddress,
+            Admin = DefaultSenderAddress,
+            Controller = DefaultSenderAddress
+        });
+        await BridgeContractStub.Pause.SendAsync(new Empty());
+        var executionResult = await BridgeContractStub.Restart.SendAsync(new Empty());
+        var state = await BridgeContractStub.IsContractPause.CallAsync(new Empty());
+        state.Value.ShouldBe(false);
+        var log = Unpaused.Parser.ParseFrom(executionResult.TransactionResult.Logs.First(l => l.Name == nameof(Unpaused)).NonIndexed);
+        log.Sender.ShouldBe(DefaultSenderAddress);
     }
 
     [Fact]
@@ -284,6 +288,7 @@ public class BridgeContractTests : BridgeContractTestBase
         await AssociationContractImplStub.Approve.SendAsync(proposalId);
         return proposalId;
     }
+    
 
     #endregion
 

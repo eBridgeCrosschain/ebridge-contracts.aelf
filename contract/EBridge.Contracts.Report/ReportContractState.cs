@@ -6,6 +6,7 @@ namespace EBridge.Contracts.Report
     public partial class ReportContractState : ContractState
     {
         public SingletonState<Address> Owner { get; set; }
+
         // public MappedState<string, MethodFees> TransactionFees { get; set; }
         public SingletonState<AuthorityInfo> MethodFeeController { get; set; }
         public SingletonState<string> OracleTokenSymbol { get; set; }
@@ -50,7 +51,15 @@ namespace EBridge.Contracts.Report
         /// </summary>
         public MappedState<string, string, OffChainAggregationInfo> OffChainAggregationInfoMap { get; set; }
 
-        public MappedState<Address, long> ObserverMortgagedTokensMap { get; set; }
+        /// <summary>
+        /// regiment address -> sender -> fee
+        /// </summary>
+        public MappedState<Address, Address, long> ObserverInRegimentMortgagedTokensMap { get; set; }
+        
+        /// <summary>
+        /// regiment address -> sender -> Amercement
+        /// </summary>
+        public MappedState<Address, Address, long> ObserverAmercementAmountMap { get; set; }
 
         public MappedState<string, long, BinaryMerkleTree> BinaryMerkleTreeMap { get; set; }
 

@@ -1,5 +1,6 @@
 using AElf.Contracts.MultiToken;
 using AElf.Contracts.Parliament;
+using AElf.Standards.ACS0;
 using EBridge.Contracts.MerkleTreeContract;
 using EBridge.Contracts.Oracle;
 using EBridge.Contracts.Regiment;
@@ -16,5 +17,6 @@ public partial class BridgeContractState
     internal RegimentContractContainer.RegimentContractReferenceState RegimentContract { get; set; }
 
     internal ReportContractContainer.ReportContractReferenceState ReportContract { get; set; }
-    
+
+    internal ACS0Container.ACS0ReferenceState GenesisContract { get; set; }
 }
