@@ -210,6 +210,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
             reportProposed.TargetChainId.ShouldBe("Ethereum");
             var title = $"lock_token_{receiptId}";
             reportProposed.QueryInfo.Title.ShouldBe(title);
+            reportProposed.QueryInfo.Options.Count.ShouldBe(2);
 
             var rawReport = await ReportContractStub.GetRawReport.CallAsync(new GetRawReportInput
             {
@@ -221,12 +222,27 @@ public partial class BridgeContractTests : BridgeContractTestBase
             _receiptDictionary = new Dictionary<string, Hash>();
             _receiptDictionary[receiptId] =
                 CalculateReceiptHash(receiptId, 100_00000000, "0x643C7DCAd9321b36de85FEaC19763BE492dB5a04");
-            //var result = ByteArrayHelper.HexStringToByteArray(rawReport.Value);
+            var result = ByteArrayHelper.HexStringToByteArray(rawReport.Value);
+            result.Length.ShouldBe(224);
 
-            // var data = new List<byte>();
-            // data.AddRange(FillObservationBytes(_receiptDictionary[receiptId].ToHex().GetBytes()));
-            //data.ShouldBe(result.ToList().GetRange(96,32));
+            var data = new List<byte>();
+            data.AddRange(FillObservationBytes(ByteStringHelper
+                .FromHexString(_receiptDictionary[receiptId].ToHex()).ToByteArray()));
+            data.ShouldBe(result.ToList().GetRange(96,32));
 
+            var data1 = new List<byte>();
+            data1.AddRange(FillObservationBytes(ConvertLong(10000000000).ToArray()));
+            data1.ShouldBe(result.ToList().GetRange(128,32));
+            
+            var data2 = new List<byte>();
+            data2.AddRange(FillObservationBytes(ByteStringHelper
+                .FromHexString("0x643C7DCAd9321b36de85FEaC19763BE492dB5a04").ToByteArray()));
+            data2.ShouldBe(result.ToList().GetRange(160,32));
+            
+            var data3 = new List<byte>();
+            data3.AddRange(FillObservationBytes(ByteStringHelper
+                .FromHexString(receiptId.Split(".").First()).ToByteArray()));
+            data3.ShouldBe(result.ToList().GetRange(192,32));
 
             var regimentInfo = await RegimentContractStub.GetRegimentInfo.CallAsync(_regimentAddress);
             var skipList = new MemberList();
@@ -710,7 +726,6 @@ public partial class BridgeContractTests : BridgeContractTestBase
                 Token = "0xf8F862Aaeb9cb101383d27044202aBbe3a057eCC",
                 RoundId = 1
             });
-            
             var regimentInfo = await RegimentContractStub.GetRegimentInfo.CallAsync(_regimentAddress);
             var skipList = new MemberList();
             foreach (var admin in regimentInfo.Admins)
@@ -2306,6 +2321,17 @@ public partial class BridgeContractTests : BridgeContractTestBase
             dst[dstOffset] = src[i];
             dstOffset++;
         }
+    }
+    
+    private List<byte> FillObservationBytes(byte[] result)
+    {
+        if (result.Length == 0)
+            return GetByteListWithCapacity(32);
+        var totalBytesLength = result.Length.Sub(1).Div(32).Add(1);
+        var ret = GetByteListWithCapacity(totalBytesLength.Mul(32));
+        // Pad with zeros in front until less than 32 bytes.
+        BytesCopy(result, 0, ret, 32-result.Length , result.Length);
+        return ret;
     }
 
     #endregion
