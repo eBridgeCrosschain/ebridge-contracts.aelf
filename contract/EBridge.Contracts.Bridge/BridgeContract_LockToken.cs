@@ -132,7 +132,7 @@ public partial class BridgeContract
             QueryInfo = new OffChainQueryInfo
             {
                 Title = $"lock_token_{receiptId}",
-                Options = { receiptHash.ToHex() }
+                Options = { receiptHash.ToHex(),$"{receipt.Amount}-{receipt.TargetAddress}-{receiptIdToken.ToHex()}"}
             },
             ChainId = input.TargetChainId,
             Payment = State.QueryPayment.Value

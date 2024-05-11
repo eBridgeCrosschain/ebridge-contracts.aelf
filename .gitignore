@@ -264,6 +264,9 @@ __pycache__/
 *.pyc
 *.DS_Store
 
+Build/*
+Logs/*
+
 .vs/
 slnx.sqlite
 
@@ -306,15 +309,7 @@ src/AElf.Boilerplate.BridgeContract.Launcher/*
 tools
 .dotnet
 !.idea/
-.idea/.idea.AElf.Bridge/.idea/contentModel.xml
-.idea/.idea.AElf.Bridge/.idea/encodings.xml
-.idea/.idea.AElf.Bridge/.idea/indexLayout.xml
-.idea/.idea.AElf.Bridge/.idea/misc.xml
-.idea/.idea.AElf.Bridge/.idea/modules.xml
-.idea/.idea.AElf.Bridge/.idea/projectSettingsUpdater.xml
-.idea/.idea.AElf.Bridge/.idea/vcs.xml
-.idea/.idea.AElf.Bridge/.idea/workspace.xml
-.idea/.idea.AElf.Bridge/riderModule.iml
+.idea/.idea.EBridge.Contracts/.idea/*
 .idea/.idea.ebridge-contracts.aelf.dir/*
 
 
