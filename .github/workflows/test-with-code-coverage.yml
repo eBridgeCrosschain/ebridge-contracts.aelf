@@ -26,7 +26,7 @@ jobs:
         run: bash scripts/download_binary.sh
 
       - name: 'Install protobuf'
-        run: bash scripts/install_protobuf.sh
+        run: bash scripts/install.sh
 
       - name: Install dependencies
         run: dotnet restore --verbosity quiet
