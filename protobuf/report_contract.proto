@@ -32,6 +32,11 @@ service ReportContract {
   rpc MortgageTokens (MortgageTokensInput) returns (google.protobuf.Empty) {}
   
   rpc SetSkipMemberList (SetSkipMemberListInput) returns (google.protobuf.Empty){}
+
+  rpc SetWhitelist (SetWhitelistInput) returns (google.protobuf.Empty){}
+  
+  rpc GetWhitelist(google.protobuf.Empty) returns (Whitelist) { option (aelf.is_view) = true; }
+  rpc GetOwner(google.protobuf.Empty) returns (aelf.Address) { option (aelf.is_view) = true; }
   
 
   // Observer management.
@@ -313,6 +318,14 @@ message SetSkipMemberListInput{
   string token = 1;
   MemberList value = 2;
   string chain_id = 3;
+}
+
+message SetWhitelistInput {
+  repeated aelf.Address value = 1;
+}
+
+message Whitelist {
+  repeated aelf.Address value = 1;
 }
 
 message GetSkipMemberListInput{

@@ -47,8 +47,28 @@ namespace EBridge.Contracts.Report
             return new Empty();
         }
 
+        public override Empty SetWhitelist(SetWhitelistInput input)
+        {
+            Assert(Context.Sender == State.Owner.Value,"No permission.");
+            Assert(input.Value.Count > 0 && input.Value.Any(),"Invalid input.");
+            State.Whitelist.Value = new Whitelist
+            {
+                Value = { input.Value }
+            };
+            return new Empty();
+        }
+
+        public override Whitelist GetWhitelist(Empty input)
+        {
+            return State.Whitelist.Value;
+        }
+
         public override Hash QueryOracle(QueryOracleInput input)
         {
+            if (State.Whitelist.Value != null && State.Whitelist.Value.Value.Count > 0)
+            {
+                Assert(State.Whitelist.Value.Value.Contains(Context.Sender),"No permission.");
+            }
             var token = string.IsNullOrEmpty(input.Token) ? State.TargetChainAddressMap[input.ChainId] : input.Token;
             Assert(!string.IsNullOrEmpty(token), "Token is null. ChainId:{input.ChainId}");
             var offChainAggregationInfo = State.OffChainAggregationInfoMap[input.ChainId][token];

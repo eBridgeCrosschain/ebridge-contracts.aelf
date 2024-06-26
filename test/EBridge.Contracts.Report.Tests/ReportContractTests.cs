@@ -4,7 +4,10 @@ using AElf.Contracts.MultiToken;
 using AElf.CSharp.Core;
 using AElf.Types;
 using EBridge.Contracts.Regiment;
+using Google.Protobuf.WellKnownTypes;
+using JetBrains.Annotations;
 using Shouldly;
+using Volo.Abp;
 using Xunit;
 using CreateRegimentInput = EBridge.Contracts.Oracle.CreateRegimentInput;
 
@@ -151,5 +154,19 @@ public class ReportContractTests : ReportContractTestBase
             .ParseFrom(executionResult3.TransactionResult.Logs.First(l => l.Name == nameof(RegimentCreated))
                 .NonIndexed).RegimentAddress;
         return (regimentAddress1, regimentAddress2, regimentAddress3);
+    }
+
+    [Fact]
+    public async Task SetWhitelistTest()
+    {
+        await InitialReportContractAsync();
+        await ReportContractStub.SetWhitelist.SendAsync(new SetWhitelistInput
+        {
+            Value = { Transmitters[0].Address, Transmitters[1].Address }
+        });
+        var whitelist = await ReportContractStub.GetWhitelist.CallAsync(new Empty());
+        whitelist.Value.Count.ShouldBe(2);
+        whitelist.Value.First().ShouldBe(Transmitters[0].Address);
+        whitelist.Value.Last().ShouldBe(Transmitters[1].Address);
     }
 }

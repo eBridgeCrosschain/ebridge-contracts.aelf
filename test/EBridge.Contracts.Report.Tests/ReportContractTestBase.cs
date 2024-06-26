@@ -24,7 +24,7 @@ public class ReportContractTestBase : DAppContractTestBase<ReportContractTestMod
     protected ECKeyPair DefaultKeypair => SampleAccount.Accounts.First().KeyPair;
 
     internal List<Account> Transmitters => SampleAccount.Accounts.Skip(1).Take(5).ToList();
-
+    
 
     internal OracleContractContainer.OracleContractStub OracleContractStub { get; set; }
 
@@ -126,7 +126,8 @@ public class ReportContractTestBase : DAppContractTestBase<ReportContractTestMod
             RegimentContractAddress = RegimentContractAddress,
             ReportFee = 0,
             ApplyObserverFee = 200_00000000,
-            InitialRegisterWhiteList = {DefaultSenderAddress}
+            InitialRegisterWhiteList = {DefaultSenderAddress},
+            OwnerAddress = DefaultSenderAddress
         });
     }
     

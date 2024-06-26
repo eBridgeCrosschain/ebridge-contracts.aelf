@@ -83,5 +83,7 @@ namespace EBridge.Contracts.Report
         /// chain Id -> Token -> Skip confirm member list
         /// </summary>
         public MappedState<string, string, MemberList> SkipMemberListMap { get; set; }
+        
+        public SingletonState<Whitelist> Whitelist { get; set; }
     }
 }

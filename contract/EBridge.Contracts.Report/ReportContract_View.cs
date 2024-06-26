@@ -5,6 +5,11 @@ namespace EBridge.Contracts.Report
 {
     public partial class ReportContract
     {
+        public override Address GetOwner(Empty input)
+        {
+            return State.Owner.Value;
+        }
+
         public override Report GetReport(GetReportInput input)
         {
             return State.ReportMap[input.ChainId][input.Token][input.RoundId];
