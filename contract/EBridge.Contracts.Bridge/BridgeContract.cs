@@ -43,6 +43,7 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
     public override Empty ChangeController(Address input)
     {
         Assert(Context.Sender == State.Admin.Value, $"No permission. Admin is {State.Admin.Value}. ");
+        Assert(IsAddressValid(input),"Invalid input.");
         State.Controller.Value = input;
         return new Empty();
     }
@@ -50,6 +51,7 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
     public override Empty ChangeAdmin(Address input)
     {
         Assert(Context.Sender == State.Admin.Value, $"No permission. Admin is {State.Admin.Value}. ");
+        Assert(IsAddressValid(input),"Invalid input.");
         State.Admin.Value = input;
         return new Empty();
     }
@@ -82,6 +84,7 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
     public override Empty ChangePauseController(Address input)
     {
         Assert(Context.Sender == State.Admin.Value, "No permission.");
+        Assert(IsAddressValid(input),"Invalid input.");
         State.PauseController.Value = input;
         return new Empty();
     }

@@ -21,10 +21,6 @@ namespace EBridge.Contracts.Oracle
             Assert(Context.Sender == author, "No permission.");
             InitializeContractReferences();
             State.RegimentContract.Value = input.RegimentContractAddress;
-            State.RegimentContract.Initialize.Send(new Regiment.InitializeInput
-            {
-                Controller = Context.Self
-            });
 
             // Controller will be the sender by default.
             State.Controller.Value = Context.Sender;

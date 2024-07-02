@@ -12,6 +12,11 @@ namespace EBridge.Contracts.Bridge
 {
     public partial class BridgeContract
     {
+        private bool IsAddressValid(Address input)
+        {
+            return input != null && !input.Value.IsNullOrEmpty();
+        }
+        
         private TokenInfo GetTokenInfo(string symbol)
         {
             RequireTokenContractStateSet();

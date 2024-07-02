@@ -6,6 +6,8 @@ namespace EBridge.Contracts.Report
         private const int MaximumOffChainQueryInfoCount = 1023;
         private const long DefaultApplyObserverFee = 200_00000000;
         private const string DefaultReceiptInfoKey = "ReceiptInfoKey";
+        private const int Default = 1023;
+
 
     }
 }

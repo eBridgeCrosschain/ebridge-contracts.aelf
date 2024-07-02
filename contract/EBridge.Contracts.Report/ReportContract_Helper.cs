@@ -259,5 +259,16 @@ namespace EBridge.Contracts.Report
         {
             return info.Title.StartsWith("lock_token");
         }
+        
+        private int GetConfirmThreshold(int nodeCount, int inputConfirmThreshold = 0)
+        {
+            return Math.Max(Math.Max(nodeCount.Mul(2).Div(3).Add(1), State.ConfirmThreshold.Value),
+                inputConfirmThreshold);
+        }
+        
+        private bool IsAddressValid(Address input)
+        {
+            return input != null && !input.Value.IsNullOrEmpty();
+        }
     }
 }
