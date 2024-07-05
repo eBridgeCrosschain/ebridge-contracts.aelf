@@ -441,7 +441,6 @@ namespace EBridge.Contracts.Report
                 ? State.ReportRecordMap[input.ChainId][input.Token][input.RoundId]
                 : State.ReportQueryRecordMap[report.QueryId];
 
-            Assert(!reportRecord.IsRejected, "This report is already rejected.");
             Assert(!reportRecord.IsAllNodeConfirmed, "This report is already confirmed by all nodes.");
             
             CheckAndCalculateThreshold(input.ChainId,input.Token,offChainAggregationInfo.RegimentId,reportRecord);
@@ -499,60 +498,6 @@ namespace EBridge.Contracts.Report
                 reportRecord.IsAllNodeConfirmed = true;
             }
         }
-        
-        public override Empty RejectReport(RejectReportInput input)
-        {
-            var offChainAggregationInfo = State.OffChainAggregationInfoMap[input.ChainId][input.Token];
-            Assert(offChainAggregationInfo != null, "Off chain aggregation info not exists.");
-            var regimentAddress = State.RegimentContract.GetRegimentAddress.Call(offChainAggregationInfo.RegimentId);
-
-            if (offChainAggregationInfo.OffChainQueryInfoList != null)
-            {
-                Assert(offChainAggregationInfo.OffChainQueryInfoList.Value.Count == 1,
-                    "Merkle tree style aggregation doesn't support rejection.");
-            }
-
-            Assert(State.ObserverSignatureMap[input.ChainId][input.Token][input.RoundId][Context.Sender] == null,
-                "Sender already confirmed this report.");
-            Assert(IsRegimentMember(Context.Sender, regimentAddress),
-                "Sender isn't a member of certain Observer Association.");
-            var skipList = State.SkipMemberListMap[input.ChainId][input.Token]?.Value;
-            Assert(skipList != null && !skipList.Contains(Context.Sender), "Sender is in the skip list.");
-            foreach (var accusingNode in input.AccusingNodes)
-            {
-                Assert(IsRegimentMember(accusingNode, regimentAddress),
-                    "Accusing node isn't a member of certain Observer Association.");
-            }
-
-            var report = State.ReportMap[input.ChainId][input.Token][input.RoundId];
-            var reportRecord = report.QueryId == null
-                ? State.ReportRecordMap[input.ChainId][input.Token][input.RoundId]
-                : State.ReportQueryRecordMap[report.QueryId];
-            foreach (var accusingNode in input.AccusingNodes)
-            {
-                if (report.QueryId != null)
-                {
-                    var senderData = report.Observations.Value
-                        .FirstOrDefault(o => o.Key == Context.Sender.ToByteArray().ToHex())?.Data;
-                    var accusedNodeData = report.Observations.Value
-                        .First(o => o.Key == accusingNode.ToByteArray().ToHex())
-                        .Data;
-                    Assert(senderData == null || !senderData.Equals(accusedNodeData), "Invalid accuse.");
-                }
-
-                // Fine.
-                var mortgagedAmount = State.ObserverInRegimentMortgagedTokensMap[regimentAddress][accusingNode];
-                var amercementAmount = GetAmercementAmount(regimentAddress);
-                Assert(mortgagedAmount >= amercementAmount, "Insufficient mortgaged amount to accuse.");
-                State.ObserverInRegimentMortgagedTokensMap[regimentAddress][accusingNode] =
-                    mortgagedAmount.Sub(amercementAmount);
-                State.ObserverAmercementAmountMap[regimentAddress][accusingNode] =
-                    State.ObserverAmercementAmountMap[regimentAddress][accusingNode].Add(amercementAmount);
-            }
-
-            reportRecord.IsRejected = true;
-            return new Empty();
-        }
 
         private bool IsRegimentMember(Address address, Address regimentAddress)
         {
@@ -583,9 +528,8 @@ namespace EBridge.Contracts.Report
             var regimentAddress = State.RegimentContract.GetRegimentAddress.Call(regimentId);
             var regimentManager = State.RegimentContract.GetRegimentInfo.Call(regimentAddress).Manager;
             Assert(Context.Sender == regimentManager, "No permission.");
-            var memberList = State.SkipMemberListMap[input.ChainId][input.Token] ?? new MemberList();
-            memberList.Value.AddRange(input.Value.Value);
-            State.SkipMemberListMap[input.ChainId][input.Token] = memberList;
+            Assert(input.Value != null && input.Value.Value.Count > 0,"Invalid input.");
+            State.SkipMemberListMap[input.ChainId][input.Token] = input.Value;
             return new Empty();
         }
     }
