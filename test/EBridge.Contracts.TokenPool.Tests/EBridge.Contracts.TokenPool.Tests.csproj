@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
-        <RootNamespace>EBridge.Contracts.Report</RootNamespace>
+        <RootNamespace>EBridge.Contracts.TokenPool</RootNamespace>
         <IsPackable>false</IsPackable>
     </PropertyGroup>
 
@@ -11,11 +11,14 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="AElf.Contracts.Association" Version="1.6.0" />
+        <PackageReference Include="AElf.Contracts.MultiToken" Version="1.6.0" />
         <PackageReference Include="AElf.EconomicSystem" Version="1.6.0" />
+        <PackageReference Include="AElf.Contracts.Genesis" Version="1.6.0" />
         <PackageReference Include="AElf.GovernmentSystem" Version="1.6.0" />
         <PackageReference Include="coverlet.collector" Version="3.1.2">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="coverlet.msbuild" Version="3.1.2">
             <PrivateAssets>all</PrivateAssets>
@@ -59,8 +62,14 @@
         <ContractStub Include="..\..\protobuf\parliament_contract_impl.proto">
             <Link>Protobuf\Proto\parliament_contract_impl.proto</Link>
         </ContractStub>
+        <ContractStub Include="..\..\protobuf\parliament_contract.proto">
+            <Link>Protobuf\Proto\parliament_contract.proto</Link>
+        </ContractStub>
         <ContractStub Include="..\..\protobuf\association_contract.proto">
             <Link>Protobuf\Proto\association_contract.proto</Link>
+        </ContractStub>
+        <ContractStub Include="..\..\protobuf\association_contract_impl.proto">
+            <Link>Protobuf\Proto\association_contract_impl.proto</Link>
         </ContractStub>
         <ContractStub Include="..\..\protobuf\regiment_contract.proto">
             <Link>Protobuf\Proto\regiment_contract.proto</Link>
@@ -68,21 +77,41 @@
         <ContractStub Include="..\..\protobuf\acs13.proto">
             <Link>Protobuf\Proto\acs13.proto</Link>
         </ContractStub>
-        <ContractStub Include="..\..\protobuf\report_contract.proto">
-            <Link>Protobuf\Proto\bridge_contract.proto</Link>
-        </ContractStub>
         <ContractStub Include="..\..\protobuf\acs0.proto">
             <Link>Protobuf\Proto\acs0.proto</Link>
+        </ContractStub>
+        <ContractStub Include="..\..\protobuf\bridge_contract.proto">
+            <Link>Protobuf\Proto\bridge_contract.proto</Link>
+        </ContractStub>
+        <ContractStub Include="..\..\protobuf\bridge_contract_impl.proto">
+            <Link>Protobuf\Proto\bridge_contract_impl.proto</Link>
+        </ContractStub>
+        <ContractStub Include="..\..\protobuf\receipt_maker.proto">
+            <Link>Protobuf\Proto\receipt_maker.proto</Link>
+        </ContractStub>
+        <ContractStub Include="..\..\protobuf\merkle_tree_contract.proto">
+            <Link>Protobuf\Proto\merkle_tree_contract.proto</Link>
+        </ContractStub>
+        <ContractStub Include="..\..\protobuf\receipt_maker_impl.proto">
+            <Link>Protobuf\Proto\receipt_maker_impl.proto</Link>
+        </ContractStub>
+        <ContractStub Include="..\..\protobuf\report_contract.proto">
+            <Link>Protobuf\Proto\report_contract.proto</Link>
+        </ContractStub>
+        <ContractStub Include="..\..\protobuf\token_pool_contract.proto">
+            <Link>Protobuf\Proto\token_pool_contract.proto</Link>
         </ContractStub>
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\contract\EBridge.Contracts.Report\EBridge.Contracts.Report.csproj" />
-        <ProjectReference Include="..\..\contract\EBridge.Contracts.Regiment\EBridge.Contracts.Regiment.csproj" />
+        <ProjectReference Include="..\..\contract\EBridge.Contracts.TokenPool\EBridge.Contracts.TokenPool.csproj" />
+        <ProjectReference Include="..\..\contract\EBridge.Contracts.Bridge\EBridge.Contracts.Bridge.csproj" />
+        <ProjectReference Include="..\..\contract\EBridge.Contracts.MerkleTree\EBridge.Contracts.MerkleTree.csproj" />
         <ProjectReference Include="..\..\contract\EBridge.Contracts.Oracle\EBridge.Contracts.Oracle.csproj" />
         <ProjectReference Include="..\..\contract\EBridge.Contracts.StringAggregator\EBridge.Contracts.StringAggregator.csproj" />
+        <ProjectReference Include="..\..\contract\EBridge.Contracts.Report\EBridge.Contracts.Report.csproj" />       
         <ProjectReference Include="..\..\src\AElf.Boilerplate.TestBase\AElf.Boilerplate.TestBase.csproj" />
-        <ProjectReference Include="..\EBridge.Contracts.Bridge.Tests\EBridge.Contracts.Bridge.Tests.csproj" />
+
     </ItemGroup>
 
 </Project>

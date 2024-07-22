@@ -51,6 +51,9 @@
         <ContractReference Include="..\..\protobuf\report_contract.proto">
             <Link>Protobuf\Proto\reference\report_contract.proto</Link>
         </ContractReference>
+        <ContractReference Include="..\..\protobuf\token_pool_contract.proto">
+            <Link>Protobuf\Proto\reference\token_pool_contract.proto</Link>
+        </ContractReference>
     </ItemGroup>
 
     <ItemGroup>

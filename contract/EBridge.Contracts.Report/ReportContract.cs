@@ -106,7 +106,7 @@ namespace EBridge.Contracts.Report
                     Title = queryInfo.Title,
                     Options = { queryInfo.Options }
                 },
-                CallbackInfo = new CallbackInfo
+                CallbackInfo = new EBridge.Contracts.Oracle.CallbackInfo
                 {
                     ContractAddress = Context.Self
                 },

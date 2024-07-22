@@ -28,6 +28,12 @@ service BridgeContractImpl {
   rpc SetSwapDailyLimit (SetSwapDailyLimitInput) returns (google.protobuf.Empty) {}
   rpc ConfigReceiptTokenBucket (ConfigReceiptTokenBucketInput) returns (google.protobuf.Empty) {}
   rpc ConfigSwapTokenBucket (ConfigSwapTokenBucketInput) returns (google.protobuf.Empty) {}
+  
+  rpc SetTokenPoolContract(aelf.Address) returns (google.protobuf.Empty){}
+  
+  rpc GetTokenPoolContract(google.protobuf.Empty) returns (aelf.Address) {
+    option (aelf.is_view) = true;
+  } 
 
   rpc GetReceiptDailyLimit (GetReceiptDailyLimitInput) returns (DailyLimitTokenInfo) {
     option (aelf.is_view) = true;

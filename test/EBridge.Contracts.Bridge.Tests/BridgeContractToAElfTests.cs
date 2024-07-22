@@ -7,6 +7,7 @@ using AElf.Contracts.MultiToken;
 using AElf.Kernel;
 using AElf.Types;
 using EBridge.Contracts.Oracle;
+using EBridge.Contracts.TokenPool;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Shouldly;
@@ -22,12 +23,32 @@ public partial class BridgeContractTests
     public async Task<(Address, Address)> InitialSwapAsync()
     {
         await InitialOracleContractAsync();
+        await RegimentContractStub.Initialize.SendAsync(new Regiment.InitializeInput
+        {
+            Controller = OracleContractAddress
+        });
         var organization = await InitialBridgeContractAsync();
         await InitialMerkleTreeContractAsync();
         await CreateAndIssueUSDTAsync();
 
         await CreateRegimentTest();
 
+        await BridgeContractStub.AddToken.SendAsync(new AddTokenInput
+        {
+            Value =
+            {
+                new ChainToken
+                {
+                    ChainId = "Ethereum",
+                    Symbol = "ELF"
+                },
+                new ChainToken
+                {
+                    ChainId = "Kovan",
+                    Symbol = "USDT"
+                }
+            }
+        });
         await TokenContractStub.Approve.SendAsync(new ApproveInput
         {
             Amount = long.MaxValue,
@@ -189,8 +210,6 @@ public partial class BridgeContractTests
             });
             result.SwappedTimes.ShouldBe(1);
             result.SwappedAmount.ShouldBe(10000000L);
-            result.DepositAmount.ShouldBe(10_0000_00000000);
-            await CheckBalanceAsync(BridgeContractAddress, "ELF", bridgeBalance.Balance - 10000000L);
         }
         {
             // Swap
@@ -210,7 +229,6 @@ public partial class BridgeContractTests
             });
             result.SwappedTimes.ShouldBe(2);
             result.SwappedAmount.ShouldBe(30000000L);
-            result.DepositAmount.ShouldBe(10_0000_00000000);
         }
         {
             // Swap
@@ -230,7 +248,6 @@ public partial class BridgeContractTests
             });
             result.SwappedTimes.ShouldBe(3);
             result.SwappedAmount.ShouldBe(80000000L);
-            result.DepositAmount.ShouldBe(10_0000_00000000);
             var receiptInfo = await BridgeContractStub.GetSwappedReceiptInfo.CallAsync(
                 new GetSwappedReceiptInfoInput
                 {
@@ -273,7 +290,6 @@ public partial class BridgeContractTests
             });
             result.SwappedTimes.ShouldBe(1);
             result.SwappedAmount.ShouldBe(10000000L);
-            result.DepositAmount.ShouldBe(10_0000_00000000);
         }
 
         {
@@ -293,7 +309,6 @@ public partial class BridgeContractTests
             });
             result.SwappedTimes.ShouldBe(2);
             result.SwappedAmount.ShouldBe(30000000L);
-            result.DepositAmount.ShouldBe(10_0000_00000000);
         }
         {
             // Swap
@@ -339,28 +354,25 @@ public partial class BridgeContractTests
             Symbol = "ELF"
         });
         swapId.ShouldBe(_swapHashOfElf);
-
-        await BridgeContractStub.Deposit.SendAsync(new DepositInput
+        await TokenContractStub.Approve.SendAsync(new ApproveInput
         {
-            SwapId = _swapHashOfElf,
-            TargetTokenSymbol = "ELF",
+            Symbol = "ELF",
+            Amount = 10_0000_00000000,
+            Spender = TokenPoolContractAddress
+        });
+        await TokenPoolContractStub.AddLiquidity.SendAsync(new AddLiquidityInput
+        {
+            ChainId = "Ethereum",
+            TokenSymbol = "ELF",
             Amount = 10_0000_00000000
         });
         {
-            var balance = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
+            var tokenPoolInfo = await TokenPoolContractStub.GetTokenPoolInfo.CallAsync(new GetTokenPoolInfoInput
             {
-                Owner = BridgeContractAddress,
-                Symbol = "ELF"
+                ChainId = "Ethereum",
+                TokenSymbol = "ELF"
             });
-            balance.Balance.ShouldBe(10_0000_00000000);
-        }
-        {
-            var result = await BridgeContractStub.GetSwapPairInfo.CallAsync(new GetSwapPairInfoInput
-            {
-                SwapId = _swapHashOfElf,
-                Symbol = "ELF"
-            });
-            result.DepositAmount.ShouldBe(10_0000_00000000);
+            tokenPoolInfo.Liquidity.ShouldBe(10_0000_00000000);
         }
 
         // Create another swap.
@@ -381,27 +393,25 @@ public partial class BridgeContractTests
         });
         _swapHashOfUsdt = createSwapResult.Output;
         _swapOfUsdtSpaceId = await BridgeContractStub.GetSpaceIdBySwapId.CallAsync(_swapHashOfUsdt);
-        await BridgeContractStub.Deposit.SendAsync(new DepositInput
+        await TokenContractStub.Approve.SendAsync(new ApproveInput
         {
-            SwapId = _swapHashOfUsdt,
-            TargetTokenSymbol = "USDT",
+            Symbol = "USDT",
+            Amount = 10_0000_00000000,
+            Spender = TokenPoolContractAddress
+        });
+        await TokenPoolContractStub.AddLiquidity.SendAsync(new AddLiquidityInput
+        {
+            ChainId = "Ethereum",
+            TokenSymbol = "USDT",
             Amount = 10_0000_00000000
         });
         {
-            var balance = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
+            var tokenPoolInfo = await TokenPoolContractStub.GetTokenPoolInfo.CallAsync(new GetTokenPoolInfoInput
             {
-                Owner = BridgeContractAddress,
-                Symbol = "USDT"
+                ChainId = "Ethereum",
+                TokenSymbol = "USDT"
             });
-            balance.Balance.ShouldBe(10_0000_00000000);
-        }
-        {
-            var result = await BridgeContractStub.GetSwapPairInfo.CallAsync(new GetSwapPairInfoInput
-            {
-                SwapId = _swapHashOfUsdt,
-                Symbol = "USDT"
-            });
-            result.DepositAmount.ShouldBe(10_0000_00000000);
+            tokenPoolInfo.Liquidity.ShouldBe(10_0000_00000000);
         }
         await PortTokenCreate();
         return organization;
@@ -457,6 +467,10 @@ public partial class BridgeContractTests
     public async Task CreateSwapTest_NotAdmin()
     {
         await InitialOracleContractAsync();
+        await RegimentContractStub.Initialize.SendAsync(new Regiment.InitializeInput
+        {
+            Controller = OracleContractAddress
+        });
         await InitialBridgeContractAsync();
         await CreateAndIssueUSDTAsync();
 
@@ -600,11 +614,6 @@ public partial class BridgeContractTests
     public async Task GetSwapPairInfo()
     {
         await CreateSwapTestAsync();
-        var bridgeBalance = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
-        {
-            Symbol = "ELF",
-            Owner = BridgeContractAddress
-        });
         {
             var result = await BridgeContractStub.GetSwapPairInfo.CallAsync(new GetSwapPairInfoInput
             {
@@ -613,7 +622,6 @@ public partial class BridgeContractTests
             });
             result.SwappedTimes.ShouldBe(0);
             result.SwappedAmount.ShouldBe(0);
-            result.DepositAmount.ShouldBe(bridgeBalance.Balance);
         }
         {
             var result1 = await BridgeContractStub.GetSwapPairInfo.CallAsync(new GetSwapPairInfoInput
@@ -622,7 +630,6 @@ public partial class BridgeContractTests
                 Symbol = "XXX"
             });
             result1.SwappedTimes.ShouldBe(0);
-            result1.DepositAmount.ShouldBe(0);
         }
     }
 
@@ -940,7 +947,12 @@ public partial class BridgeContractTests
             });
             result.SwappedTimes.ShouldBe(1);
             result.SwappedAmount.ShouldBe(10000000L);
-            result.DepositAmount.ShouldBe(10_0000_00000000);
+            var tokenPoolInfo = await TokenPoolContractStub.GetTokenPoolInfo.CallAsync(new GetTokenPoolInfoInput
+            {
+                ChainId = "Ethereum",
+                TokenSymbol = "ELF"
+            });
+            tokenPoolInfo.Liquidity.ShouldBe(9999990000000);
         }
     }
 
@@ -998,7 +1010,7 @@ public partial class BridgeContractTests
                 ReceiptId = SampleSwapInfo.SwapInfos[2].ReceiptId,
                 SwapId = _swapHashOfElf
             });
-            executionResult.TransactionResult.Error.ShouldContain("Insufficient balance");
+            executionResult.TransactionResult.Error.ShouldContain("Pool liquidity is not enough.");
         }
     }
 
@@ -1150,172 +1162,172 @@ public partial class BridgeContractTests
 
     #endregion
 
-    #region Deposit
-
-    [Fact]
-    public async Task DepositTest_NoPermission()
-    {
-        await CreateSwapTestAsync();
-        var executionResult = await LockBridgeContractStubs[0].Deposit.SendWithExceptionAsync(new DepositInput
-        {
-            SwapId = _swapHashOfElf,
-            Amount = 1000_00000000,
-            TargetTokenSymbol = "ELF"
-        });
-        executionResult.TransactionResult.Error.ShouldContain("No permission.");
-    }
-
-    [Fact]
-    public async Task DepositTest_SwapIdIsNull()
-    {
-        await CreateSwapTestAsync();
-        var executionResult = await LockBridgeContractStubs[0].Deposit.SendWithExceptionAsync(new DepositInput
-        {
-            SwapId = new Hash(),
-            Amount = 1000_00000000,
-            TargetTokenSymbol = "ELF"
-        });
-        executionResult.TransactionResult.Error.ShouldContain("Token swap pair not found.");
-    }
-
-    [Fact]
-    public async Task DepositTest_SymbolNotExist()
-    {
-        await CreateSwapTestAsync();
-        var executionResult = await BridgeContractStub.Deposit.SendWithExceptionAsync(new DepositInput
-        {
-            SwapId = _swapHashOfElf,
-            Amount = 1000_00000000,
-            TargetTokenSymbol = "BNB"
-        });
-        executionResult.TransactionResult.Error.ShouldContain($"Swap pair {_swapHashOfElf}-BNB is not exist.");
-    }
-
-    [Fact]
-    public async Task DepositTest_InvalidAmount()
-    {
-        await CreateSwapTestAsync();
-        var executionResult = await BridgeContractStub.Deposit.SendWithExceptionAsync(new DepositInput
-        {
-            SwapId = _swapHashOfElf,
-            Amount = 0,
-            TargetTokenSymbol = "ELF"
-        });
-        executionResult.TransactionResult.Error.ShouldContain("Invalid deposit amount.");
-    }
-
-    [Fact]
-    public async Task WithdrawTest()
-    {
-        await CreateSwapTestAsync();
-
-        var userBalance = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
-        {
-            Symbol = "ELF",
-            Owner = DefaultSenderAddress
-        });
-
-        await BridgeContractStub.Withdraw.SendAsync(new WithdrawInput
-        {
-            SwapId = _swapHashOfElf,
-            TargetTokenSymbol = "ELF",
-            Amount = 30000_00000000
-        });
-        {
-            var balance = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
-            {
-                Symbol = "ELF",
-                Owner = BridgeContractAddress
-            });
-            balance.Balance.ShouldBe(70000_00000000);
-        }
-        {
-            var userBalanceWithdraw = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
-            {
-                Symbol = "ELF",
-                Owner = DefaultSenderAddress
-            });
-            userBalanceWithdraw.Balance.ShouldBe(userBalance.Balance + 30000_00000000);
-        }
-        {
-            var result = await BridgeContractStub.GetSwapPairInfo.CallAsync(new GetSwapPairInfoInput
-            {
-                SwapId = _swapHashOfElf,
-                Symbol = "ELF"
-            });
-            result.DepositAmount.ShouldBe(7_0000_00000000);
-        }
-    }
-
-    [Fact]
-    public async Task WithdrawTest_NoPermission()
-    {
-        await CreateSwapTestAsync();
-
-        var executionResult = await LockBridgeContractStubs[0].Withdraw.SendWithExceptionAsync(new WithdrawInput
-        {
-            SwapId = _swapHashOfElf,
-            TargetTokenSymbol = "ELF",
-            Amount = 30000_00000000
-        });
-        executionResult.TransactionResult.Error.ShouldContain("No permission.");
-    }
-
-    [Fact]
-    public async Task WithdrawTest_SwapIdIsNull()
-    {
-        await CreateSwapTestAsync();
-
-        var executionResult = await BridgeContractStub.Withdraw.SendWithExceptionAsync(new WithdrawInput
-        {
-            SwapId = new Hash(),
-            TargetTokenSymbol = "ELF",
-            Amount = 30000_00000000
-        });
-        executionResult.TransactionResult.Error.ShouldContain("Token swap pair not found.");
-    }
-
-    [Fact]
-    public async Task WithdrawTest_SymbolNotExist()
-    {
-        await CreateSwapTestAsync();
-
-        var executionResult = await BridgeContractStub.Withdraw.SendWithExceptionAsync(new WithdrawInput
-        {
-            SwapId = _swapHashOfElf,
-            TargetTokenSymbol = "BNB",
-            Amount = 30000_00000000
-        });
-        executionResult.TransactionResult.Error.ShouldContain($"Swap pair {_swapHashOfElf}-BNB is not exist.");
-    }
-
-    [Fact]
-    public async Task WithdrawTest_InvalidAmount()
-    {
-        await CreateSwapTestAsync();
-        var executionResult = await BridgeContractStub.Withdraw.SendWithExceptionAsync(new WithdrawInput
-        {
-            SwapId = _swapHashOfElf,
-            Amount = 0,
-            TargetTokenSymbol = "ELF"
-        });
-        executionResult.TransactionResult.Error.ShouldContain("Invalid withdraw amount.");
-    }
-
-    [Fact]
-    public async Task WithdrawTest_DepositNotEnough()
-    {
-        await WithdrawTest();
-        var executionResult = await BridgeContractStub.Withdraw.SendWithExceptionAsync(new WithdrawInput
-        {
-            SwapId = _swapHashOfElf,
-            Amount = 8_0000_00000000,
-            TargetTokenSymbol = "ELF"
-        });
-        executionResult.TransactionResult.Error.ShouldContain("Contract balance not enough");
-    }
-
-    #endregion
+    // #region Deposit
+    //
+    // [Fact]
+    // public async Task DepositTest_NoPermission()
+    // {
+    //     await CreateSwapTestAsync();
+    //     var executionResult = await LockBridgeContractStubs[0].Deposit.SendWithExceptionAsync(new DepositInput
+    //     {
+    //         SwapId = _swapHashOfElf,
+    //         Amount = 1000_00000000,
+    //         TargetTokenSymbol = "ELF"
+    //     });
+    //     executionResult.TransactionResult.Error.ShouldContain("No permission.");
+    // }
+    //
+    // [Fact]
+    // public async Task DepositTest_SwapIdIsNull()
+    // {
+    //     await CreateSwapTestAsync();
+    //     var executionResult = await LockBridgeContractStubs[0].Deposit.SendWithExceptionAsync(new DepositInput
+    //     {
+    //         SwapId = new Hash(),
+    //         Amount = 1000_00000000,
+    //         TargetTokenSymbol = "ELF"
+    //     });
+    //     executionResult.TransactionResult.Error.ShouldContain("Token swap pair not found.");
+    // }
+    //
+    // [Fact]
+    // public async Task DepositTest_SymbolNotExist()
+    // {
+    //     await CreateSwapTestAsync();
+    //     var executionResult = await BridgeContractStub.Deposit.SendWithExceptionAsync(new DepositInput
+    //     {
+    //         SwapId = _swapHashOfElf,
+    //         Amount = 1000_00000000,
+    //         TargetTokenSymbol = "BNB"
+    //     });
+    //     executionResult.TransactionResult.Error.ShouldContain($"Swap pair {_swapHashOfElf}-BNB is not exist.");
+    // }
+    //
+    // [Fact]
+    // public async Task DepositTest_InvalidAmount()
+    // {
+    //     await CreateSwapTestAsync();
+    //     var executionResult = await BridgeContractStub.Deposit.SendWithExceptionAsync(new DepositInput
+    //     {
+    //         SwapId = _swapHashOfElf,
+    //         Amount = 0,
+    //         TargetTokenSymbol = "ELF"
+    //     });
+    //     executionResult.TransactionResult.Error.ShouldContain("Invalid deposit amount.");
+    // }
+    //
+    // [Fact]
+    // public async Task WithdrawTest()
+    // {
+    //     await CreateSwapTestAsync();
+    //
+    //     var userBalance = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
+    //     {
+    //         Symbol = "ELF",
+    //         Owner = DefaultSenderAddress
+    //     });
+    //
+    //     await BridgeContractStub.Withdraw.SendAsync(new WithdrawInput
+    //     {
+    //         SwapId = _swapHashOfElf,
+    //         TargetTokenSymbol = "ELF",
+    //         Amount = 30000_00000000
+    //     });
+    //     {
+    //         var balance = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
+    //         {
+    //             Symbol = "ELF",
+    //             Owner = BridgeContractAddress
+    //         });
+    //         balance.Balance.ShouldBe(70000_00000000);
+    //     }
+    //     {
+    //         var userBalanceWithdraw = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
+    //         {
+    //             Symbol = "ELF",
+    //             Owner = DefaultSenderAddress
+    //         });
+    //         userBalanceWithdraw.Balance.ShouldBe(userBalance.Balance + 30000_00000000);
+    //     }
+    //     {
+    //         var result = await BridgeContractStub.GetSwapPairInfo.CallAsync(new GetSwapPairInfoInput
+    //         {
+    //             SwapId = _swapHashOfElf,
+    //             Symbol = "ELF"
+    //         });
+    //         result.DepositAmount.ShouldBe(7_0000_00000000);
+    //     }
+    // }
+    //
+    // [Fact]
+    // public async Task WithdrawTest_NoPermission()
+    // {
+    //     await CreateSwapTestAsync();
+    //
+    //     var executionResult = await LockBridgeContractStubs[0].Withdraw.SendWithExceptionAsync(new WithdrawInput
+    //     {
+    //         SwapId = _swapHashOfElf,
+    //         TargetTokenSymbol = "ELF",
+    //         Amount = 30000_00000000
+    //     });
+    //     executionResult.TransactionResult.Error.ShouldContain("No permission.");
+    // }
+    //
+    // [Fact]
+    // public async Task WithdrawTest_SwapIdIsNull()
+    // {
+    //     await CreateSwapTestAsync();
+    //
+    //     var executionResult = await BridgeContractStub.Withdraw.SendWithExceptionAsync(new WithdrawInput
+    //     {
+    //         SwapId = new Hash(),
+    //         TargetTokenSymbol = "ELF",
+    //         Amount = 30000_00000000
+    //     });
+    //     executionResult.TransactionResult.Error.ShouldContain("Token swap pair not found.");
+    // }
+    //
+    // [Fact]
+    // public async Task WithdrawTest_SymbolNotExist()
+    // {
+    //     await CreateSwapTestAsync();
+    //
+    //     var executionResult = await BridgeContractStub.Withdraw.SendWithExceptionAsync(new WithdrawInput
+    //     {
+    //         SwapId = _swapHashOfElf,
+    //         TargetTokenSymbol = "BNB",
+    //         Amount = 30000_00000000
+    //     });
+    //     executionResult.TransactionResult.Error.ShouldContain($"Swap pair {_swapHashOfElf}-BNB is not exist.");
+    // }
+    //
+    // [Fact]
+    // public async Task WithdrawTest_InvalidAmount()
+    // {
+    //     await CreateSwapTestAsync();
+    //     var executionResult = await BridgeContractStub.Withdraw.SendWithExceptionAsync(new WithdrawInput
+    //     {
+    //         SwapId = _swapHashOfElf,
+    //         Amount = 0,
+    //         TargetTokenSymbol = "ELF"
+    //     });
+    //     executionResult.TransactionResult.Error.ShouldContain("Invalid withdraw amount.");
+    // }
+    //
+    // [Fact]
+    // public async Task WithdrawTest_DepositNotEnough()
+    // {
+    //     await WithdrawTest();
+    //     var executionResult = await BridgeContractStub.Withdraw.SendWithExceptionAsync(new WithdrawInput
+    //     {
+    //         SwapId = _swapHashOfElf,
+    //         Amount = 8_0000_00000000,
+    //         TargetTokenSymbol = "ELF"
+    //     });
+    //     executionResult.TransactionResult.Error.ShouldContain("Contract balance not enough");
+    // }
+    //
+    // #endregion
 
     #region Helper
 

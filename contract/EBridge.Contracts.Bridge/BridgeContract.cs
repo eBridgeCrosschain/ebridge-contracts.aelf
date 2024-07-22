@@ -1,3 +1,4 @@
+using AElf;
 using AElf.Sdk.CSharp;
 using AElf.Standards.ACS3;
 using AElf.Types;
@@ -125,5 +126,17 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
     }
 
     #endregion
-    
+
+    public override Empty SetTokenPoolContract(Address input)
+    {
+        Assert(Context.Sender == State.Controller.Value, "No permission.");
+        Assert(IsAddressValid(input),"Invalid input.");
+        State.TokenPoolContract.Value = input;
+        return new Empty();
+    }
+
+    public override Address GetTokenPoolContract(Empty input)
+    {
+        return State.TokenPoolContract.Value;
+    }
 }

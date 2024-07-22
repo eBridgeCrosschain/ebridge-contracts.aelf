@@ -7,6 +7,8 @@ using AElf.CSharp.Core;
 using AElf.CSharp.Core.Extension;
 using AElf.Sdk.CSharp;
 using AElf.Types;
+using EBridge.Contracts.TokenPool;
+using LockInput = EBridge.Contracts.TokenPool.LockInput;
 
 namespace EBridge.Contracts.Bridge
 {
@@ -23,20 +25,19 @@ namespace EBridge.Contracts.Bridge
             return State.TokenContract.GetTokenInfo.Call(new GetTokenInfoInput { Symbol = symbol });
         }
 
-        private void TransferToken(string symbol, long amount, Address to)
+        private void TransferToken(string symbol, long amount, Address to,string fromChainId)
         {
             if (amount <= 0)
             {
                 return;
             }
-
-            RequireTokenContractStateSet();
-            State.TokenContract.Transfer.Send(new TransferInput
+            RequireTokenPoolContractStateSet();
+            State.TokenPoolContract.Release.Send(new ReleaseInput
             {
+                FromChainId = fromChainId,
                 Amount = amount,
-                Symbol = symbol,
-                To = to,
-                Memo = "Token swap."
+                Receiver = to,
+                TargetTokenSymbol = symbol
             });
         }
 
@@ -47,6 +48,11 @@ namespace EBridge.Contracts.Bridge
 
             State.TokenContract.Value =
                 Context.GetContractAddressByName(SmartContractConstants.TokenContractSystemName);
+        }
+        
+        private void RequireTokenPoolContractStateSet()
+        {
+            Assert(State.TokenPoolContract.Value != null,"Token pool contract has not be set.");
         }
 
         private SwapInfo GetTokenSwapInfo(Hash swapId)
@@ -234,11 +240,12 @@ namespace EBridge.Contracts.Bridge
             }
         }
 
-        private void TransferDepositTo(string symbol, long amount, Address from)
+        private void TransferDepositTo(string symbol, long amount, Address from, string targetChainId)
         {
             Assert(amount > 0, $"Insufficient lock amount {amount}.");
 
             RequireTokenContractStateSet();
+            RequireTokenPoolContractStateSet();
             State.TokenContract.TransferFrom.Send(new TransferFromInput
             {
                 From = from,
@@ -246,6 +253,19 @@ namespace EBridge.Contracts.Bridge
                 Symbol = symbol,
                 To = Context.Self,
                 Memo = "Token Lock."
+            });
+            State.TokenContract.Approve.Send(new ApproveInput
+            {
+                Spender = State.TokenPoolContract.Value,
+                Symbol = symbol,
+                Amount = amount
+            });
+            State.TokenPoolContract.Lock.Send(new LockInput
+            {
+                TargetChainId = targetChainId,
+                TargetTokenSymbol = symbol,
+                Amount = amount,
+                Sender = from
             });
         }
 
