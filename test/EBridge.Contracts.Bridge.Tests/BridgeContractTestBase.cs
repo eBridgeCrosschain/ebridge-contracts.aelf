@@ -40,7 +40,7 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
     protected Address DefaultSenderAddress { get; set; }
     protected ECKeyPair DefaultKeypair => SampleAccount.Accounts.First().KeyPair;
 
-    internal List<Account> Transmitters => SampleAccount.Accounts.Skip(1).Take(4).ToList();
+    internal List<Account> Transmitters => SampleAccount.Accounts.Skip(1).Take(5).ToList();
 
     internal List<Account> Receivers => SampleAccount.Accounts.Skip(6).Take(5).ToList();
 
@@ -116,9 +116,8 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
     
     protected Address TokenPoolContractAddress { get; set; }
 
-    internal readonly Address _regimentAddress =
-        Address.FromBase58("28M7nDjWDcyKiBQAU5VewhPj2fmv1FToretdnru7vzS9hKovfp");
-    
+    internal Address _regimentAddress;
+
     internal Dictionary<string, Hash> _receiptDictionary;
     
     internal Hash _swapHashOfElf;
@@ -728,7 +727,7 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
             var regimentAddress = RegimentCreated.Parser
                 .ParseFrom(executionResult.TransactionResult.Logs.First(l => l.Name == nameof(RegimentCreated))
                     .NonIndexed).RegimentAddress;
-            regimentAddress.ShouldBe(_regimentAddress);
+            _regimentAddress = regimentAddress;
             var regimentInfo = await RegimentContractStub.GetRegimentInfo.CallAsync(_regimentAddress);
             var manager = regimentInfo.Manager;
             manager.ShouldBe(DefaultSenderAddress);

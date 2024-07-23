@@ -10,6 +10,7 @@ using AElf.Kernel;
 using AElf.Types;
 using EBridge.Contracts.Bridge.Helpers;
 using EBridge.Contracts.Report;
+using EBridge.Contracts.TokenPool;
 using Google.Protobuf.WellKnownTypes;
 using Org.BouncyCastle.Utilities;
 using Shouldly;
@@ -262,7 +263,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
                 Token = "0xf8F862Aaeb9cb101383d27044202aBbe3a057eCC",
                 Value = skipList
             });
-            foreach (var account in Transmitters)
+            foreach (var account in Transmitters.SkipLast(1))
             {
                 var stub = GetReportContractStub(account.KeyPair);
                 await stub.ConfirmReport.SendAsync(new ConfirmReportInput
@@ -330,7 +331,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
             receiptIdInfo.Symbol.ShouldBe("ELF");
 
 
-            foreach (var account in Transmitters)
+            foreach (var account in Transmitters.SkipLast(1))
             {
                 var stub = GetReportContractStub(account.KeyPair);
                 await stub.ConfirmReport.SendAsync(new ConfirmReportInput
@@ -926,26 +927,26 @@ public partial class BridgeContractTests : BridgeContractTestBase
             log.FromChainId.ShouldBe("Ethereum");
             await CheckBalanceAsync(Receivers.First().Address, "ELF", 10000000L);
             await CheckBalanceAsync(BridgeContractAddress, "ELF",  62_00000000 + 31_00000000);
-            var swapPairInfo = await BridgeContractStub.GetSwapPairInfo.CallAsync(new GetSwapPairInfoInput
             {
-                SwapId = _swapHashOfElf,
-                Symbol = "ELF"
-            });
-            swapPairInfo.DepositAmount.ShouldBe(0);
-            {
-                await BridgeContractStub.Deposit.SendAsync(new DepositInput
+                await TokenContractStub.Approve.SendAsync(new ApproveInput
                 {
-                    SwapId = _swapHashOfElf,
-                    TargetTokenSymbol = "ELF",
+                    Spender = TokenPoolContractAddress,
+                    Symbol = "ELF",
+                    Amount = 10_0000_00000000
+                });
+                await TokenPoolContractStub.AddLiquidity.SendAsync(new AddLiquidityInput
+                {
+                    ChainId = "Ethereum",
+                    TokenSymbol = "ELF",
                     Amount = 10_0000_00000000
                 });
             }
-            var swapPairInfo1 = await BridgeContractStub.GetSwapPairInfo.CallAsync(new GetSwapPairInfoInput
+            var tokenPoolInfo = await TokenPoolContractStub.GetTokenPoolInfo.CallAsync(new GetTokenPoolInfoInput
             {
-                SwapId = _swapHashOfElf,
-                Symbol = "ELF"
+                ChainId = "Ethereum",
+                TokenSymbol = "ELF"
             });
-            swapPairInfo1.DepositAmount.ShouldBe(10_0000_00000000);
+            tokenPoolInfo.Liquidity.ShouldBe(10_0000_00000000 + 100_00000000+50_00000000-10000000+40000_00000000);
             await BridgeContractStub.SwapToken.SendAsync(new SwapTokenInput
             {
                 ReceiverAddress = Receivers[1].Address,

@@ -46,6 +46,11 @@ public partial class BridgeContractTests
                 {
                     ChainId = "Kovan",
                     Symbol = "USDT"
+                },
+                new ChainToken
+                {
+                    ChainId = "Polygon",
+                    Symbol = "USDT"
                 }
             }
         });
@@ -159,12 +164,7 @@ public partial class BridgeContractTests
         await CreateSwapTestAsync();
         await OracleQueryCommitAndReveal();
         var time = await SetSwapLimit();
-
-        var bridgeBalance = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
-        {
-            Symbol = "ELF",
-            Owner = BridgeContractAddress
-        });
+        
         {
             var swapTime = TimestampHelper.GetUtcNow().ToDateTime();
             blockTimeProvider.SetBlockTime(Timestamp.FromDateTime(swapTime.AddHours(1)));
@@ -268,11 +268,20 @@ public partial class BridgeContractTests
             });
             executionResult.TransactionResult.Error.ShouldContain("Merkle proof failed.");
         }
-        var bridgeUsdtBalance = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
         {
-            Symbol = "USDT",
-            Owner = BridgeContractAddress
-        });
+            await TokenContractStub.Approve.SendAsync(new ApproveInput
+            {
+                Spender = TokenPoolContractAddress,
+                Symbol = "USDT",
+                Amount = 1000000000000
+            });
+            await TokenPoolContractStub.AddLiquidity.SendAsync(new AddLiquidityInput
+            {
+                ChainId = "Polygon",
+                TokenSymbol = "USDT",
+                Amount = 1000000000000
+            });
+        }
         {
             // Swap
             await ReceiverBridgeContractStubs.First().SwapToken.SendAsync(new SwapTokenInput
@@ -590,11 +599,10 @@ public partial class BridgeContractTests
             Admin = DefaultSenderAddress,
             Controller = DefaultSenderAddress
         });
-        var regimentId = await RegimentContractStub.GetRegimentId.CallAsync(_regimentAddress);
         var executionResult = await BridgeContractStub.CreateSwap.SendWithExceptionAsync(new CreateSwapInput
         {
             MerkleTreeLeafLimit = 1024,
-            RegimentId = regimentId,
+            RegimentId = HashHelper.ComputeFrom("regiment"),
             SwapTargetToken =
                 new SwapTargetToken
                 {
