@@ -28,8 +28,8 @@ service BridgeContractImpl {
   rpc SetSwapDailyLimit (SetSwapDailyLimitInput) returns (google.protobuf.Empty) {}
   rpc ConfigReceiptTokenBucket (ConfigReceiptTokenBucketInput) returns (google.protobuf.Empty) {}
   rpc ConfigSwapTokenBucket (ConfigSwapTokenBucketInput) returns (google.protobuf.Empty) {}
-  
   rpc SetTokenPoolContract(aelf.Address) returns (google.protobuf.Empty){}
+  rpc AssetsMigrator(AssetsMigratorInput) returns (google.protobuf.Empty){}
   
   rpc GetTokenPoolContract(google.protobuf.Empty) returns (aelf.Address) {
     option (aelf.is_view) = true;
@@ -127,6 +127,16 @@ message GetReceiptMinWaitTimeInSecondsInput {
 
 message ConfigSwapTokenBucketInput {
   repeated SwapTokenBucketConfig swap_token_bucket_configs = 1;
+}
+
+message AssetsMigratorInput {
+  repeated aelf.Hash swapId = 1;
+  aelf.Address receiver = 2;
+}
+
+message AssetsInfo {
+  aelf.Hash swapId = 1;
+  string symbol = 2;
 }
 
 message SwapTokenBucketConfig {

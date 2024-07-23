@@ -1,8 +1,13 @@
+using System;
 using AElf;
+using AElf.Contracts.MultiToken;
+using AElf.CSharp.Core;
 using AElf.Sdk.CSharp;
 using AElf.Standards.ACS3;
 using AElf.Types;
+using EBridge.Contracts.TokenPool;
 using Google.Protobuf.WellKnownTypes;
+using LockInput = EBridge.Contracts.TokenPool.LockInput;
 
 namespace EBridge.Contracts.Bridge;
 
@@ -129,7 +134,7 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
 
     public override Empty SetTokenPoolContract(Address input)
     {
-        Assert(Context.Sender == State.Controller.Value, "No permission.");
+        Assert(Context.Sender == State.Admin.Value, "No permission.");
         Assert(IsAddressValid(input),"Invalid input.");
         State.TokenPoolContract.Value = input;
         return new Empty();
@@ -138,5 +143,54 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
     public override Address GetTokenPoolContract(Empty input)
     {
         return State.TokenPoolContract.Value;
+    }
+
+    public override Empty AssetsMigrator(AssetsMigratorInput input)
+    {
+        Assert(Context.Sender == State.Admin.Value, "No permission.");
+        Assert(input != null && input.SwapId.Count > 0, "Invalid input.");
+        Assert(IsAddressValid(input.Receiver),"Invalid receiver.");
+        foreach (var swapId in input.SwapId)
+        {
+            var swapInfo = GetTokenSwapInfo(swapId);
+            var symbol = swapInfo.SwapTargetToken.Symbol;
+            var swapPairInfo = State.SwapPairInfoMap[swapInfo.SwapId][symbol];
+            Assert(swapPairInfo != null, $"Swap pair {swapInfo.SwapId}-{symbol} is not exist.");
+            var balance = (State.TokenContract.GetBalance.Call(new GetBalanceInput
+            {
+                Owner = Context.Self,
+                Symbol = symbol
+            })).Balance;
+            if (swapPairInfo.DepositAmount > 0 && balance > 0)
+            {
+                if (symbol == DefaultFeeSymbol)
+                {
+                    balance = balance.Sub(State.TransactionFee.Value);
+                }
+                var diff = balance.Sub(swapPairInfo.DepositAmount);
+                // if diff > 0, it means that a portion is locked into the contract through staking.
+                var amount = diff > 0 ? swapPairInfo.DepositAmount : balance;
+                State.TokenContract.Transfer.Send(new TransferInput
+                {
+                    Symbol = symbol,
+                    Amount = amount,
+                    To = input.Receiver,
+                    Memo = "Bridge assets migrator."
+                });
+                if (diff > 0)
+                {
+                    State.TokenPoolContract.Lock.Send(new LockInput
+                    {
+                        TargetChainId = swapInfo.SwapTargetToken.FromChainId,
+                        TargetTokenSymbol = symbol,
+                        Amount = diff,
+                        Sender = Context.Self
+                    });
+                }
+            }
+            swapPairInfo.DepositAmount = 0;
+            State.SwapPairInfoMap[swapInfo.SwapId][symbol] = swapPairInfo;
+        }
+        return new Empty();
     }
 }

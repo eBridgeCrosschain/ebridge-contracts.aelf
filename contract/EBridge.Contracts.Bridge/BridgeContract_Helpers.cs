@@ -31,14 +31,27 @@ namespace EBridge.Contracts.Bridge
             {
                 return;
             }
-            RequireTokenPoolContractStateSet();
-            State.TokenPoolContract.Release.Send(new ReleaseInput
+            RequireTokenContractStateSet();
+            if (State.TokenPoolContract.Value == null)
             {
-                FromChainId = fromChainId,
-                Amount = amount,
-                Receiver = to,
-                TargetTokenSymbol = symbol
-            });
+                State.TokenContract.Transfer.Send(new TransferInput
+                {
+                    Amount = amount,
+                    Symbol = symbol,
+                    To = to,
+                    Memo = "Token swap."
+                });
+            }
+            else
+            {
+                State.TokenPoolContract.Release.Send(new ReleaseInput
+                {
+                    FromChainId = fromChainId,
+                    Amount = amount,
+                    Receiver = to,
+                    TargetTokenSymbol = symbol
+                });
+            }
         }
 
         private void RequireTokenContractStateSet()
@@ -48,11 +61,6 @@ namespace EBridge.Contracts.Bridge
 
             State.TokenContract.Value =
                 Context.GetContractAddressByName(SmartContractConstants.TokenContractSystemName);
-        }
-        
-        private void RequireTokenPoolContractStateSet()
-        {
-            Assert(State.TokenPoolContract.Value != null,"Token pool contract has not be set.");
         }
 
         private SwapInfo GetTokenSwapInfo(Hash swapId)
@@ -245,7 +253,6 @@ namespace EBridge.Contracts.Bridge
             Assert(amount > 0, $"Insufficient lock amount {amount}.");
 
             RequireTokenContractStateSet();
-            RequireTokenPoolContractStateSet();
             State.TokenContract.TransferFrom.Send(new TransferFromInput
             {
                 From = from,
@@ -254,6 +261,7 @@ namespace EBridge.Contracts.Bridge
                 To = Context.Self,
                 Memo = "Token Lock."
             });
+            if (State.TokenPoolContract.Value == null) return;
             State.TokenContract.Approve.Send(new ApproveInput
             {
                 Spender = State.TokenPoolContract.Value,
@@ -267,6 +275,7 @@ namespace EBridge.Contracts.Bridge
                 Amount = amount,
                 Sender = from
             });
+
         }
 
         private void TransferFee(string symbol, long amount, Address from, Address to)
