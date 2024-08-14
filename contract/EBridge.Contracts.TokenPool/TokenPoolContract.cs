@@ -96,7 +96,7 @@ public partial class TokenPoolContract : TokenPoolContractContainer.TokenPoolCon
             Value = input.ChainId
         });
         if (whitelist.Equals(new TokenSymbolList()) ||
-            whitelist.Symbol.Count <= 0 && !whitelist.Symbol.Contains(input.TokenSymbol))
+            whitelist.Symbol.Count <= 0 || !whitelist.Symbol.Contains(input.TokenSymbol))
         {
             throw new AssertionException("Not support.");
         }

@@ -44,7 +44,7 @@ public partial class BridgeContractTests
                 },
                 new ChainToken
                 {
-                    ChainId = "Kovan",
+                    ChainId = "Ethereum",
                     Symbol = "USDT"
                 },
                 new ChainToken
