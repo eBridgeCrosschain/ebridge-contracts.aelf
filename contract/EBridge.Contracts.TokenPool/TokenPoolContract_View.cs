@@ -9,7 +9,7 @@ public partial class TokenPoolContract
     public override TokenPoolInfo GetTokenPoolInfo(GetTokenPoolInfoInput input)
     {
         var tokenVirtualAddress =
-            CheckParamsAndGetTokenVirtualInfo( input.ChainId, input.TokenSymbol,
+            CheckParamsAndGetTokenVirtualInfo(input.TokenSymbol,
                 out var tokenVirtualHash);
         var liquidity = State.TokenLiquidity[tokenVirtualAddress];
         return new TokenPoolInfo
@@ -23,7 +23,7 @@ public partial class TokenPoolContract
     public override Int64Value GetLiquidity(GetLiquidityInput input)
     {
         var tokenVirtualAddress =
-            CheckParamsAndGetTokenVirtualInfo( input.ChainId, input.TokenSymbol,
+            CheckParamsAndGetTokenVirtualInfo(input.TokenSymbol,
                 out var tokenVirtualHash);
         return new Int64Value
         {
@@ -34,7 +34,7 @@ public partial class TokenPoolContract
     public override Int64Value GetRemovableLiquidity(GetLiquidityInput input)
     {
         var tokenVirtualAddress =
-            CheckParamsAndGetTokenVirtualInfo(input.ChainId, input.TokenSymbol,
+            CheckParamsAndGetTokenVirtualInfo(input.TokenSymbol,
                 out var tokenVirtualHash);
         var tokenLiquidity = State.TokenLiquidity[tokenVirtualAddress];
         var userLiquidity = State.LiquidityProviderBalances[input.Provider ?? Context.Sender][tokenVirtualAddress];

@@ -20,6 +20,7 @@ service TokenPoolContract {
   rpc RemoveLiquidity (RemoveLiquidityInput) returns (google.protobuf.Empty) {}
   rpc SetAdmin (aelf.Address) returns (google.protobuf.Empty) {}
   rpc SetBridgeContract (aelf.Address) returns (google.protobuf.Empty) {}
+  rpc Migrator (MigratorInput) returns (google.protobuf.Empty) {}
   
   rpc GetTokenPoolInfo(GetTokenPoolInfoInput) returns (TokenPoolInfo) {
     option (aelf.is_view) = true;
@@ -58,21 +59,26 @@ message ReleaseInput{
 }
 
 message AddLiquidityInput{
-  string chain_id = 1;
-  string token_symbol = 2;
+  string token_symbol = 1;
   int64 amount = 3;
 }
 
 message RemoveLiquidityInput{
-  string chain_id = 1;
-  string token_symbol = 2;
+  string token_symbol = 1;
   int64 amount = 3;
 }
 
-message GetTokenPoolInfoInput {
-  string chain_id = 2;
-  string token_symbol = 3;
+message MigratorInput {
+  aelf.Address provider = 1;
+  string token_symbol = 2;
+  int64 deposit_amount = 3;
+  int64 lock_amount = 4;
 }
+
+message GetTokenPoolInfoInput {
+  string token_symbol = 1;
+}
+
 message TokenPoolInfo {
   aelf.Address token_virtual_address = 1;
   aelf.Hash token_virtual_hash = 2;
@@ -81,8 +87,7 @@ message TokenPoolInfo {
 
 message GetLiquidityInput {
   aelf.Address provider = 1;
-  string chain_id = 2;
-  string token_symbol = 3;
+  string token_symbol = 2;
 }
 
 // Events
@@ -107,16 +112,14 @@ message Released {
 
 message LiquidityAdded {
   option (aelf.is_event) = true;
-  string chain_id = 1;
-  string token_symbol = 2;
-  int64 amount = 3;
-  aelf.Address provider = 4;
+  string token_symbol = 1;
+  int64 amount = 2;
+  aelf.Address provider = 3;
 }
 
 message LiquidityRemoved {
   option (aelf.is_event) = true;
-  string chain_id = 1;
-  string token_symbol = 2;
-  int64 amount = 3;
-  aelf.Address provider = 4;
+  string token_symbol = 1;
+  int64 amount = 2;
+  aelf.Address provider = 3;
 }

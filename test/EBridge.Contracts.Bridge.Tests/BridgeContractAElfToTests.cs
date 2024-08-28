@@ -936,14 +936,12 @@ public partial class BridgeContractTests : BridgeContractTestBase
                 });
                 await TokenPoolContractStub.AddLiquidity.SendAsync(new AddLiquidityInput
                 {
-                    ChainId = "Ethereum",
                     TokenSymbol = "ELF",
                     Amount = 10_0000_00000000
                 });
             }
             var tokenPoolInfo = await TokenPoolContractStub.GetTokenPoolInfo.CallAsync(new GetTokenPoolInfoInput
             {
-                ChainId = "Ethereum",
                 TokenSymbol = "ELF"
             });
             tokenPoolInfo.Liquidity.ShouldBe(10_0000_00000000 + 100_00000000+50_00000000-10000000+40000_00000000);

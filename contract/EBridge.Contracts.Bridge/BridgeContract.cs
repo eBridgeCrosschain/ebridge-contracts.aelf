@@ -149,13 +149,14 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
     {
         Assert(Context.Sender == State.Admin.Value, "No permission.");
         Assert(input != null && input.SwapId.Count > 0, "Invalid input.");
-        Assert(IsAddressValid(input.Receiver),"Invalid receiver.");
+        Assert(IsAddressValid(input.Provider),"Invalid receiver.");
         foreach (var swapId in input.SwapId)
         {
             var swapInfo = GetTokenSwapInfo(swapId);
             var symbol = swapInfo.SwapTargetToken.Symbol;
             var swapPairInfo = State.SwapPairInfoMap[swapInfo.SwapId][symbol];
             Assert(swapPairInfo != null, $"Swap pair {swapInfo.SwapId}-{symbol} is not exist.");
+            // usable liquidity
             var balance = (State.TokenContract.GetBalance.Call(new GetBalanceInput
             {
                 Owner = Context.Self,
@@ -167,26 +168,13 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
                 {
                     balance = balance.Sub(State.TransactionFee.Value);
                 }
-                var diff = balance.Sub(swapPairInfo.DepositAmount);
-                // if diff > 0, it means that a portion is locked into the contract through staking.
-                var amount = diff > 0 ? swapPairInfo.DepositAmount : balance;
-                State.TokenContract.Transfer.Send(new TransferInput
+                State.TokenPoolContract.Migrator.Send(new MigratorInput
                 {
-                    Symbol = symbol,
-                    Amount = amount,
-                    To = input.Receiver,
-                    Memo = "Bridge assets migrator."
+                    Provider = input.Provider,
+                    TokenSymbol = symbol,
+                    DepositAmount = swapPairInfo.DepositAmount,
+                    LockAmount = balance
                 });
-                if (diff > 0)
-                {
-                    State.TokenPoolContract.Lock.Send(new LockInput
-                    {
-                        TargetChainId = swapInfo.SwapTargetToken.FromChainId,
-                        TargetTokenSymbol = symbol,
-                        Amount = diff,
-                        Sender = Context.Self
-                    });
-                }
             }
             swapPairInfo.DepositAmount = 0;
             State.SwapPairInfoMap[swapInfo.SwapId][symbol] = swapPairInfo;

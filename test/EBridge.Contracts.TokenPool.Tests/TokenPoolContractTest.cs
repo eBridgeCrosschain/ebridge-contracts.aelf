@@ -47,7 +47,7 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
         {
             Spender = TokenPoolContractAddress,
             Symbol = "ELF",
-            Amount = 1000000000
+            Amount = 2000000000
         });
 
         var balanceBefore = (await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
@@ -79,7 +79,6 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
         (balanceBefore - balanceAfter).ShouldBe(1000000000);
         var tokenPoolInfo = await TokenPoolContractStub.GetTokenPoolInfo.CallAsync(new GetTokenPoolInfoInput
         {
-            ChainId = "Sepolia",
             TokenSymbol = "ELF"
         });
         tokenPoolInfo.Liquidity.ShouldBe(1000000000);
@@ -90,6 +89,26 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
                 Symbol = "ELF"
             });
             balance.Balance.ShouldBe(1000000000);
+        }
+        await TokenPoolContractStub.Lock.SendAsync(new LockInput
+        {
+            TargetChainId = "Bsc",
+            Amount = 1000000000,
+            Sender = User1Address,
+            TargetTokenSymbol = "ELF"
+        });
+        var tokenPoolInfo1 = await TokenPoolContractStub.GetTokenPoolInfo.CallAsync(new GetTokenPoolInfoInput
+        {
+            TokenSymbol = "ELF"
+        });
+        tokenPoolInfo1.Liquidity.ShouldBe(2000000000);
+        {
+            var balance = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
+            {
+                Owner = tokenPoolInfo.TokenVirtualAddress,
+                Symbol = "ELF"
+            });
+            balance.Balance.ShouldBe(2000000000);
         }
     }
 
@@ -217,7 +236,6 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
         (balanceAfter - balanceBefore).ShouldBe(500000000);
         var tokenPoolInfo = await TokenPoolContractStub.GetTokenPoolInfo.CallAsync(new GetTokenPoolInfoInput
         {
-            ChainId = "Sepolia",
             TokenSymbol = "ELF"
         });
         tokenPoolInfo.Liquidity.ShouldBe(500000000);
@@ -360,13 +378,11 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
         // 1. add liquidity
         var result = await TokenPoolContractStub.AddLiquidity.SendAsync(new AddLiquidityInput
         {
-            ChainId = "Sepolia",
             TokenSymbol = "ELF",
             Amount = 2000000000
         });
         var events = LiquidityAdded.Parser.ParseFrom(result.TransactionResult.Logs
             .FirstOrDefault(l => l.Name == nameof(LiquidityAdded))?.NonIndexed);
-        events.ChainId.ShouldBe("Sepolia");
         events.TokenSymbol.ShouldBe("ELF");
         events.Amount.ShouldBe(2000000000);
         events.Provider.ShouldBe(DefaultSenderAddress);
@@ -379,7 +395,6 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
         {
             var tokenPoolInfo = await TokenPoolContractStub.GetTokenPoolInfo.CallAsync(new GetTokenPoolInfoInput
             {
-                ChainId = "Sepolia",
                 TokenSymbol = "ELF"
             });
             tokenPoolInfo.Liquidity.ShouldBe(2000000000);
@@ -394,7 +409,6 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
             {
                 var liquidityInfo = await TokenPoolContractStub.GetLiquidity.CallAsync(new GetLiquidityInput
                 {
-                    ChainId = "Sepolia",
                     Provider = DefaultSenderAddress,
                     TokenSymbol = "ELF"
                 });
@@ -402,7 +416,6 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
                 var removableLiquidity = await TokenPoolContractStub.GetRemovableLiquidity.CallAsync(
                     new GetLiquidityInput
                     {
-                        ChainId = "Sepolia",
                         Provider = DefaultSenderAddress,
                         TokenSymbol = "ELF"
                     });
@@ -429,7 +442,6 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
         {
             var tokenPoolInfo = await TokenPoolContractStub.GetTokenPoolInfo.CallAsync(new GetTokenPoolInfoInput
             {
-                ChainId = "Sepolia",
                 TokenSymbol = "ELF"
             });
             tokenPoolInfo.Liquidity.ShouldBe(3000000000);
@@ -445,7 +457,6 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
         {
             var liquidityInfo = await TokenPoolContractStub.GetLiquidity.CallAsync(new GetLiquidityInput
             {
-                ChainId = "Sepolia",
                 Provider = DefaultSenderAddress,
                 TokenSymbol = "ELF"
             });
@@ -464,7 +475,6 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
         {
             var tokenPoolInfo = await TokenPoolContractStub.GetTokenPoolInfo.CallAsync(new GetTokenPoolInfoInput
             {
-                ChainId = "Sepolia",
                 TokenSymbol = "ELF"
             });
             tokenPoolInfo.Liquidity.ShouldBe(500000000);
@@ -480,14 +490,12 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
         {
             var liquidityInfo = await TokenPoolContractStub.GetLiquidity.CallAsync(new GetLiquidityInput
             {
-                ChainId = "Sepolia",
                 Provider = DefaultSenderAddress,
                 TokenSymbol = "ELF"
             });
             liquidityInfo.Value.ShouldBe(2000000000);
             var removableLiquidity = await TokenPoolContractStub.GetRemovableLiquidity.CallAsync(new GetLiquidityInput
             {
-                ChainId = "Sepolia",
                 Provider = DefaultSenderAddress,
                 TokenSymbol = "ELF"
             });
@@ -510,36 +518,11 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
                 Symbol = "ELF",
                 Amount = 10000000000
             });
-            var result = await TokenPoolContractStub.AddLiquidity.SendWithExceptionAsync(new AddLiquidityInput
-            {
-                ChainId = "Sepolia",
-                TokenSymbol = "ELF",
-                Amount = 2000000000
-            });
-            result.TransactionResult.Error.ShouldContain("Not support.");
         }
         await InitializeBridgeContractAndAddToken();
         {
             var result = await TokenPoolContractStub.AddLiquidity.SendWithExceptionAsync(new AddLiquidityInput
             {
-                TokenSymbol = "ELF",
-                Amount = 2000000000
-            });
-            result.TransactionResult.Error.ShouldContain("Invalid chain id.");
-        }
-        {
-            var result = await TokenPoolContractStub.AddLiquidity.SendWithExceptionAsync(new AddLiquidityInput
-            {
-                ChainId = "",
-                TokenSymbol = "ELF",
-                Amount = 2000000000
-            });
-            result.TransactionResult.Error.ShouldContain("Invalid chain id.");
-        }
-        {
-            var result = await TokenPoolContractStub.AddLiquidity.SendWithExceptionAsync(new AddLiquidityInput
-            {
-                ChainId = "Sepolia",
                 Amount = 2000000000
             });
             result.TransactionResult.Error.ShouldContain("Invalid symbol.");
@@ -547,7 +530,6 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
         {
             var result = await TokenPoolContractStub.AddLiquidity.SendWithExceptionAsync(new AddLiquidityInput
             {
-                ChainId = "Sepolia",
                 TokenSymbol = "",
                 Amount = 2000000000
             });
@@ -556,7 +538,6 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
         {
             var result = await TokenPoolContractStub.AddLiquidity.SendWithExceptionAsync(new AddLiquidityInput
             {
-                ChainId = "Sepolia",
                 Amount = 0,
                 TokenSymbol = "ELF"
             });
@@ -565,7 +546,6 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
         {
             var result = await TokenPoolContractStub.AddLiquidity.SendWithExceptionAsync(new AddLiquidityInput
             {
-                ChainId = "Sepolia",
                 TokenSymbol = "ELF",
                 Amount = -1
             });
@@ -574,7 +554,6 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
         {
             var result = await TokenPoolContractStub.AddLiquidity.SendWithExceptionAsync(new AddLiquidityInput
             {
-                ChainId = "Sepolia",
                 TokenSymbol = "ELF"
             });
             result.TransactionResult.Error.ShouldContain("Invalid amount.");
@@ -598,7 +577,6 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
         });
         await TokenPoolContractStub.AddLiquidity.SendAsync(new AddLiquidityInput
         {
-            ChainId = "Sepolia",
             TokenSymbol = "ELF",
             Amount = 2000000000
         });
@@ -609,7 +587,6 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
         })).Balance;
         var result = await TokenPoolContractStub.RemoveLiquidity.SendAsync(new RemoveLiquidityInput
         {
-            ChainId = "Sepolia",
             TokenSymbol = "ELF",
             Amount = 1500000000
         });
@@ -617,7 +594,6 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
             .FirstOrDefault(l => l.Name == nameof(LiquidityRemoved))?.NonIndexed);
         events.TokenSymbol.ShouldBe("ELF");
         events.Provider.ShouldBe(DefaultSenderAddress);
-        events.ChainId.ShouldBe("Sepolia");
         events.Amount.ShouldBe(1500000000);
         var balanceAfter = (await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
         {
@@ -627,7 +603,6 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
         (balanceAfter - balanceBefore).ShouldBe(1500000000);
         var tokenPoolInfo = await TokenPoolContractStub.GetTokenPoolInfo.CallAsync(new GetTokenPoolInfoInput
         {
-            ChainId = "Sepolia",
             TokenSymbol = "ELF"
         });
         tokenPoolInfo.Liquidity.ShouldBe(500000000);
@@ -642,7 +617,6 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
         {
             var liquidityInfo = await TokenPoolContractStub.GetLiquidity.CallAsync(new GetLiquidityInput
             {
-                ChainId = "Sepolia",
                 Provider = DefaultSenderAddress,
                 TokenSymbol = "ELF"
             });
@@ -650,7 +624,6 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
             var removableLiquidity = await TokenPoolContractStub.GetRemovableLiquidity.CallAsync(
                 new GetLiquidityInput
                 {
-                    ChainId = "Sepolia",
                     Provider = DefaultSenderAddress,
                     TokenSymbol = "ELF"
                 });
@@ -669,24 +642,6 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
         {
             var result = await TokenPoolContractStub.RemoveLiquidity.SendWithExceptionAsync(new RemoveLiquidityInput
             {
-                TokenSymbol = "ELF",
-                Amount = 2000000000
-            });
-            result.TransactionResult.Error.ShouldContain("Invalid chain id.");
-        }
-        {
-            var result = await TokenPoolContractStub.RemoveLiquidity.SendWithExceptionAsync(new RemoveLiquidityInput
-            {
-                ChainId = "",
-                TokenSymbol = "ELF",
-                Amount = 2000000000
-            });
-            result.TransactionResult.Error.ShouldContain("Invalid chain id.");
-        }
-        {
-            var result = await TokenPoolContractStub.RemoveLiquidity.SendWithExceptionAsync(new RemoveLiquidityInput
-            {
-                ChainId = "Sepolia",
                 Amount = 2000000000
             });
             result.TransactionResult.Error.ShouldContain("Invalid symbol.");
@@ -694,7 +649,6 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
         {
             var result = await TokenPoolContractStub.RemoveLiquidity.SendWithExceptionAsync(new RemoveLiquidityInput
             {
-                ChainId = "Sepolia",
                 TokenSymbol = "",
                 Amount = 2000000000
             });
@@ -703,7 +657,6 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
         {
             var result = await TokenPoolContractStub.RemoveLiquidity.SendWithExceptionAsync(new RemoveLiquidityInput
             {
-                ChainId = "Sepolia",
                 Amount = 0,
                 TokenSymbol = "ELF"
             });
@@ -712,7 +665,6 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
         {
             var result = await TokenPoolContractStub.RemoveLiquidity.SendWithExceptionAsync(new RemoveLiquidityInput
             {
-                ChainId = "Sepolia",
                 TokenSymbol = "ELF",
                 Amount = -1
             });
@@ -721,7 +673,6 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
         {
             var result = await TokenPoolContractStub.RemoveLiquidity.SendWithExceptionAsync(new RemoveLiquidityInput
             {
-                ChainId = "Sepolia",
                 TokenSymbol = "ELF"
             });
             result.TransactionResult.Error.ShouldContain("Invalid amount.");
@@ -729,7 +680,6 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
         {
             var result = await TokenPoolContractStub.RemoveLiquidity.SendWithExceptionAsync(new RemoveLiquidityInput
             {
-                ChainId = "Sepolia",
                 TokenSymbol = "ELF",
                 Amount = 4000000000
             });
@@ -744,7 +694,6 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
             });
             await TokenPoolContractStub.AddLiquidity.SendAsync(new AddLiquidityInput
             {
-                ChainId = "Sepolia",
                 TokenSymbol = "ELF",
                 Amount = 2000000000
             });
@@ -763,7 +712,6 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
             await TokenPoolContractStub.SetBridgeContract.SendAsync(BridgeContractAddress);
             var result = await TokenPoolContractStub.RemoveLiquidity.SendWithExceptionAsync(new RemoveLiquidityInput
             {
-                ChainId = "Sepolia",
                 TokenSymbol = "ELF",
                 Amount = 2000000000
             });
@@ -772,7 +720,6 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
         {
             var result = await TokenPoolContractStub1.RemoveLiquidity.SendWithExceptionAsync(new RemoveLiquidityInput
             {
-                ChainId = "Sepolia",
                 TokenSymbol = "ELF",
                 Amount = 500000000
             });

@@ -32,10 +32,11 @@ public partial class TokenPoolContract : TokenPoolContractContainer.TokenPoolCon
         Assert(Context.Sender == State.BridgeContract.Value, "No permission.");
         Assert(input.Amount > 0, "Invalid amount.");
         Assert(IsAddressValid(input.Sender), "Invalid sender.");
+        Assert(IsStringValid(input.TargetChainId), "Invalid chain id.");
         var tokenVirtualAddress =
-            CheckParamsAndGetTokenVirtualInfo(input.TargetChainId, input.TargetTokenSymbol,
+            CheckParamsAndGetTokenVirtualInfo(input.TargetTokenSymbol,
                 out var tokenVirtualHash);
-        State.TokenLiquidity[tokenVirtualAddress] += input.Amount;
+        State.TokenLiquidity[tokenVirtualAddress] = State.TokenLiquidity[tokenVirtualAddress].Add(input.Amount);
         State.TokenContract.TransferFrom.Send(new TransferFromInput
         {
             From = State.BridgeContract.Value,
@@ -61,11 +62,12 @@ public partial class TokenPoolContract : TokenPoolContractContainer.TokenPoolCon
         Assert(Context.Sender == State.BridgeContract.Value, "No permission.");
         Assert(input.Amount > 0, "Invalid amount.");
         Assert(IsAddressValid(input.Receiver), "Invalid receiver.");
+        Assert(IsStringValid(input.FromChainId), "Invalid chain id.");
         var tokenVirtualAddress =
-            CheckParamsAndGetTokenVirtualInfo(input.FromChainId, input.TargetTokenSymbol,
+            CheckParamsAndGetTokenVirtualInfo(input.TargetTokenSymbol,
                 out var tokenVirtualHash);
         Assert(State.TokenLiquidity[tokenVirtualAddress] >= input.Amount, "Pool liquidity is not enough.");
-        State.TokenLiquidity[tokenVirtualAddress] -= input.Amount;
+        State.TokenLiquidity[tokenVirtualAddress] = State.TokenLiquidity[tokenVirtualAddress].Sub(input.Amount);
         State.TokenContract.Transfer.VirtualSend(tokenVirtualHash, new TransferInput
         {
             To = input.Receiver,
@@ -89,18 +91,8 @@ public partial class TokenPoolContract : TokenPoolContractContainer.TokenPoolCon
         Assert(IsInitialized(), "Contract has not been initialized.");
         Assert(input.Amount > 0, "Invalid amount.");
         var tokenVirtualAddress =
-            CheckParamsAndGetTokenVirtualInfo(input.ChainId, input.TokenSymbol,
+            CheckParamsAndGetTokenVirtualInfo(input.TokenSymbol,
                 out var tokenVirtualHash);
-        var whitelist = State.BridgeContract.GetTokenWhitelist.Call(new StringValue
-        {
-            Value = input.ChainId
-        });
-        if (whitelist.Equals(new TokenSymbolList()) ||
-            whitelist.Symbol.Count <= 0 || !whitelist.Symbol.Contains(input.TokenSymbol))
-        {
-            throw new AssertionException("Not support.");
-        }
-
         State.LiquidityProviderBalances[Context.Sender][tokenVirtualAddress] =
             State.LiquidityProviderBalances[Context.Sender][tokenVirtualAddress].Add(input.Amount);
         State.TokenLiquidity[tokenVirtualAddress] = State.TokenLiquidity[tokenVirtualAddress].Add(input.Amount);
@@ -114,7 +106,6 @@ public partial class TokenPoolContract : TokenPoolContractContainer.TokenPoolCon
         });
         Context.Fire(new LiquidityAdded
         {
-            ChainId = input.ChainId,
             TokenSymbol = input.TokenSymbol,
             Amount = input.Amount,
             Provider = Context.Sender
@@ -127,13 +118,14 @@ public partial class TokenPoolContract : TokenPoolContractContainer.TokenPoolCon
         Assert(IsInitialized(), "Contract has not been initialized.");
         Assert(input.Amount > 0, "Invalid amount.");
         var tokenVirtualAddress =
-            CheckParamsAndGetTokenVirtualInfo(input.ChainId, input.TokenSymbol,
+            CheckParamsAndGetTokenVirtualInfo(input.TokenSymbol,
                 out var tokenVirtualHash);
         Assert(
             State.TokenLiquidity[tokenVirtualAddress] >= input.Amount &&
             State.LiquidityProviderBalances[Context.Sender][tokenVirtualAddress] >= input.Amount,
             "Not enough liquidity to remove.");
-        State.LiquidityProviderBalances[Context.Sender][tokenVirtualAddress]= State.LiquidityProviderBalances[Context.Sender][tokenVirtualAddress].Sub(input.Amount);
+        State.LiquidityProviderBalances[Context.Sender][tokenVirtualAddress] =
+            State.LiquidityProviderBalances[Context.Sender][tokenVirtualAddress].Sub(input.Amount);
         State.TokenLiquidity[tokenVirtualAddress] = State.TokenLiquidity[tokenVirtualAddress].Sub(input.Amount);
         State.TokenContract.Transfer.VirtualSend(tokenVirtualHash, new TransferInput
         {
@@ -144,7 +136,6 @@ public partial class TokenPoolContract : TokenPoolContractContainer.TokenPoolCon
         });
         Context.Fire(new LiquidityRemoved
         {
-            ChainId = input.ChainId,
             TokenSymbol = input.TokenSymbol,
             Amount = input.Amount,
             Provider = Context.Sender
@@ -167,6 +158,27 @@ public partial class TokenPoolContract : TokenPoolContractContainer.TokenPoolCon
         Assert(Context.Sender == State.Admin.Value, "No permission.");
         Assert(IsAddressValid(input), "Invalid input.");
         State.BridgeContract.Value = input;
+        return new Empty();
+    }
+
+    public override Empty Migrator(MigratorInput input)
+    {
+        Assert(IsInitialized(), "Contract has not been initialized.");
+        Assert(Context.Sender == State.BridgeContract.Value, "No permission.");
+        var tokenVirtualHash = HashHelper.ConcatAndCompute(
+            HashHelper.ComputeFrom(ChainHelper.ConvertChainIdToBase58(Context.ChainId)),
+            HashHelper.ComputeFrom(input.TokenSymbol));
+        var tokenVirtualAddress = Context.ConvertVirtualAddressToContractAddress(tokenVirtualHash);
+        State.LiquidityProviderBalances[input.Provider][tokenVirtualAddress] = input.DepositAmount;
+        State.TokenLiquidity[tokenVirtualAddress] = input.LockAmount;
+        State.TokenContract.TransferFrom.Send(new TransferFromInput
+        {
+            From = Context.Sender,
+            To = tokenVirtualAddress,
+            Amount = input.LockAmount,
+            Symbol = input.TokenSymbol,
+            Memo = "bridge token migrator"
+        });
         return new Empty();
     }
 }

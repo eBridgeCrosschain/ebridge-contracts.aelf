@@ -131,7 +131,7 @@ message ConfigSwapTokenBucketInput {
 
 message AssetsMigratorInput {
   repeated aelf.Hash swapId = 1;
-  aelf.Address receiver = 2;
+  aelf.Address provider = 2;
 }
 
 message AssetsInfo {

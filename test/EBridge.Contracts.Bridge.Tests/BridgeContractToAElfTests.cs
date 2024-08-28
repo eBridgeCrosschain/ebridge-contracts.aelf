@@ -277,7 +277,6 @@ public partial class BridgeContractTests
             });
             await TokenPoolContractStub.AddLiquidity.SendAsync(new AddLiquidityInput
             {
-                ChainId = "Polygon",
                 TokenSymbol = "USDT",
                 Amount = 1000000000000
             });
@@ -371,14 +370,12 @@ public partial class BridgeContractTests
         });
         await TokenPoolContractStub.AddLiquidity.SendAsync(new AddLiquidityInput
         {
-            ChainId = "Ethereum",
             TokenSymbol = "ELF",
             Amount = 10_0000_00000000
         });
         {
             var tokenPoolInfo = await TokenPoolContractStub.GetTokenPoolInfo.CallAsync(new GetTokenPoolInfoInput
             {
-                ChainId = "Ethereum",
                 TokenSymbol = "ELF"
             });
             tokenPoolInfo.Liquidity.ShouldBe(10_0000_00000000);
@@ -410,14 +407,12 @@ public partial class BridgeContractTests
         });
         await TokenPoolContractStub.AddLiquidity.SendAsync(new AddLiquidityInput
         {
-            ChainId = "Ethereum",
             TokenSymbol = "USDT",
             Amount = 10_0000_00000000
         });
         {
             var tokenPoolInfo = await TokenPoolContractStub.GetTokenPoolInfo.CallAsync(new GetTokenPoolInfoInput
             {
-                ChainId = "Ethereum",
                 TokenSymbol = "USDT"
             });
             tokenPoolInfo.Liquidity.ShouldBe(10_0000_00000000);
@@ -957,7 +952,6 @@ public partial class BridgeContractTests
             result.SwappedAmount.ShouldBe(10000000L);
             var tokenPoolInfo = await TokenPoolContractStub.GetTokenPoolInfo.CallAsync(new GetTokenPoolInfoInput
             {
-                ChainId = "Ethereum",
                 TokenSymbol = "ELF"
             });
             tokenPoolInfo.Liquidity.ShouldBe(9999990000000);
