@@ -1,5 +1,3 @@
-using System;
-using AElf;
 using AElf.Contracts.MultiToken;
 using AElf.CSharp.Core;
 using AElf.Sdk.CSharp;
@@ -7,7 +5,6 @@ using AElf.Standards.ACS3;
 using AElf.Types;
 using EBridge.Contracts.TokenPool;
 using Google.Protobuf.WellKnownTypes;
-using LockInput = EBridge.Contracts.TokenPool.LockInput;
 
 namespace EBridge.Contracts.Bridge;
 
