@@ -17,7 +17,8 @@ public partial class TokenPoolContract : TokenPoolContractContainer.TokenPoolCon
         Assert(IsAddressValid(input.BridgeContractAddress), "Invalid input.");
 
         State.GenesisContract.Value = Context.GetZeroSmartContractAddress();
-        Assert(State.GenesisContract.GetContractInfo.Call(Context.Self).Deployer == Context.Sender, "No permission.");
+        var author = State.GenesisContract.GetContractAuthor.Call(Context.Self);
+        Assert(Context.Sender == author, "No permission.");
         State.BridgeContract.Value = input.BridgeContractAddress;
         State.Admin.Value = input.Admin ?? Context.Sender;
         State.TokenContract.Value =
@@ -169,16 +170,21 @@ public partial class TokenPoolContract : TokenPoolContractContainer.TokenPoolCon
             HashHelper.ComputeFrom(ChainHelper.ConvertChainIdToBase58(Context.ChainId)),
             HashHelper.ComputeFrom(input.TokenSymbol));
         var tokenVirtualAddress = Context.ConvertVirtualAddressToContractAddress(tokenVirtualHash);
-        State.LiquidityProviderBalances[input.Provider][tokenVirtualAddress] = input.DepositAmount;
-        State.TokenLiquidity[tokenVirtualAddress] = input.LockAmount;
-        State.TokenContract.TransferFrom.Send(new TransferFromInput
+        State.LiquidityProviderBalances[input.Provider][tokenVirtualAddress] =
+            State.LiquidityProviderBalances[input.Provider][tokenVirtualAddress].Add(input.DepositAmount);
+        if (input.LockAmount > 0)
         {
-            From = Context.Sender,
-            To = tokenVirtualAddress,
-            Amount = input.LockAmount,
-            Symbol = input.TokenSymbol,
-            Memo = "bridge token migrator"
-        });
+            State.TokenLiquidity[tokenVirtualAddress] = State.TokenLiquidity[tokenVirtualAddress].Add(input.LockAmount);
+            State.TokenContract.TransferFrom.Send(new TransferFromInput
+            {
+                From = Context.Sender,
+                To = tokenVirtualAddress,
+                Amount = input.LockAmount,
+                Symbol = input.TokenSymbol,
+                Memo = "bridge token migrator"
+            });
+        }
+
         return new Empty();
     }
 }

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using AElf.Contracts.MultiToken;
 using AElf.CSharp.Core;
 using AElf.Sdk.CSharp;
@@ -46,7 +47,7 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
     public override Empty ChangeController(Address input)
     {
         Assert(Context.Sender == State.Admin.Value, $"No permission. Admin is {State.Admin.Value}. ");
-        Assert(IsAddressValid(input),"Invalid input.");
+        Assert(IsAddressValid(input), "Invalid input.");
         State.Controller.Value = input;
         return new Empty();
     }
@@ -54,14 +55,14 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
     public override Empty ChangeAdmin(Address input)
     {
         Assert(Context.Sender == State.Admin.Value, $"No permission. Admin is {State.Admin.Value}. ");
-        Assert(IsAddressValid(input),"Invalid input.");
+        Assert(IsAddressValid(input), "Invalid input.");
         State.Admin.Value = input;
         return new Empty();
     }
 
     public override Empty ChangeTransactionFeeController(AuthorityInfo input)
     {
-        Assert(State.FeeRatioController.Value != null,"Controller not set.");
+        Assert(State.FeeRatioController.Value != null, "Controller not set.");
 
         Assert(Context.Sender == State.Admin.Value, "No permission.");
         if (input.ContractAddress != null)
@@ -87,7 +88,7 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
     public override Empty ChangePauseController(Address input)
     {
         Assert(Context.Sender == State.Admin.Value, "No permission.");
-        Assert(IsAddressValid(input),"Invalid input.");
+        Assert(IsAddressValid(input), "Invalid input.");
         State.PauseController.Value = input;
         return new Empty();
     }
@@ -132,7 +133,7 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
     public override Empty SetTokenPoolContract(Address input)
     {
         Assert(Context.Sender == State.Admin.Value, "No permission.");
-        Assert(IsAddressValid(input),"Invalid input.");
+        Assert(IsAddressValid(input), "Invalid input.");
         State.TokenPoolContract.Value = input;
         return new Empty();
     }
@@ -146,36 +147,53 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
     {
         Assert(Context.Sender == State.Admin.Value, "No permission.");
         Assert(input != null && input.SwapId.Count > 0, "Invalid input.");
-        Assert(IsAddressValid(input.Provider),"Invalid receiver.");
+        Assert(IsAddressValid(input.Provider), "Invalid receiver.");
+        var alreadyCompleteTransferSymbol = new HashSet<string>();
         foreach (var swapId in input.SwapId)
         {
             var swapInfo = GetTokenSwapInfo(swapId);
             var symbol = swapInfo.SwapTargetToken.Symbol;
             var swapPairInfo = State.SwapPairInfoMap[swapInfo.SwapId][symbol];
             Assert(swapPairInfo != null, $"Swap pair {swapInfo.SwapId}-{symbol} is not exist.");
-            // usable liquidity
-            var balance = (State.TokenContract.GetBalance.Call(new GetBalanceInput
+            var balance = 0L;
+            if (!alreadyCompleteTransferSymbol.Contains(symbol))
             {
-                Owner = Context.Self,
-                Symbol = symbol
-            })).Balance;
-            if (swapPairInfo.DepositAmount > 0 && balance > 0)
-            {
+                // usable liquidity
+                balance = (State.TokenContract.GetBalance.Call(new GetBalanceInput
+                {
+                    Owner = Context.Self,
+                    Symbol = symbol
+                })).Balance;
                 if (symbol == DefaultFeeSymbol)
                 {
                     balance = balance.Sub(State.TransactionFee.Value);
                 }
-                State.TokenPoolContract.Migrator.Send(new MigratorInput
+
+                alreadyCompleteTransferSymbol.Add(symbol);
+            }
+
+            if (balance > 0)
+            {
+                State.TokenContract.Approve.Send(new ApproveInput
                 {
-                    Provider = input.Provider,
-                    TokenSymbol = symbol,
-                    DepositAmount = swapPairInfo.DepositAmount,
-                    LockAmount = balance
+                    Spender = State.TokenPoolContract.Value,
+                    Symbol = symbol,
+                    Amount = balance
                 });
             }
+
+            State.TokenPoolContract.Migrator.Send(new MigratorInput
+            {
+                Provider = input.Provider,
+                TokenSymbol = symbol,
+                DepositAmount = swapPairInfo.DepositAmount,
+                LockAmount = balance
+            });
+
             swapPairInfo.DepositAmount = 0;
             State.SwapPairInfoMap[swapInfo.SwapId][symbol] = swapPairInfo;
         }
+
         return new Empty();
     }
 }
