@@ -153,6 +153,10 @@ public partial class BridgeContractTests : BridgeContractTestBase
     public async Task Regiment_AddAdminTest()
     {
         await InitialOracleContractAsync();
+        await RegimentContractStub.Initialize.SendAsync(new Regiment.InitializeInput
+        {
+            Controller = OracleContractAddress
+        });
         await CreateRegimentTest();
         await OracleContractStub.AddAdmins.SendAsync(new AddAdminsInput
         {

@@ -77,8 +77,8 @@ namespace EBridge.Contracts.Report
 
         public override Empty AdjustApplyObserverFee(Int64Value input)
         {
-            Assert(Context.Sender == State.ParliamentContract.GetDefaultOrganizationAddress.Call(new Empty()),
-                "No permission.");
+            Assert(Context.Sender == State.Owner.Value, "No permission.");
+            Assert(input.Value >= 0,"Invalid input.");
             State.ApplyObserverFee.Value = input.Value;
             return new Empty();
         }
@@ -125,8 +125,8 @@ namespace EBridge.Contracts.Report
 
         public override Empty AdjustReportFee(Int64Value input)
         {
-            Assert(Context.Sender == State.ParliamentContract.GetDefaultOrganizationAddress.Call(new Empty()),
-                "No permission.");
+            Assert(Context.Sender == State.Owner.Value, "No permission.");
+            Assert(input.Value >= 0,"Invalid input.");
             State.ReportFee.Value = input.Value;
             return new Empty();
         }

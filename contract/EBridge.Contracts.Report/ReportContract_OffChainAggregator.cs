@@ -136,8 +136,7 @@ namespace EBridge.Contracts.Report
 
         public override Empty AddRegisterWhiteList(Address input)
         {
-            Assert(Context.Sender == State.ParliamentContract.GetDefaultOrganizationAddress.Call(new Empty()),
-                "No permission.");
+            Assert(Context.Sender == State.Owner.Value, "No permission.");
             Assert(!State.RegisterWhiteListMap[input], $"{input} already in register white list.");
             State.RegisterWhiteListMap[input] = true;
             Context.Fire(new RegisterWhiteListAdded()
@@ -150,8 +149,7 @@ namespace EBridge.Contracts.Report
 
         public override Empty RemoveFromRegisterWhiteList(Address input)
         {
-            Assert(Context.Sender == State.ParliamentContract.GetDefaultOrganizationAddress.Call(new Empty()),
-                "No permission.");
+            Assert(Context.Sender == State.Owner.Value, "No permission.");
             Assert(State.RegisterWhiteListMap[input], $"{input} is not in register white list.");
             State.RegisterWhiteListMap[input] = false;
             Context.Fire(new RegisterWhiteListRemoved()

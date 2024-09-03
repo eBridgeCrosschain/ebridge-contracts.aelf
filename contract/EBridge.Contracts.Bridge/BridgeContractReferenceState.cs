@@ -5,6 +5,7 @@ using EBridge.Contracts.MerkleTreeContract;
 using EBridge.Contracts.Oracle;
 using EBridge.Contracts.Regiment;
 using EBridge.Contracts.Report;
+using EBridge.Contracts.TokenPool;
 
 namespace EBridge.Contracts.Bridge;
 
@@ -19,4 +20,6 @@ public partial class BridgeContractState
     internal ReportContractContainer.ReportContractReferenceState ReportContract { get; set; }
 
     internal ACS0Container.ACS0ReferenceState GenesisContract { get; set; }
+
+    internal TokenPoolContractContainer.TokenPoolContractReferenceState TokenPoolContract { get; set; }
 }

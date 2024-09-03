@@ -12,7 +12,6 @@ public class MainChainDAppContractTestDeploymentListProvider : MainChainContract
     public new List<Hash> GetDeployContractNameList()
     {
         var list = base.GetDeployContractNameList();
-        list.Add(RegimentSmartContractAddressNameProvider.Name);
         list.Add(ReceiptMakerSmartContractAddressNameProvider.Name);
         return list;
     }

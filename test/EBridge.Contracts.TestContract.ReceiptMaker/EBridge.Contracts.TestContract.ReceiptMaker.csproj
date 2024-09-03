@@ -27,7 +27,7 @@
         </ContractCode>
     </ItemGroup>
     <ItemGroup>
-      <PackageReference Include="AElf.Types" Version="1.2.3" />
+      <PackageReference Include="AElf.Types" Version="1.6.0" />
       <PackageReference Include="Google.Protobuf" Version="3.19.4" />
     </ItemGroup>
 

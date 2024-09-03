@@ -86,7 +86,7 @@ public partial class BridgeContract
             Amount = input.Amount,
             TargetAddress = input.TargetAddress
         };
-        TransferDepositTo(input.Symbol, input.Amount, Context.Sender);
+        TransferDepositTo(input.Symbol, input.Amount, Context.Sender, input.TargetChainId);
 
         var receiptIdToken = HashHelper.ConcatAndCompute(HashHelper.ComputeFrom(Context.ChainId),
             HashHelper.ComputeFrom(input.TargetChainId),
