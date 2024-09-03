@@ -16,9 +16,9 @@ public partial class TokenPoolContract : TokenPoolContractContainer.TokenPoolCon
         Assert(State.IsInitialized.Value == false, "Already initialized.");
         Assert(IsAddressValid(input.BridgeContractAddress), "Invalid input.");
 
-        State.GenesisContract.Value = Context.GetZeroSmartContractAddress();
-        var author = State.GenesisContract.GetContractAuthor.Call(Context.Self);
-        Assert(Context.Sender == author, "No permission.");
+        // State.GenesisContract.Value = Context.GetZeroSmartContractAddress();
+        // var author = State.GenesisContract.GetContractAuthor.Call(Context.Self);
+        // Assert(Context.Sender == author, "No permission.");
         State.BridgeContract.Value = input.BridgeContractAddress;
         State.Admin.Value = input.Admin ?? Context.Sender;
         State.TokenContract.Value =
