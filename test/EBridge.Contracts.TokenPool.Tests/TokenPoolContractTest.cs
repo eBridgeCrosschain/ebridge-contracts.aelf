@@ -238,14 +238,14 @@ public class TokenPoolContractTest : TokenPoolContractTestBase
         {
             TokenSymbol = "ELF"
         });
-        tokenPoolInfo.Liquidity.ShouldBe(500000000);
+        tokenPoolInfo.Liquidity.ShouldBe(1500000000);
         {
             var balance = await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
             {
                 Owner = tokenPoolInfo.TokenVirtualAddress,
                 Symbol = "ELF"
             });
-            balance.Balance.ShouldBe(500000000);
+            balance.Balance.ShouldBe(1500000000);
         }
     }
 
