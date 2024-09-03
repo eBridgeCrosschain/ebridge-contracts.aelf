@@ -86,7 +86,7 @@ public partial class BridgeContract
             Amount = input.Amount,
             TargetAddress = input.TargetAddress
         };
-        TransferDepositTo(input.Symbol, input.Amount, Context.Sender);
+        TransferDepositTo(input.Symbol, input.Amount, Context.Sender, input.TargetChainId);
 
         var receiptIdToken = HashHelper.ConcatAndCompute(HashHelper.ComputeFrom(Context.ChainId),
             HashHelper.ComputeFrom(input.TargetChainId),
@@ -132,7 +132,7 @@ public partial class BridgeContract
             QueryInfo = new OffChainQueryInfo
             {
                 Title = $"lock_token_{receiptId}",
-                Options = { receiptHash.ToHex() }
+                Options = { receiptHash.ToHex(),$"{receipt.Amount}-{receipt.TargetAddress}-{receiptIdToken.ToHex()}"}
             },
             ChainId = input.TargetChainId,
             Payment = State.QueryPayment.Value

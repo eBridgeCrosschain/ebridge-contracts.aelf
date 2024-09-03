@@ -19,9 +19,9 @@ namespace EBridge.Contracts.Report
         public override Empty Initialize(InitializeInput input)
         {
             Assert(!State.IsInitialized.Value, "Already initialized.");
-            // State.GenesisContract.Value = Context.GetZeroSmartContractAddress();
-            // var author = State.GenesisContract.GetContractAuthor.Call(Context.Self);
-            // Assert(Context.Sender == author, "No permission.");
+            State.GenesisContract.Value = Context.GetZeroSmartContractAddress();
+            var author = State.GenesisContract.GetContractAuthor.Call(Context.Self);
+            Assert(Context.Sender == author, "No permission.");
             State.Owner.Value = input.OwnerAddress;
             State.OracleContract.Value = input.OracleContractAddress;
             State.RegimentContract.Value = input.RegimentContractAddress;
@@ -47,6 +47,29 @@ namespace EBridge.Contracts.Report
             return new Empty();
         }
 
+        public override Empty SetThreshold(NodeThreshold input)
+        {
+            Assert(Context.Sender == State.Owner.Value,"No permission.");
+            Assert(input.ConfirmThreshold > 0,"Invalid input confirm threshold.");
+            State.ConfirmThreshold.Value = input.ConfirmThreshold;
+            return new Empty();
+        }
+
+        public override NodeThreshold GetThreshold(Empty input)
+        {
+            return new NodeThreshold
+            {
+                ConfirmThreshold = State.ConfirmThreshold.Value
+            };
+        }
+
+        public override Empty ChangeOwner(Address input)
+        {
+            Assert(Context.Sender == State.Owner.Value,"No permission.");
+            Assert(IsAddressValid(input),"Invalid input.");
+            return new Empty();
+        }
+
         public override Hash QueryOracle(QueryOracleInput input)
         {
             var token = string.IsNullOrEmpty(input.Token) ? State.TargetChainAddressMap[input.ChainId] : input.Token;
@@ -62,7 +85,7 @@ namespace EBridge.Contracts.Report
             var predicate = IfDataOnChain;
             if (predicate(queryInfo))
             {
-                ProposeReport(input.ChainId, token, queryInfo, offChainAggregationInfo);
+                ProposeReport(input.ChainId, token, queryInfo, offChainAggregationInfo,input.AggregateThreshold);
                 return Hash.Empty;
             }
 
@@ -83,7 +106,7 @@ namespace EBridge.Contracts.Report
                     Title = queryInfo.Title,
                     Options = { queryInfo.Options }
                 },
-                CallbackInfo = new CallbackInfo
+                CallbackInfo = new EBridge.Contracts.Oracle.CallbackInfo
                 {
                     ContractAddress = Context.Self
                 },
@@ -104,6 +127,7 @@ namespace EBridge.Contracts.Report
 
         private void PayToTheContract(long payment)
         {
+            Assert(payment >= 0,"Invalid payment.");
             var totalPayment = State.ReportFee.Value.Add(payment);
             if (totalPayment > 0)
             {
@@ -310,9 +334,10 @@ namespace EBridge.Contracts.Report
             State.BinaryMerkleTreeMap[token][currentRoundId] = merkleTree;
             return merkleTree.Root.Value;
         }
-
+        
+        
         private Report ProposeReport(string chainId, string token, OffChainQueryInfo queryInfo,
-            OffChainAggregationInfo info)
+            OffChainAggregationInfo info,int threshold)
         {
             var currentRoundId = State.CurrentRoundIdMap[chainId][token];
             var report = new Report
@@ -328,6 +353,13 @@ namespace EBridge.Contracts.Report
                             Key = queryInfo.Title.Split("_").Last(),
                             //Data -> receipt hash.
                             Data = queryInfo.Options.First()
+                        },
+                        new Observation
+                        {
+                            //Key -> get receipt info key.
+                            Key = DefaultReceiptInfoKey,
+                            //Data -> receipt hash.
+                            Data = queryInfo.Options.Last()
                         }
                     }
                 }
@@ -343,13 +375,14 @@ namespace EBridge.Contracts.Report
                 QueryInfo = new OffChainQueryInfo
                 {
                     Title = queryInfo.Title,
-                    Options = { queryInfo.Options.First() }
+                    Options = { queryInfo.Options }
                 },
                 TargetChainId = info.ChainId
             });
             State.ReportRecordMap[chainId][token][currentRoundId] = new ReportQueryRecord
             {
-                PaidReportFee = State.ReportFee.Value
+                PaidReportFee = State.ReportFee.Value,
+                ConfirmThreshold = threshold
             };
             return report;
         }
@@ -408,32 +441,12 @@ namespace EBridge.Contracts.Report
                 ? State.ReportRecordMap[input.ChainId][input.Token][input.RoundId]
                 : State.ReportQueryRecordMap[report.QueryId];
 
-            Assert(!reportRecord.IsRejected, "This report is already rejected.");
             Assert(!reportRecord.IsAllNodeConfirmed, "This report is already confirmed by all nodes.");
-
-
-            var regimentAddress = State.RegimentContract.GetRegimentAddress.Call(offChainAggregationInfo.RegimentId);
-            var memberList = State.OracleContract.GetRegimentMemberList
-                .Call(regimentAddress).Value;
-
-            Assert(IsRegimentMember(Context.Sender, regimentAddress),
-                "Sender isn't a member of certain regiment.");
-
-            var skipList = State.SkipMemberListMap[input.ChainId][input.Token]?.Value;
-            Assert(skipList != null && !skipList.Contains(Context.Sender), "Sender is in the skip list.");
-
+            
+            CheckAndCalculateThreshold(input.ChainId,input.Token,offChainAggregationInfo.RegimentId,reportRecord);
+            
             State.ObserverSignatureMap[input.ChainId][input.Token][input.RoundId][Context.Sender] =
                 input.Signature;
-            if (!reportRecord.ConfirmedNodeList.Contains(Context.Sender))
-            {
-                reportRecord.ConfirmedNodeList.Add(Context.Sender);
-            }
-
-            if (reportRecord.ConfirmedNodeList.Count == memberList.Count.Sub(skipList?.Count ?? 0))
-            {
-                reportRecord.IsAllNodeConfirmed = true;
-            }
-
             if (report.QueryId == null)
             {
                 State.ReportRecordMap[input.ChainId][input.Token][input.RoundId] = reportRecord;
@@ -455,56 +468,35 @@ namespace EBridge.Contracts.Report
             return new Empty();
         }
 
-        public override Empty RejectReport(RejectReportInput input)
+        private void CheckAndCalculateThreshold(string chainId,string token,Hash regimentId,ReportQueryRecord reportRecord)
         {
-            var offChainAggregationInfo = State.OffChainAggregationInfoMap[input.ChainId][input.Token];
-            Assert(offChainAggregationInfo != null, "Off chain aggregation info not exists.");
-            var regimentAddress = State.RegimentContract.GetRegimentAddress.Call(offChainAggregationInfo.RegimentId);
-
-            if (offChainAggregationInfo.OffChainQueryInfoList != null)
-            {
-                Assert(offChainAggregationInfo.OffChainQueryInfoList.Value.Count == 1,
-                    "Merkle tree style aggregation doesn't support rejection.");
-            }
-
-            Assert(State.ObserverSignatureMap[input.ChainId][input.Token][input.RoundId][Context.Sender] == null,
-                "Sender already confirmed this report.");
+            var regimentAddress = State.RegimentContract.GetRegimentAddress.Call(regimentId);
             Assert(IsRegimentMember(Context.Sender, regimentAddress),
-                "Sender isn't a member of certain Observer Association.");
-            foreach (var accusingNode in input.AccusingNodes)
+                "Sender isn't a member of certain regiment.");
+            var skipList = State.SkipMemberListMap[chainId][token]?.Value;
+            Assert(skipList != null && !skipList.Contains(Context.Sender), "Sender is in the skip list.");
+            var memberList = State.OracleContract.GetRegimentMemberList
+                .Call(regimentAddress).Value;
+            if (!reportRecord.ConfirmedNodeList.Contains(Context.Sender))
             {
-                Assert(IsRegimentMember(accusingNode, regimentAddress),
-                    "Accusing node isn't a member of certain Observer Association.");
+                reportRecord.ConfirmedNodeList.Add(Context.Sender);
             }
 
-            var report = State.ReportMap[input.ChainId][input.Token][input.RoundId];
-            var reportRecord = report.QueryId == null
-                ? State.ReportRecordMap[input.ChainId][input.Token][input.RoundId]
-                : State.ReportQueryRecordMap[report.QueryId];
-            foreach (var accusingNode in input.AccusingNodes)
+            foreach (var confirmNode in reportRecord.ConfirmedNodeList)
             {
-                if (report.QueryId != null)
+                if (!memberList.Contains(confirmNode))
                 {
-                    var senderData = report.Observations.Value
-                        .FirstOrDefault(o => o.Key == Context.Sender.ToByteArray().ToHex())?.Data;
-                    var accusedNodeData = report.Observations.Value
-                        .First(o => o.Key == accusingNode.ToByteArray().ToHex())
-                        .Data;
-                    Assert(senderData == null || !senderData.Equals(accusedNodeData), "Invalid accuse.");
+                    reportRecord.ConfirmedNodeList.Remove(confirmNode);
                 }
-
-                // Fine.
-                var mortgagedAmount = State.ObserverInRegimentMortgagedTokensMap[regimentAddress][accusingNode];
-                var amercementAmount = GetAmercementAmount(regimentAddress);
-                Assert(mortgagedAmount >= amercementAmount, "Insufficient mortgaged amount to accuse.");
-                State.ObserverInRegimentMortgagedTokensMap[regimentAddress][accusingNode] =
-                    mortgagedAmount.Sub(amercementAmount);
-                State.ObserverAmercementAmountMap[regimentAddress][accusingNode] =
-                    State.ObserverAmercementAmountMap[regimentAddress][accusingNode].Add(amercementAmount);
             }
+            
+            var threshold =
+                GetConfirmThreshold(memberList.Count.Sub(skipList?.Count ?? 0), reportRecord.ConfirmThreshold);
 
-            reportRecord.IsRejected = true;
-            return new Empty();
+            if (reportRecord.ConfirmedNodeList.Count >= threshold)
+            {
+                reportRecord.IsAllNodeConfirmed = true;
+            }
         }
 
         private bool IsRegimentMember(Address address, Address regimentAddress)
@@ -518,9 +510,15 @@ namespace EBridge.Contracts.Report
 
         public override Empty ChangeOracleContractAddress(Address input)
         {
-            Assert(Context.Sender == State.ParliamentContract.GetDefaultOrganizationAddress.Call(new Empty()),
-                "No permission.");
+            Assert(Context.Sender == State.Owner.Value, "No permission.");
+            Assert(IsAddressValid(input),"Invalid input.");
             State.OracleContract.Value = input;
+            State.TokenContract.Approve.Send(new ApproveInput
+            {
+                Spender = State.OracleContract.Value,
+                Symbol = State.OracleTokenSymbol.Value,
+                Amount = long.MaxValue
+            });
             return new Empty();
         }
 
@@ -530,9 +528,8 @@ namespace EBridge.Contracts.Report
             var regimentAddress = State.RegimentContract.GetRegimentAddress.Call(regimentId);
             var regimentManager = State.RegimentContract.GetRegimentInfo.Call(regimentAddress).Manager;
             Assert(Context.Sender == regimentManager, "No permission.");
-            var memberList = State.SkipMemberListMap[input.ChainId][input.Token] ?? new MemberList();
-            memberList.Value.AddRange(input.Value.Value);
-            State.SkipMemberListMap[input.ChainId][input.Token] = memberList;
+            Assert(input.Value != null && input.Value.Value.Count > 0,"Invalid input.");
+            State.SkipMemberListMap[input.ChainId][input.Token] = input.Value;
             return new Empty();
         }
     }

@@ -38,8 +38,7 @@ public class MerkleTreeContractTestBase : DAppContractTestBase<MerkleTreeContrac
     
     internal ACS0Container.ACS0Stub ZeroContractStub { get; set; }
 
-    internal Address RegimentContractAddress =>
-        GetAddress(RegimentSmartContractAddressNameProvider.StringName);
+    protected Address RegimentContractAddress { get; set; }
 
     internal Address ReceiptMakerContractAddress =>
         GetAddress(ReceiptMakerSmartContractAddressNameProvider.StringName);
@@ -55,6 +54,13 @@ public class MerkleTreeContractTestBase : DAppContractTestBase<MerkleTreeContrac
                 File.ReadAllBytes(typeof(MerkleTreeContract).Assembly.Location))
         }));
         MerkleTreeContractAddress = Address.Parser.ParseFrom(result.TransactionResult.ReturnValue);
+        result = AsyncHelper.RunSync(async () =>await ZeroContractStub.DeploySmartContract.SendAsync(new ContractDeploymentInput
+        {   
+            Category = KernelConstants.CodeCoverageRunnerCategory,
+            Code = ByteString.CopyFrom(
+                File.ReadAllBytes(typeof(RegimentContract).Assembly.Location))
+        }));
+        RegimentContractAddress = Address.Parser.ParseFrom(result.TransactionResult.ReturnValue);
         DefaultSenderAddress = SampleAccount.Accounts.First().Address;
         MerkleTreeContractStub = GetMerkleTreeContractStub(DefaultKeypair);
         UserMerkleTreeContractStub = GetMerkleTreeContractStub(UserKeyPair);

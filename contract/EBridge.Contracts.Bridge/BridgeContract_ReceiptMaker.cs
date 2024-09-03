@@ -16,17 +16,20 @@ public partial class BridgeContract
         Assert(Context.Sender == State.OracleContract.Value, "No permission.");
         var queryResult = new StringValue();
         queryResult.MergeFrom(input.Result);
-        RecordReceiptHash(queryResult.Value);
+        RecordReceiptHash(queryResult.Value,input.OracleNodes.First());
         return new Empty();
     }
 
-    private void RecordReceiptHash(string queryResult)
+    private void RecordReceiptHash(string queryResult,Address oracleNodesAddress)
     {
         var receiptHashMap = JsonParser.Default.Parse<ReceiptHashMap>(queryResult);
         Assert(!string.IsNullOrEmpty(receiptHashMap.SwapId), "Swap id is null.");
         var swapId = Hash.LoadFromHex(receiptHashMap.SwapId);
         var spaceId = GetSpaceIdBySwapId(swapId);
         Assert(spaceId != null, $"Space id is null.SwapId : {swapId}");
+        var swapInfo = State.SwapInfo[swapId];
+        var regimentAddress = State.RegimentContract.GetRegimentAddress.Call(swapInfo.RegimentId);
+        Assert(oracleNodesAddress == regimentAddress,"No record permission");
 
         foreach (var (receiptId, receiptHash) in receiptHashMap.Value)
         {

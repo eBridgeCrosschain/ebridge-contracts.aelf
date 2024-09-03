@@ -10,7 +10,7 @@ public partial class BridgeContract
         Assert(Context.Sender == State.FeeRatioController.Value.OwnerAddress, "No permission.");
         foreach (var feeRatio in input.Value)
         {
-            Assert(feeRatio.Ratio_ > 0, $"Incorrect fee floating ratio.{feeRatio.Ratio_}");
+            Assert(feeRatio.Ratio_ > 0 && feeRatio.Ratio_ <= 100, $"Incorrect fee floating ratio.{feeRatio.Ratio_}");
             State.FeeFloatingRatio[feeRatio.ChainId] = ((decimal) feeRatio.Ratio_ / 100 + 1).ToString();
         }
 

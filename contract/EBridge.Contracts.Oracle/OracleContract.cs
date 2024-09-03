@@ -16,15 +16,11 @@ namespace EBridge.Contracts.Oracle
         public override Empty Initialize(InitializeInput input)
         {
             Assert(!State.Initialized.Value, "Already initialized.");
-            // State.GenesisContract.Value = Context.GetZeroSmartContractAddress();
-            // var author = State.GenesisContract.GetContractAuthor.Call(Context.Self);
-            // Assert(Context.Sender == author, "No permission.");
+            State.GenesisContract.Value = Context.GetZeroSmartContractAddress();
+            var author = State.GenesisContract.GetContractAuthor.Call(Context.Self);
+            Assert(Context.Sender == author, "No permission.");
             InitializeContractReferences();
             State.RegimentContract.Value = input.RegimentContractAddress;
-            State.RegimentContract.Initialize.Send(new Regiment.InitializeInput
-            {
-                Controller = Context.Self
-            });
 
             // Controller will be the sender by default.
             State.Controller.Value = Context.Sender;

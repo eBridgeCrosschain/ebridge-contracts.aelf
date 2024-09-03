@@ -12,6 +12,9 @@ public partial class RegimentContract : RegimentContractContainer.RegimentContra
     public override Empty Initialize(InitializeInput input)
     {
         Assert(!State.IsInitialized.Value, "Already initialized.");
+        State.GenesisContract.Value = Context.GetZeroSmartContractAddress();
+        var author = State.GenesisContract.GetContractAuthor.Call(Context.Self);
+        Assert(Context.Sender == author, "No permission.");
         State.IsInitialized.Value = true;
         State.Controller.Value = input.Controller ?? Context.Sender;
         State.MemberJoinLimit.Value = input.MemberJoinLimit <= 0 ? DefaultMemberJoinLimit : input.MemberJoinLimit;
