@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
@@ -9,6 +10,7 @@ using AElf.Contracts.Association;
 using AElf.Contracts.MultiToken;
 using AElf.Contracts.Parliament;
 using AElf.ContractTestBase.ContractTestKit;
+using AElf.Cryptography;
 using AElf.Cryptography.ECDSA;
 using AElf.CSharp.Core.Extension;
 using AElf.Kernel;
@@ -21,7 +23,9 @@ using EBridge.Contracts.Oracle;
 using EBridge.Contracts.Regiment;
 using EBridge.Contracts.Report;
 using EBridge.Contracts.TestContract.ReceiptMaker;
+using EBridge.Contracts.TokenPool;
 using Google.Protobuf;
+using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using Volo.Abp.Threading;
@@ -56,6 +60,8 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
 
     internal ACS0Container.ACS0Stub ZeroContractStub { get; set; }
     internal BridgeContractContainer.BridgeContractStub BridgeContractStub { get; set; }
+    
+    internal TokenPoolContractContainer.TokenPoolContractStub TokenPoolContractStub { get; set; }
 
     internal BridgeContractImplContainer.BridgeContractImplStub BridgeContractImplStub { get; set; }
 
@@ -101,17 +107,17 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
         GetAddress(StringAggregatorSmartContractAddressNameProvider.StringName);
     protected Address MerkleTreeContractAddress { get; set; }
 
-    internal Address RegimentContractAddress =>
-        GetAddress(RegimentSmartContractAddressNameProvider.StringName);
+    protected Address RegimentContractAddress { get; set; }
     internal Address ParliamentContractAddress =>
         GetAddress(ParliamentSmartContractAddressNameProvider.StringName);
 
     internal Address ReceiptMakerContractAddress =>
         GetAddress(ReceiptMakerSmartContractAddressNameProvider.StringName);
     
-    internal readonly Address _regimentAddress =
-        Address.FromBase58("2Myxs3YTFEcDN5VQDECBgmBda1NXJT1bdRQYSkdbZL74aKxEW3");
-    
+    protected Address TokenPoolContractAddress { get; set; }
+
+    internal Address _regimentAddress;
+
     internal Dictionary<string, Hash> _receiptDictionary;
     
     internal Hash _swapHashOfElf;
@@ -156,9 +162,38 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
         {   
             Category = KernelConstants.CodeCoverageRunnerCategory,
             Code = ByteString.CopyFrom(
+                File.ReadAllBytes(typeof(RegimentContract).Assembly.Location))
+        }));
+        RegimentContractAddress = Address.Parser.ParseFrom(result.TransactionResult.ReturnValue);
+
+        result = AsyncHelper.RunSync(async () =>await ZeroContractStub.DeploySmartContract.SendAsync(new ContractDeploymentInput
+        {   
+            Category = KernelConstants.CodeCoverageRunnerCategory,
+            Code = ByteString.CopyFrom(
                 File.ReadAllBytes(typeof(ReportContract).Assembly.Location))
         }));
         ReportContractAddress = Address.Parser.ParseFrom(result.TransactionResult.ReturnValue);
+        
+        var code = File.ReadAllBytes(typeof(TokenPoolContract).Assembly.Location);
+        var contractOperation = new ContractOperation
+        {
+            ChainId = 9992731,
+            CodeHash = HashHelper.ComputeFrom(code),
+            Deployer = DefaultSenderAddress,
+            Salt = HashHelper.ComputeFrom("tokenpool"),
+            Version = 1
+        };
+        contractOperation.Signature = GenerateContractSignature(DefaultKeypair.PrivateKey, contractOperation);
+
+        result = AsyncHelper.RunSync(async () => await ZeroContractStub.DeploySmartContract.SendAsync(
+            new ContractDeploymentInput
+            {
+                Category = KernelConstants.CodeCoverageRunnerCategory,
+                Code = ByteString.CopyFrom(code),
+                ContractOperation = contractOperation
+            }));
+        TokenPoolContractAddress = Address.Parser.ParseFrom(result.TransactionResult.ReturnValue);
+
         
         BridgeContractStub = GetBridgeContractStub(DefaultKeypair);
         BridgeContractImplStub = GetBridgeContractImplStub(DefaultKeypair);
@@ -176,6 +211,9 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
         ReceiptMakerContractImplStub = GetReceiptMakerContractStub(DefaultKeypair);
         AssociationContractStub = GetAssociationContractStub(DefaultKeypair);
         AssociationContractImplStub = GetAssociationContractImplStub(DefaultKeypair);
+        TokenPoolContractStub = GetTokenPoolContractStub(DefaultKeypair);
+
+        AsyncHelper.RunSync(async () => await CreateSeed0());
 
         foreach (var transmitter in Transmitters)
         {
@@ -203,6 +241,13 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
         }
     }
 
+    private ByteString GenerateContractSignature(byte[] privateKey, ContractOperation contractOperation)
+    {
+        var dataHash = HashHelper.ComputeFrom(contractOperation);
+        var signature = CryptoHelper.SignWithPrivateKey(privateKey, dataHash.ToByteArray());
+        return ByteStringHelper.FromHexString(signature.ToHex());
+    }
+    
     internal MerkleTreeContractContainer.MerkleTreeContractStub
         GetMerkleTreeContractStub(
             ECKeyPair senderKeyPair)
@@ -288,6 +333,14 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
             AssociationContractAddress,
             senderKeyPair);
     }
+    internal TokenPoolContractContainer.TokenPoolContractStub
+        GetTokenPoolContractStub(
+            ECKeyPair senderKeyPair)
+    {
+        return GetTester<TokenPoolContractContainer.TokenPoolContractStub>(
+            TokenPoolContractAddress,
+            senderKeyPair);
+    }
 
     internal ReceiptMakerContractImplContainer.ReceiptMakerContractImplStub GetReceiptMakerContractStub(
         ECKeyPair senderKeyPair)
@@ -321,6 +374,12 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
             PauseController = DefaultSenderAddress,
             ApproveTransferController = DefaultSenderAddress
         });
+        await BridgeContractImplStub.SetTokenPoolContract.SendAsync(TokenPoolContractAddress);
+        await TokenPoolContractStub.Initialize.SendAsync(new TokenPool.InitializeInput
+        {
+            BridgeContractAddress = BridgeContractAddress,
+            Admin = DefaultSenderAddress
+        });
         return organizationAddress;
     }
 
@@ -347,6 +406,7 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
 
     internal async Task CreateAndIssueUSDTAsync()
     {
+        await CreateUsdt();
         await TokenContractStub.Create.SendAsync(new CreateInput
         {
             Symbol = "USDT",
@@ -367,6 +427,7 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
 
     internal async Task PortTokenCreate()
     {
+        await CreatePort();
         // Create PORT token.
         await TokenContractStub.Create.SendAsync(new CreateInput
         {
@@ -408,6 +469,123 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
             Symbol = "PORT",
             Amount = 5_00000000_00000000,
             Spender = ReportContractAddress
+        });
+    }
+
+    private async Task CreateSeed0()
+    {
+        await TokenContractStub.Create.SendAsync(new CreateInput
+        {
+            Symbol = "SEED-0",
+            TokenName = "SEED-0 token",
+            TotalSupply = 1,
+            Decimals = 0,
+            Issuer = DefaultSenderAddress,
+            IsBurnable = true,
+            IssueChainId = 0,
+        });
+    }
+    private async Task CreateUsdt()
+    {
+        var seedOwnedSymbol = "USDT";
+        var seedExpTime = DateTime.UtcNow.Add(TimeSpan.FromDays(1)).ToTimestamp().Seconds.ToString();
+        await TokenContractStub.Create.SendAsync(new CreateInput
+        {
+            Symbol = "SEED-1",
+            TokenName = "SEED-1 token",
+            TotalSupply = 1,
+            Decimals = 0,
+            Issuer = DefaultSenderAddress,
+            IsBurnable = true,
+            IssueChainId = 0,
+            LockWhiteList = { TokenContractAddress },
+            ExternalInfo = new ExternalInfo()
+            {
+                Value =
+                {
+                    {
+                        "__seed_owned_symbol",
+                        seedOwnedSymbol
+                    },
+                    {
+                        "__seed_exp_time",
+                        seedExpTime
+                    }
+                }
+            }
+        });
+
+        await TokenContractStub.Issue.SendAsync(new IssueInput
+        {
+            Symbol = "SEED-1",
+            Amount = 1,
+            To = DefaultSenderAddress,
+            Memo = ""
+        });
+
+        var balance = await TokenContractStub.GetBalance.SendAsync(new GetBalanceInput()
+        {
+            Owner = DefaultSenderAddress,
+            Symbol = "SEED-1"
+        });
+        balance.Output.Balance.ShouldBe(1);
+        await TokenContractStub.Approve.SendAsync(new ApproveInput
+        {
+            Symbol = "SEED-1",
+            Amount = 1,
+            Spender = TokenContractAddress
+        });
+    }
+
+    private async Task CreatePort()
+    {
+        var seedOwnedSymbol = "PORT";
+        var seedExpTime = DateTime.UtcNow.Add(TimeSpan.FromDays(1)).ToTimestamp().Seconds.ToString();
+        await TokenContractStub.Create.SendAsync(new CreateInput
+        {
+            Symbol = "SEED-2",
+            TokenName = "SEED-2 token",
+            TotalSupply = 1,
+            Decimals = 0,
+            Issuer = DefaultSenderAddress,
+            IsBurnable = true,
+            IssueChainId = 0,
+            LockWhiteList = { TokenContractAddress },
+            ExternalInfo = new ExternalInfo()
+            {
+                Value =
+                {
+                    {
+                        "__seed_owned_symbol",
+                        seedOwnedSymbol
+                    },
+                    {
+                        "__seed_exp_time",
+                        seedExpTime
+                    }
+                }
+            }
+        });
+
+        await TokenContractStub.Issue.SendAsync(new IssueInput
+        {
+            Symbol = "SEED-2",
+            Amount = 1,
+            To = DefaultSenderAddress,
+            Memo = ""
+        });
+
+        var balance = await TokenContractStub.GetBalance.SendAsync(new GetBalanceInput()
+        {
+            Owner = DefaultSenderAddress,
+            Symbol = "SEED-2"
+        });
+        balance.Output.Balance.ShouldBe(1);
+        await TokenContractStub.Approve.SendAsync(new ApproveInput
+        {
+            Symbol = "SEED-2",
+            Amount = 1,
+            Spender = TokenContractAddress
         });
     }
 
@@ -549,7 +727,7 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
             var regimentAddress = RegimentCreated.Parser
                 .ParseFrom(executionResult.TransactionResult.Logs.First(l => l.Name == nameof(RegimentCreated))
                     .NonIndexed).RegimentAddress;
-            regimentAddress.ShouldBe(_regimentAddress);
+            _regimentAddress = regimentAddress;
             var regimentInfo = await RegimentContractStub.GetRegimentInfo.CallAsync(_regimentAddress);
             var manager = regimentInfo.Manager;
             manager.ShouldBe(DefaultSenderAddress);

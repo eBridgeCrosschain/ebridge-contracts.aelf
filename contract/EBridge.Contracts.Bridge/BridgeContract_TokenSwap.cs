@@ -75,21 +75,6 @@ public partial class BridgeContract
         return swapId;
     }
 
-    public override Empty Deposit(DepositInput input)
-    {
-        var swapInfo = GetTokenSwapInfo(input.SwapId);
-        Assert(input.Amount > 0, $"Invalid deposit amount.{input.Amount}");
-        var regimentAddress = State.RegimentContract.GetRegimentAddress.Call(swapInfo.RegimentId);
-        var regimentMemberList = State.RegimentContract.GetRegimentMemberList.Call(regimentAddress);
-        Assert(regimentMemberList.Value.Contains(Context.Sender), "No permission.");
-        var swapPairInfo = State.SwapPairInfoMap[swapInfo.SwapId][input.TargetTokenSymbol];
-        Assert(swapPairInfo != null, $"Swap pair {swapInfo.SwapId}-{input.TargetTokenSymbol} is not exist.");
-        swapPairInfo.DepositAmount = swapPairInfo.DepositAmount.Add(input.Amount);
-        State.SwapPairInfoMap[swapInfo.SwapId][input.TargetTokenSymbol] = swapPairInfo;
-        TransferDepositFrom(input.TargetTokenSymbol, input.Amount, Context.Sender);
-        return new Empty();
-    }
-
     public override Empty SwapToken(SwapTokenInput input)
     {
         Assert(!State.IsContractPause.Value, "Contract is paused.");
@@ -176,7 +161,7 @@ public partial class BridgeContract
         State.SwapPairInfoMap[swapInfo.SwapId][swapTargetToken.Symbol] = swapPairInfo;
 
         // Do transfer
-        TransferToken(swapTargetToken.Symbol, targetTokenAmount, receiverAddress);
+        TransferToken(swapTargetToken.Symbol, targetTokenAmount, receiverAddress, swapTargetToken.FromChainId);
         Context.Fire(new TokenSwapped
         {
             Amount = targetTokenAmount,
@@ -196,29 +181,6 @@ public partial class BridgeContract
             ReceivingTxId = Context.TransactionId,
             AmountMap = {swapAmounts.ReceivedAmounts}
         };
-    }
-
-    public override Empty Withdraw(WithdrawInput input)
-    {
-        var swapInfo = GetTokenSwapInfo(input.SwapId);
-        Assert(input.Amount > 0, $"Invalid withdraw amount.{input.Amount}");
-        var regimentAddress = State.RegimentContract.GetRegimentAddress.Call(swapInfo.RegimentId);
-        var regimentManager = State.RegimentContract.GetRegimentInfo.Call(regimentAddress).Manager;
-        Assert(Context.Sender == regimentManager, "No permission.");
-        var swapPairInfo = State.SwapPairInfoMap[swapInfo.SwapId][input.TargetTokenSymbol];
-        Assert(swapPairInfo != null, $"Swap pair {swapInfo.SwapId}-{input.TargetTokenSymbol} is not exist.");
-        var balance = State.TokenContract.GetBalance.Call(new GetBalanceInput
-        {
-            Symbol = input.TargetTokenSymbol,
-            Owner = Context.Self
-        }).Balance;
-        Assert(balance >= input.Amount, $"Contract balance not enough. Balance : {balance}");
-        Assert(swapPairInfo.DepositAmount >= input.Amount,
-            $"Swap pair deposits not enough. Deposit amount : {swapPairInfo.DepositAmount}");
-        swapPairInfo.DepositAmount = swapPairInfo.DepositAmount.Sub(input.Amount);
-        State.SwapPairInfoMap[swapInfo.SwapId][input.TargetTokenSymbol] = swapPairInfo;
-        WithdrawDepositTo(input.TargetTokenSymbol, input.Amount, Context.Sender);
-        return new Empty();
     }
 
     public override Empty ChangeSwapRatio(ChangeSwapRatioInput input)

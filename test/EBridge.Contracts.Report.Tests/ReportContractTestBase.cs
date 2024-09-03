@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -14,6 +15,8 @@ using EBridge.Contracts.Bridge;
 using EBridge.Contracts.Oracle;
 using EBridge.Contracts.Regiment;
 using Google.Protobuf;
+using Google.Protobuf.WellKnownTypes;
+using Shouldly;
 using Volo.Abp.Threading;
 
 namespace EBridge.Contracts.Report;
@@ -43,9 +46,8 @@ public class ReportContractTestBase : DAppContractTestBase<ReportContractTestMod
     internal Address StringAggregatorContractAddress =>
         GetAddress(StringAggregatorSmartContractAddressNameProvider.StringName);
 
-    internal Address RegimentContractAddress =>
-        GetAddress(RegimentSmartContractAddressNameProvider.StringName);
-    
+    protected Address RegimentContractAddress { get; set; }
+
     internal ACS0Container.ACS0Stub ZeroContractStub { get; set; }
 
     internal readonly Address _regimentAddress =
@@ -69,6 +71,14 @@ public class ReportContractTestBase : DAppContractTestBase<ReportContractTestMod
                 File.ReadAllBytes(typeof(ReportContract).Assembly.Location))
         }));
         ReportContractAddress = Address.Parser.ParseFrom(result.TransactionResult.ReturnValue);
+        
+        result = AsyncHelper.RunSync(async () =>await ZeroContractStub.DeploySmartContract.SendAsync(new ContractDeploymentInput
+        {   
+            Category = KernelConstants.CodeCoverageRunnerCategory,
+            Code = ByteString.CopyFrom(
+                File.ReadAllBytes(typeof(RegimentContract).Assembly.Location))
+        }));
+        RegimentContractAddress = Address.Parser.ParseFrom(result.TransactionResult.ReturnValue);
         DefaultSenderAddress = SampleAccount.Accounts.First().Address;
         OracleContractStub = GetOracleContractStub(DefaultKeypair);
         TokenContractStub = GetTokenContractStub(DefaultKeypair);
@@ -136,10 +146,80 @@ public class ReportContractTestBase : DAppContractTestBase<ReportContractTestMod
         {
             RegimentContractAddress = RegimentContractAddress
         });
+        await RegimentContractStub.Initialize.SendAsync(new Regiment.InitializeInput
+        {
+            Controller = OracleContractAddress
+        });
+    }
+    private async Task CreateSeed0()
+    {
+        await TokenContractStub.Create.SendAsync(new CreateInput
+        {
+            Symbol = "SEED-0",
+            TokenName = "SEED-0 token",
+            TotalSupply = 1,
+            Decimals = 0,
+            Issuer = DefaultSenderAddress,
+            IsBurnable = true,
+            IssueChainId = 0,
+        });
     }
     
+    private async Task CreatePort()
+    {
+        var seedOwnedSymbol = "PORT";
+        var seedExpTime = DateTime.UtcNow.Add(TimeSpan.FromDays(1)).ToTimestamp().Seconds.ToString();
+        await TokenContractStub.Create.SendAsync(new CreateInput
+        {
+            Symbol = "SEED-2",
+            TokenName = "SEED-2 token",
+            TotalSupply = 1,
+            Decimals = 0,
+            Issuer = DefaultSenderAddress,
+            IsBurnable = true,
+            IssueChainId = 0,
+            LockWhiteList = { TokenContractAddress },
+            ExternalInfo = new ExternalInfo()
+            {
+                Value =
+                {
+                    {
+                        "__seed_owned_symbol",
+                        seedOwnedSymbol
+                    },
+                    {
+                        "__seed_exp_time",
+                        seedExpTime
+                    }
+                }
+            }
+        });
+
+        await TokenContractStub.Issue.SendAsync(new IssueInput
+        {
+            Symbol = "SEED-2",
+            Amount = 1,
+            To = DefaultSenderAddress,
+            Memo = ""
+        });
+
+        var balance = await TokenContractStub.GetBalance.SendAsync(new GetBalanceInput()
+        {
+            Owner = DefaultSenderAddress,
+            Symbol = "SEED-2"
+        });
+        balance.Output.Balance.ShouldBe(1);
+        await TokenContractStub.Approve.SendAsync(new ApproveInput
+        {
+            Symbol = "SEED-2",
+            Amount = 1,
+            Spender = TokenContractAddress
+        });
+    }
     internal async Task PortTokenCreate()
     {
+        await CreateSeed0();
+        await CreatePort();
         // Create PORT token.
         await TokenContractStub.Create.SendAsync(new CreateInput
         {

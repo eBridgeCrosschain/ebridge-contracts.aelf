@@ -7,32 +7,51 @@ using AElf.CSharp.Core;
 using AElf.CSharp.Core.Extension;
 using AElf.Sdk.CSharp;
 using AElf.Types;
+using EBridge.Contracts.TokenPool;
+using LockInput = EBridge.Contracts.TokenPool.LockInput;
 
 namespace EBridge.Contracts.Bridge
 {
     public partial class BridgeContract
     {
+        private bool IsAddressValid(Address input)
+        {
+            return input != null && !input.Value.IsNullOrEmpty();
+        }
+        
         private TokenInfo GetTokenInfo(string symbol)
         {
             RequireTokenContractStateSet();
             return State.TokenContract.GetTokenInfo.Call(new GetTokenInfoInput { Symbol = symbol });
         }
 
-        private void TransferToken(string symbol, long amount, Address to)
+        private void TransferToken(string symbol, long amount, Address to,string fromChainId)
         {
             if (amount <= 0)
             {
                 return;
             }
-
             RequireTokenContractStateSet();
-            State.TokenContract.Transfer.Send(new TransferInput
+            if (State.TokenPoolContract.Value == null)
             {
-                Amount = amount,
-                Symbol = symbol,
-                To = to,
-                Memo = "Token swap."
-            });
+                State.TokenContract.Transfer.Send(new TransferInput
+                {
+                    Amount = amount,
+                    Symbol = symbol,
+                    To = to,
+                    Memo = "Token swap."
+                });
+            }
+            else
+            {
+                State.TokenPoolContract.Release.Send(new ReleaseInput
+                {
+                    FromChainId = fromChainId,
+                    Amount = amount,
+                    Receiver = to,
+                    TargetTokenSymbol = symbol
+                });
+            }
         }
 
         private void RequireTokenContractStateSet()
@@ -229,7 +248,7 @@ namespace EBridge.Contracts.Bridge
             }
         }
 
-        private void TransferDepositTo(string symbol, long amount, Address from)
+        private void TransferDepositTo(string symbol, long amount, Address from, string targetChainId)
         {
             Assert(amount > 0, $"Insufficient lock amount {amount}.");
 
@@ -242,6 +261,21 @@ namespace EBridge.Contracts.Bridge
                 To = Context.Self,
                 Memo = "Token Lock."
             });
+            if (State.TokenPoolContract.Value == null) return;
+            State.TokenContract.Approve.Send(new ApproveInput
+            {
+                Spender = State.TokenPoolContract.Value,
+                Symbol = symbol,
+                Amount = amount
+            });
+            State.TokenPoolContract.Lock.Send(new LockInput
+            {
+                TargetChainId = targetChainId,
+                TargetTokenSymbol = symbol,
+                Amount = amount,
+                Sender = from
+            });
+
         }
 
         private void TransferFee(string symbol, long amount, Address from, Address to)

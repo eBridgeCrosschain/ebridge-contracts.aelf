@@ -32,7 +32,11 @@ service ReportContract {
   rpc MortgageTokens (MortgageTokensInput) returns (google.protobuf.Empty) {}
   
   rpc SetSkipMemberList (SetSkipMemberListInput) returns (google.protobuf.Empty){}
-  
+  rpc SetThreshold (NodeThreshold) returns (google.protobuf.Empty){}
+  rpc GetThreshold (google.protobuf.Empty) returns (NodeThreshold) { option (aelf.is_view) = true; }
+
+  rpc GetOwner(google.protobuf.Empty) returns (aelf.Address) { option (aelf.is_view) = true; }
+  rpc ChangeOwner (aelf.Address) returns (google.protobuf.Empty){}
 
   // Observer management.
   rpc ApplyObserver (ApplyObserverInput) returns (google.protobuf.Empty) {}
@@ -167,6 +171,7 @@ message ReportQueryRecord {
   repeated aelf.Address confirmed_node_list = 5;
   int64 payment = 6;
   string target_chain_id = 7;
+  int32 confirm_threshold = 10;
 }
 
 message ObserverList {
@@ -313,6 +318,10 @@ message SetSkipMemberListInput{
   string token = 1;
   MemberList value = 2;
   string chain_id = 3;
+}
+
+message NodeThreshold {
+  int32 confirm_threshold = 1;
 }
 
 message GetSkipMemberListInput{
