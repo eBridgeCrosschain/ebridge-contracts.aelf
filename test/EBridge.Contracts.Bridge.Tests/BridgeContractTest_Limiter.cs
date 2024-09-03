@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using AElf;
 using AElf.ContractTestKit;
+using AElf.CSharp.Core.Extension;
 using AElf.Kernel;
 using Google.Protobuf.WellKnownTypes;
 using Shouldly;
@@ -46,6 +47,13 @@ public partial class BridgeContractTests
                 Symbol = "USDT",
                 TargetChain = "BSC",
                 DefaultTokenAmount = 5_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            },
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "AGENT",
+                TargetChain = "Base",
+                DefaultTokenAmount = 5100_0000_00000000,
                 StartTime = Timestamp.FromDateTime(time)
             }
         };
@@ -608,6 +616,14 @@ public partial class BridgeContractTests
                 IsEnable = true,
                 TokenCapacity = 5_0000_00000000,
                 Rate = 200
+            },
+            new ReceiptTokenBucketConfig
+            {
+                IsEnable = true,
+                Rate = 500000_00000000,
+                Symbol = "AGENT",
+                TargetChain = "Base",
+                TokenCapacity = 50000000_00000000 
             }
         };
         blockTimeProvider.SetBlockTime(Timestamp.FromDateTime(time));
@@ -626,6 +642,21 @@ public partial class BridgeContractTests
             bucket.CurrentTokenAmount.ShouldBe(5_0000_00000000);
             bucket.IsEnable.ShouldBe(true);
             bucket.Rate.ShouldBe(200);
+            bucket.LastUpdatedTime.ShouldBe(Timestamp.FromDateTime(time));
+        }
+        var time1 = TimestampHelper.GetUtcNow().AddDays(100).ToDateTime();
+        blockTimeProvider.SetBlockTime(Timestamp.FromDateTime(time1));
+        {
+            var bucket = await BridgeContractImplStub.GetCurrentReceiptTokenBucketState.CallAsync(
+                new GetCurrentReceiptTokenBucketStateInput
+                {
+                    Symbol = "AGENT",
+                    TargetChain = "Base"
+                });
+            bucket.TokenCapacity.ShouldBe(50000000_00000000);
+            bucket.CurrentTokenAmount.ShouldBe(50000000_00000000);
+            bucket.IsEnable.ShouldBe(true);
+            bucket.Rate.ShouldBe(500000_00000000);
             bucket.LastUpdatedTime.ShouldBe(Timestamp.FromDateTime(time));
         }
         {
