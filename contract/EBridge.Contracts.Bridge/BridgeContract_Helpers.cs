@@ -8,6 +8,7 @@ using AElf.CSharp.Core.Extension;
 using AElf.Sdk.CSharp;
 using AElf.Types;
 using EBridge.Contracts.TokenPool;
+using Google.Protobuf;
 using LockInput = EBridge.Contracts.TokenPool.LockInput;
 
 namespace EBridge.Contracts.Bridge
@@ -18,19 +19,20 @@ namespace EBridge.Contracts.Bridge
         {
             return input != null && !input.Value.IsNullOrEmpty();
         }
-        
+
         private TokenInfo GetTokenInfo(string symbol)
         {
             RequireTokenContractStateSet();
             return State.TokenContract.GetTokenInfo.Call(new GetTokenInfoInput { Symbol = symbol });
         }
 
-        private void TransferToken(string symbol, long amount, Address to,string fromChainId)
+        private void TransferToken(string symbol, long amount, Address to, string fromChainId)
         {
             if (amount <= 0)
             {
                 return;
             }
+
             RequireTokenContractStateSet();
             if (State.TokenPoolContract.Value == null)
             {
@@ -210,9 +212,22 @@ namespace EBridge.Contracts.Bridge
             return HashHelper.ConcatAndCompute(receiptIdHash, amountHash, addressHash);
         }
 
+        private Hash CalculateReceiptHashForTon(Hash receiptIdToken, long amount, string targetAddress,
+            long receiptIndex)
+        {
+            var addressHash = HashHelper.ComputeFrom(ByteString.FromBase64(targetAddress).ToByteArray());
+            var amountTon = ConvertLong(amount);
+            var amountHash = HashHelper.ComputeFrom(amountTon.ToArray());
+            var receiptIndexTon = ConvertLong(receiptIndex);
+            var receiptIndexHash = HashHelper.ComputeFrom(receiptIndexTon.ToArray());
+            var receiptIdHash = HashHelper.ConcatAndCompute(receiptIdToken, receiptIndexHash);
+            return HashHelper.ConcatAndCompute(receiptIdHash, amountHash, addressHash);
+        }
+
         private IEnumerable<byte> ConvertLong(long data)
         {
             var b = data.ToBytes();
+
             if (b.Length == 32)
                 return b;
             var diffCount = 32.Sub(b.Length);
@@ -275,7 +290,6 @@ namespace EBridge.Contracts.Bridge
                 Amount = amount,
                 Sender = from
             });
-
         }
 
         private void TransferFee(string symbol, long amount, Address from, Address to)
@@ -343,7 +357,7 @@ namespace EBridge.Contracts.Bridge
             Assert(amount <= dailyLimitTokenInfo.TokenAmount,
                 $"Amount exceeds daily limit amount. Current daily limit is {dailyLimitTokenInfo.TokenAmount}");
             dailyLimitTokenInfo.TokenAmount = dailyLimitTokenInfo.TokenAmount.Sub(amount);
-            
+
             if (tokenBucket != null)
             {
                 Assert(amount <= tokenBucket.TokenCapacity, "Amount exceeds token max capacity.");
@@ -354,6 +368,7 @@ namespace EBridge.Contracts.Bridge
                     throw new AssertionException(
                         $"Amount exceeds current token amount, the minimum wait time is {minWaitInSeconds}s");
                 }
+
                 tokenBucket.CurrentTokenAmount = tokenBucket.CurrentTokenAmount.Sub(amount);
             }
         }

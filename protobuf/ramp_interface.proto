@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+import "aelf/core.proto";
+import "aelf/options.proto";
+import "acs12.proto";
+import "ramp_common_message.proto";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+
+// the contract definition: a gRPC service definition.
+service RampInterface {
+    rpc ForwardMessage (ForwardMessageInput) returns (google.protobuf.Empty) {}
+    rpc GetCurrentTokenBucketState(aelf.Hash) returns (RateLimiterTokenBucket) { option (aelf.is_view) = true; }
+}
+
+message ForwardMessageInput {
+    int64 source_chain_id = 1;
+    int64 target_chain_id = 2;
+    bytes sender = 3;
+    bytes receiver = 4;
+    bytes message = 5;
+    ramp.TokenAmount token_amount = 6;
+}
+
+message RateLimiterTokenBucket {
+    bool is_token_bucket_enabled = 1;
+    bool is_daily_limit_enabled = 2;
+}

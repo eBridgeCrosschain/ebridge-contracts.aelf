@@ -12,6 +12,7 @@ import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
 import "aelf/core.proto";
 import "aelf/options.proto";
+import "ramp_interface.proto";
 
 option csharp_namespace = "EBridge.Contracts.Bridge";
 
@@ -23,13 +24,21 @@ service BridgeContractImpl {
   option (aelf.base) = "acs13.proto";
   option (aelf.base) = "receipt_maker.proto";
   option (aelf.base) = "bridge_contract.proto";
-
+  option (aelf.base) = "ramp_interface.proto";
+  
   rpc SetReceiptDailyLimit (SetReceiptDailyLimitInput) returns (google.protobuf.Empty) {}
   rpc SetSwapDailyLimit (SetSwapDailyLimitInput) returns (google.protobuf.Empty) {}
   rpc ConfigReceiptTokenBucket (ConfigReceiptTokenBucketInput) returns (google.protobuf.Empty) {}
   rpc ConfigSwapTokenBucket (ConfigSwapTokenBucketInput) returns (google.protobuf.Empty) {}
   rpc SetTokenPoolContract(aelf.Address) returns (google.protobuf.Empty){}
   rpc AssetsMigrator(AssetsMigratorInput) returns (google.protobuf.Empty){}
+  
+  rpc SetRampContract(aelf.Address) returns (google.protobuf.Empty){}
+  rpc SetRampTokenSwapConfig(TokenSwapConfig) returns (google.protobuf.Empty){}
+  
+  rpc SetTonConfig(SetTonConfigInput) returns (google.protobuf.Empty){}
+  
+  rpc TestCreateReceipt(TestCreateReceiptInput) returns (google.protobuf.Empty) {}
   
   rpc GetTokenPoolContract(google.protobuf.Empty) returns (aelf.Address) {
     option (aelf.is_view) = true;
@@ -58,6 +67,13 @@ service BridgeContractImpl {
   rpc GetSwapMinWaitTimeInSeconds (GetSwapMinWaitTimeInSecondsInput) returns (google.protobuf.Int64Value){
     option (aelf.is_view) = true;
   }
+  
+  rpc GetRampContract(google.protobuf.Empty) returns (aelf.Address) {
+    option (aelf.is_view) = true;
+  }
+  rpc GetTonConfig(google.protobuf.Empty) returns (TonConfig) {
+    option (aelf.is_view) = true;
+  }
 }
 
 // Data struct
@@ -76,6 +92,15 @@ message TokenBucket {
 }
 
 // Input
+message TestCreateReceiptInput{
+  string symbol = 1;
+  aelf.Address owner = 2;
+  string targetAddress = 3;
+  int64 amount = 4;
+  string target_chain_id = 5;
+  bool is_ton = 6;
+}
+
 message SetReceiptDailyLimitInput {
   repeated ReceiptDailyLimitInfo receipt_daily_limit_infos = 1;
 }
@@ -149,6 +174,43 @@ message SwapTokenBucketConfig {
 message GetSwapMinWaitTimeInSecondsInput {
   aelf.Hash swapId = 1;
   int64 token_amount = 2;
+}
+
+message TokenSwapConfig {
+  TokenSwapList token_swap_list = 1;
+}
+
+message TokenSwapList {
+  repeated TokenSwapInfo token_swap_info_list = 1;
+}
+
+message TokenSwapInfo {
+  int64 target_chain_id = 1;
+  string target_contract_address = 2;
+  string token_address = 3;
+  string origin_token = 4;
+  string swap_id = 5;
+}
+
+message SetTonConfigInput {
+  string ton_contract_address = 1;
+  int32 ton_chain_id = 2;
+}
+
+message TonConfig {
+  string ton_contract_address = 1;
+  int32 ton_chain_id = 2;
+}
+
+message TestEvent {
+  option (aelf.is_event) = true;
+  string sender = 1;
+  string receiver = 2;
+  bytes message = 3;
+  aelf.Hash swapId = 4;
+  string symbol = 5;
+  string tokenAddress = 6;
+  string targetContractAddress = 7;
 }
 
 message ReceiptDailyLimitSet {

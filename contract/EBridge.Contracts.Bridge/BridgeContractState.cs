@@ -24,6 +24,7 @@ public partial class BridgeContractState : ContractState
     /// Method fee controller.
     /// </summary>
     public SingletonState<AuthorityInfo> MethodFeeController { get; set; }
+    
 
     /// <summary>
     /// Is contract pause (true->pause/false=>start).
@@ -92,6 +93,14 @@ public partial class BridgeContractState : ContractState
     /// Swap Id -> Tree index
     /// </summary>
     public MappedState<Hash, long> RecordedTreeLeafIndex { get; set; }
+    
+    /// <summary>
+    /// receipt hash ->
+    /// true : already record
+    /// false : not record
+    /// </summary>
+    public MappedState<Hash, bool> ReceiptHashRecordStatus { get; set; }
+
 
     #endregion
 
@@ -182,4 +191,6 @@ public partial class BridgeContractState : ContractState
     /// swap id -> token bucket
     /// </summary>
     public MappedState<Hash, TokenBucket> SwapTokenBucketInfo { get; set; }
+    
+    public SingletonState<TonConfig> TonConfig { get; set; }
 }

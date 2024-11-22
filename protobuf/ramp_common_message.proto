@@ -1,0 +1,24 @@
+// the version of the language, use proto3 for contracts
+syntax = "proto3";
+
+// some core imports for AElf chain types
+import "aelf/core.proto";
+import "aelf/options.proto";
+import "acs12.proto";
+
+package ramp;
+
+// import for using the google.protobuf.* type.
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+
+// the name of the C# namespace in which the contract code will be,
+
+message TokenAmount {
+    string swap_id = 1;
+    int64 target_chain_id = 2;
+    string target_contract_address = 3;
+    string token_address = 4;
+    string origin_token = 5;
+}

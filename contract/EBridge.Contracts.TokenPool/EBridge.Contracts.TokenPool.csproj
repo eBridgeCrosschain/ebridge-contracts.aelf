@@ -21,6 +21,12 @@
         <CommonMessage Include="..\..\protobuf\authority_info.proto">
             <Link>Protobuf\Proto\authority_info.proto</Link>
         </CommonMessage>
+        <CommonMessage Include="..\..\protobuf\ramp_common_message.proto">
+            <Link>Protobuf\Proto\ramp_common_message.proto</Link>
+        </CommonMessage>
+        <CommonMessage Include="..\..\protobuf\oracle_common_message.proto">
+            <Link>Protobuf\Proto\oracle_common_message.proto</Link>
+        </CommonMessage>
     </ItemGroup>
 
     <ItemGroup>
@@ -35,6 +41,12 @@
         </ContractReference>
         <ContractReference Include="..\..\protobuf\bridge_contract.proto">
             <Link>Protobuf\Proto\bridge_contract.proto</Link>
+        </ContractReference>
+        <ContractReference Include="..\..\protobuf\ramp_interface.proto">
+            <Link>Protobuf\Proto\ramp_interface.proto</Link>
+        </ContractReference>
+        <ContractReference Include="..\..\protobuf\ramp_contract.proto">
+            <Link>Protobuf\Proto\ramp_contract.proto</Link>
         </ContractReference>
         <ContractReference Include="..\..\protobuf\bridge_contract_impl.proto">
             <Link>Protobuf\Proto\reference\bridge_contract_impl.proto</Link>
