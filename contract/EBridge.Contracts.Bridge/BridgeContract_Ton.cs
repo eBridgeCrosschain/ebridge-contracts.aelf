@@ -12,12 +12,10 @@ public partial class BridgeContract
     public override Empty SetTonConfig(SetTonConfigInput input)
     {
         Assert(Context.Sender == State.Admin.Value, "No permission.");
-        Assert(input.TonChainId > 0 && input.TonContractAddress != null, "Invalid input.");
-        State.TonConfig.Value = new TonConfig
-        {
-            TonChainId = input.TonChainId,
-            TonContractAddress = input.TonContractAddress
-        };
+        Assert(input.TonConfig != null, "Invalid input.");
+        var config = input.TonConfig;
+        Assert(config.TonChainId > 0 && config.TonContractAddress != null && config.TonFee > 0, "Invalid input value.");
+        State.TonConfig.Value = config;
         return new Empty();
     }
 
@@ -43,7 +41,8 @@ public partial class BridgeContract
                 TargetContractAddress = swap.TargetContractAddress,
                 TokenAddress = swap.TokenAddress,
                 OriginToken = swap.OriginToken,
-                SwapId = swap.SwapId
+                SwapId = swap.SwapId,
+                SourceChainId = swap.SourceChainId == 0 ? Context.ChainId : swap.SourceChainId
             });
         }
 
@@ -66,8 +65,8 @@ public partial class BridgeContract
         Assert(input.TargetChainId > 0 && input.TargetChainId == Context.ChainId, "Invalid target chain id.");
         var sender = input.Sender?.ToBase64();
         Assert(sender != null && sender == tonConfig.TonContractAddress, "Invalid sender.");
-        var receiver = input.Receiver?.ToPlainBase58();
-        Assert(receiver != null && Address.FromBase58(receiver) == Context.Self, "Invalid receiver.");
+        var receiver = Address.Parser.ParseFrom(input.Receiver);
+        Assert(receiver != null && receiver == Context.Self, "Invalid receiver.");
         Assert(input.Message != null, "Invalid message.");
         var leafHashValue = EncodeMessageAndVerification(input.Message, out var amount, out var targetAddress,
             out var receiptIndex, out var receiptIdHash);
@@ -88,7 +87,7 @@ public partial class BridgeContract
     }
 
     private Hash EncodeMessageAndVerification(ByteString message, out long amount, out Address targetAddress,
-        out long receiptIndex, out Hash receiptIndexHash)
+        out long receiptIndex, out Hash receiptIdTokenHash)
     {
         var messageByte = message.ToByteArray();
         var receiptIndexByte = messageByte.Skip(0).Take(32).ToArray();
@@ -97,9 +96,9 @@ public partial class BridgeContract
         var targetAddressByte = messageByte.Skip(96).Take(32).ToArray();
         var leafHash = messageByte.Skip(128).Take(32).ToArray();
         var leafHashValue = Hash.LoadFromHex(leafHash.ToHex());
-        var receiptIdTokenHash = Hash.LoadFromHex(receiptIdToken.ToHex());
+        receiptIdTokenHash = Hash.LoadFromHex(receiptIdToken.ToHex());
         var amountHash = HashHelper.ComputeFrom(amountByte);
-        receiptIndexHash = HashHelper.ComputeFrom(receiptIndexByte);
+        var receiptIndexHash = HashHelper.ComputeFrom(receiptIndexByte);
         var receiptIdHash = HashHelper.ConcatAndCompute(receiptIdTokenHash, receiptIndexHash);
         var targetAddressByteHash = HashHelper.ComputeFrom(targetAddressByte);
         var computeHash = HashHelper.ConcatAndCompute(receiptIdHash, amountHash, targetAddressByteHash);
@@ -111,11 +110,11 @@ public partial class BridgeContract
         return leafHashValue;
     }
 
-    public override RateLimiterTokenBucket GetCurrentTokenBucketState(Hash input)
+    public override RateLimiterTokenBucket GetCurrentTokenSwapBucketState(GetCurrentTokenSwapBucketStateInput input)
     {
         var result = new RateLimiterTokenBucket();
-        var amount = 0;
-        var swapId = input;
+        var amount = input.Amount;
+        var swapId = input.SwapId;
         var swapInfo = GetTokenSwapInfo(swapId);
         var actualAmount = GetTargetTokenAmount(amount, swapInfo.SwapTargetToken?.SwapRatio);
         var dailyLimit = State.SwapDailyLimit[swapId];

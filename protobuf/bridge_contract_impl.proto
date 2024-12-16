@@ -38,8 +38,6 @@ service BridgeContractImpl {
   
   rpc SetTonConfig(SetTonConfigInput) returns (google.protobuf.Empty){}
   
-  rpc TestCreateReceipt(TestCreateReceiptInput) returns (google.protobuf.Empty) {}
-  
   rpc GetTokenPoolContract(google.protobuf.Empty) returns (aelf.Address) {
     option (aelf.is_view) = true;
   } 
@@ -92,14 +90,6 @@ message TokenBucket {
 }
 
 // Input
-message TestCreateReceiptInput{
-  string symbol = 1;
-  aelf.Address owner = 2;
-  string targetAddress = 3;
-  int64 amount = 4;
-  string target_chain_id = 5;
-  bool is_ton = 6;
-}
 
 message SetReceiptDailyLimitInput {
   repeated ReceiptDailyLimitInfo receipt_daily_limit_infos = 1;
@@ -190,16 +180,17 @@ message TokenSwapInfo {
   string token_address = 3;
   string origin_token = 4;
   string swap_id = 5;
+  int64 source_chain_id = 6;
 }
 
 message SetTonConfigInput {
-  string ton_contract_address = 1;
-  int32 ton_chain_id = 2;
+    TonConfig ton_config = 1;
 }
 
 message TonConfig {
   string ton_contract_address = 1;
   int32 ton_chain_id = 2;
+  int64 ton_fee = 3;
 }
 
 message TestEvent {

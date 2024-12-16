@@ -599,11 +599,6 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
                 {
                     ChainId = "Ethereum",
                     GasLimit_ = 293414
-                },
-                new GasLimit
-                {
-                    ChainId = "Ton",
-                    GasLimit_ = 111
                 }
             }
         });
@@ -615,11 +610,6 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
                 {
                     ChainId = "Ethereum",
                     GasPrice_ = 8245816000
-                },
-                new GasPrice
-                {
-                    ChainId = "Ton",
-                    GasPrice_ = 22222222
                 }
             }
         });
@@ -636,7 +626,7 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
                 new Ratio
                 {
                     ChainId = "Ton",
-                    Ratio_ = 1052631578947
+                    Ratio_ = 1185454500
                 }
             }
         });
@@ -647,11 +637,6 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
                 new Ratio
                 {
                     ChainId = "Ethereum",
-                    Ratio_ = 20
-                },
-                new Ratio
-                {
-                    ChainId = "Ton",
                     Ratio_ = 20
                 }
             }

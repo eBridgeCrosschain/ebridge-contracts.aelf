@@ -107,14 +107,16 @@ public partial class BridgeContract
         };
 
         State.ReceiptMap[receiptId] = receipt;
-        
+
         switch (input.TargetChainType)
         {
-            case ChainType.Evm:
-                DealWithEvmChain(input.TargetChainId, receiptId, receipt.Amount, receipt.TargetAddress, receiptIdToken.ToHex());
+            case 0:
+                DealWithEvmChain(input.TargetChainId, receiptId, receipt.Amount, receipt.TargetAddress,
+                    receiptIdToken.ToHex());
                 break;
-            case ChainType.Tvm:
-                DealWithTonChain(receiptIdToken, receipt.Amount, receipt.TargetAddress, receiptCount, receipt.Symbol);
+            case 1:
+                DealWithTonChain(input.TargetChainId, receiptIdToken, receipt.Amount, receipt.TargetAddress,
+                    receiptCount, receipt.Symbol);
                 break;
             default:
                 throw new AssertionException("Invalid chain type.");
@@ -133,10 +135,14 @@ public partial class BridgeContract
         return new Empty();
     }
 
-    private void DealWithTonChain(Hash receiptIdToken, long amount, string targetAddress, long receiptCount,
+    private void DealWithTonChain(string chainId, Hash receiptIdToken, long amount, string targetAddress,
+        long receiptCount,
         string symbol)
     {
         var config = State.TonConfig.Value;
+        var nativeTokenFee = CalculateTransactionFeeForTon(State.PriceRatio[chainId], config.TonFee);
+        State.TransactionFee.Value = State.TransactionFee.Value.Add(nativeTokenFee);
+        TransferFee(DefaultFeeSymbol, nativeTokenFee, Context.Sender, Context.Self);
         var message = GenerateMessage(receiptIdToken, amount, targetAddress, receiptCount);
         State.RampContract.Send.Send(new SendInput
         {

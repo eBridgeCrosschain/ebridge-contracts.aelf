@@ -318,15 +318,14 @@ message CreateReceiptInput{
     string targetAddress = 3;
     int64 amount = 4;
     string target_chain_id = 5;
-    ChainType target_chain_type = 6;
+    int32 target_chain_type = 6; // 0: EVM, 1: TVM
+//    ChainType target_chain_type = 6;
 }
 
 enum ChainType {
     EVM = 0;
     TVM = 1;
 }
-
-
 message SetGasLimitInput{
     repeated GasLimit gas_limit_list = 1;
 }

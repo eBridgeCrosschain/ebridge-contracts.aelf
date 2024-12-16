@@ -12,7 +12,7 @@ import "google/protobuf/timestamp.proto";
 // the contract definition: a gRPC service definition.
 service RampInterface {
     rpc ForwardMessage (ForwardMessageInput) returns (google.protobuf.Empty) {}
-    rpc GetCurrentTokenBucketState(aelf.Hash) returns (RateLimiterTokenBucket) { option (aelf.is_view) = true; }
+    rpc GetCurrentTokenSwapBucketState(GetCurrentTokenSwapBucketStateInput) returns (RateLimiterTokenBucket) { option (aelf.is_view) = true; }
 }
 
 message ForwardMessageInput {
@@ -27,4 +27,9 @@ message ForwardMessageInput {
 message RateLimiterTokenBucket {
     bool is_token_bucket_enabled = 1;
     bool is_daily_limit_enabled = 2;
+}
+
+message GetCurrentTokenSwapBucketStateInput {
+    aelf.Hash swap_id = 1;
+    int64 amount = 2;
 }

@@ -431,27 +431,23 @@ public partial class BridgeContractTests : BridgeContractTestBase
         await InitialSetGas();
         var input = new SetTonConfigInput
         {
-            TonChainId = 1101,
-            TonContractAddress = "EQAOADR4NzUEVdZRLrq/Qg2G5mrXRZkX/NXLm/uW9W4Nqok4"
+            TonConfig = new TonConfig
+            {
+                TonChainId = 1101,
+                TonContractAddress = "EQAOADR4NzUEVdZRLrq/Qg2G5mrXRZkX/NXLm/uW9W4Nqok4",
+                TonFee = 30000000
+            }
         };
         var res = await BridgeContractImplStub.SetTonConfig.SendAsync(input);
-        // var executionResult = await BridgeContractStub.CreateReceipt.SendAsync(new CreateReceiptInput
-        // {
-        //     Symbol = "ELF",
-        //     Amount = 100_00000000,
-        //     TargetAddress = "EQDsJj94gXdTrsUGFHM-KVFT-RPUFAe4TIVS-EM7ip9cG8M5",
-        //     TargetChainId = "Ton",
-        //     IsTon = true
-        // });
-        var executionResult = await BridgeContractImplStub.TestCreateReceipt.SendAsync(new TestCreateReceiptInput
+        var executionResult = await BridgeContractStub.CreateReceipt.SendAsync(new CreateReceiptInput
         {
             Symbol = "ELF",
-            Amount = 100_00000000,
-            TargetAddress = "EQBvA4zKQaQOjwu7HbyHiWJU7xQyzV4hre1YXq2PzVR2UTyT",
+            Amount = 1000000000000,
+            TargetAddress = "kQDYnId__pLw2tqEK6TQs30lMYWECEX-bwpNrwfFGpr2dpU8",
             TargetChainId = "Ton",
-            // IsTon = true
+            TargetChainType = 1
         });
-        
+
     }
     [Fact]
     public async Task AElfToPipeline_DailyLimit_Test()

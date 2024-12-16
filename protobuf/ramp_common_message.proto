@@ -21,4 +21,5 @@ message TokenAmount {
     string target_contract_address = 3;
     string token_address = 4;
     string origin_token = 5;
+    int64 amount = 6;
 }

@@ -202,6 +202,13 @@ namespace EBridge.Contracts.Bridge
             var fee = decimal.Round((transactionFee / 1000000000) * priceRatioDecimal * feeRatio, PriceDecimals);
             return (long)decimal.Ceiling(fee) * 100000000;
         }
+        
+        private long CalculateTransactionFeeForTon(long priceRatio,long tonFee)
+        {
+            var priceRatioDecimal = (decimal)priceRatio / 100000000;
+            var fee = decimal.Round(((decimal)tonFee / 1000000000) * priceRatioDecimal, PriceDecimals);
+            return (long)(fee * 100000000);
+        }
 
         private Hash CalculateReceiptHash(string receiptId, long amount, string targetAddress)
         {

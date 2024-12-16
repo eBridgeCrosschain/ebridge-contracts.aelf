@@ -110,10 +110,11 @@ message TokenSwapList {
 
 message TokenSwapInfo {
     int64 target_chain_id = 1;
-    string target_contract_address = 2;
-    string token_address = 3;
-    string origin_token = 4;
-    string swap_id = 5;
+    int64 source_chain_id = 2;
+    string target_contract_address = 3;
+    string token_address = 4;
+    string origin_token = 5;
+    string swap_id = 6;
 }
 
 // log event
@@ -143,7 +144,7 @@ message SendRequested {
     int64 target_chain_id = 2;
     int64 source_chain_id = 3;
     bytes receiver = 4;
-    bytes sender = 5;
+    aelf.Address sender = 5;
     bytes message = 6;
     ramp.TokenAmount token_amount = 7;
     int64 epoch = 8;
