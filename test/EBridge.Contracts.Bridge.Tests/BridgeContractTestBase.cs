@@ -18,6 +18,7 @@ using AElf.Kernel.Proposal;
 using AElf.Standards.ACS0;
 using AElf.Standards.ACS3;
 using AElf.Types;
+using AetherLink.Contracts.Ramp;
 using EBridge.Contracts.MerkleTreeContract;
 using EBridge.Contracts.Oracle;
 using EBridge.Contracts.Regiment;
@@ -38,6 +39,8 @@ namespace EBridge.Contracts.Bridge;
 public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestModule>
 {
     protected Address DefaultSenderAddress { get; set; }
+    internal Address RampContractAddress { get; set; }
+
     protected ECKeyPair DefaultKeypair => SampleAccount.Accounts.First().KeyPair;
 
     internal List<Account> Transmitters => SampleAccount.Accounts.Skip(1).Take(5).ToList();
@@ -60,7 +63,7 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
 
     internal ACS0Container.ACS0Stub ZeroContractStub { get; set; }
     internal BridgeContractContainer.BridgeContractStub BridgeContractStub { get; set; }
-    
+
     internal TokenPoolContractContainer.TokenPoolContractStub TokenPoolContractStub { get; set; }
 
     internal BridgeContractImplContainer.BridgeContractImplStub BridgeContractImplStub { get; set; }
@@ -105,75 +108,82 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
 
     internal Address StringAggregatorContractAddress =>
         GetAddress(StringAggregatorSmartContractAddressNameProvider.StringName);
+
     protected Address MerkleTreeContractAddress { get; set; }
 
     protected Address RegimentContractAddress { get; set; }
+
     internal Address ParliamentContractAddress =>
         GetAddress(ParliamentSmartContractAddressNameProvider.StringName);
 
     internal Address ReceiptMakerContractAddress =>
         GetAddress(ReceiptMakerSmartContractAddressNameProvider.StringName);
-    
+
     protected Address TokenPoolContractAddress { get; set; }
 
     internal Address _regimentAddress;
 
     internal Dictionary<string, Hash> _receiptDictionary;
-    
+
     internal Hash _swapHashOfElf;
     internal Hash _swapHashOfUsdt;
     internal Hash _swapOfElfSpaceId;
     internal Hash _swapOfUsdtSpaceId;
-    
+
     protected IBlockTimeProvider blockTimeProvider =>
         Application.ServiceProvider.GetRequiredService<IBlockTimeProvider>();
-    
+
     public BridgeContractTestBase()
     {
         DefaultSenderAddress = SampleAccount.Accounts.First().Address;
         TransactionFeeRatioAddress = SampleAccount.Accounts[14].Address;
-        
+
         ZeroContractStub = GetContractZeroTester(DefaultKeypair);
-        var result = AsyncHelper.RunSync(async () =>await ZeroContractStub.DeploySmartContract.SendAsync(new ContractDeploymentInput
-        {   
-            Category = KernelConstants.CodeCoverageRunnerCategory,
-            Code = ByteString.CopyFrom(
-                File.ReadAllBytes(typeof(BridgeContract).Assembly.Location))
-        }));
+        var result = AsyncHelper.RunSync(async () => await ZeroContractStub.DeploySmartContract.SendAsync(
+            new ContractDeploymentInput
+            {
+                Category = KernelConstants.CodeCoverageRunnerCategory,
+                Code = ByteString.CopyFrom(
+                    File.ReadAllBytes(typeof(BridgeContract).Assembly.Location))
+            }));
         BridgeContractAddress = Address.Parser.ParseFrom(result.TransactionResult.ReturnValue);
-        
-        result = AsyncHelper.RunSync(async () =>await ZeroContractStub.DeploySmartContract.SendAsync(new ContractDeploymentInput
-        {   
-            Category = KernelConstants.CodeCoverageRunnerCategory,
-            Code = ByteString.CopyFrom(
-                File.ReadAllBytes(typeof(MerkleTreeContract.MerkleTreeContract).Assembly.Location))
-        }));
+
+        result = AsyncHelper.RunSync(async () => await ZeroContractStub.DeploySmartContract.SendAsync(
+            new ContractDeploymentInput
+            {
+                Category = KernelConstants.CodeCoverageRunnerCategory,
+                Code = ByteString.CopyFrom(
+                    File.ReadAllBytes(typeof(MerkleTreeContract.MerkleTreeContract).Assembly.Location))
+            }));
         MerkleTreeContractAddress = Address.Parser.ParseFrom(result.TransactionResult.ReturnValue);
-        
-        result = AsyncHelper.RunSync(async () =>await ZeroContractStub.DeploySmartContract.SendAsync(new ContractDeploymentInput
-        {   
-            Category = KernelConstants.CodeCoverageRunnerCategory,
-            Code = ByteString.CopyFrom(
-                File.ReadAllBytes(typeof(OracleContract).Assembly.Location))
-        }));
+
+        result = AsyncHelper.RunSync(async () => await ZeroContractStub.DeploySmartContract.SendAsync(
+            new ContractDeploymentInput
+            {
+                Category = KernelConstants.CodeCoverageRunnerCategory,
+                Code = ByteString.CopyFrom(
+                    File.ReadAllBytes(typeof(OracleContract).Assembly.Location))
+            }));
         OracleContractAddress = Address.Parser.ParseFrom(result.TransactionResult.ReturnValue);
-        
-        result = AsyncHelper.RunSync(async () =>await ZeroContractStub.DeploySmartContract.SendAsync(new ContractDeploymentInput
-        {   
-            Category = KernelConstants.CodeCoverageRunnerCategory,
-            Code = ByteString.CopyFrom(
-                File.ReadAllBytes(typeof(RegimentContract).Assembly.Location))
-        }));
+
+        result = AsyncHelper.RunSync(async () => await ZeroContractStub.DeploySmartContract.SendAsync(
+            new ContractDeploymentInput
+            {
+                Category = KernelConstants.CodeCoverageRunnerCategory,
+                Code = ByteString.CopyFrom(
+                    File.ReadAllBytes(typeof(RegimentContract).Assembly.Location))
+            }));
         RegimentContractAddress = Address.Parser.ParseFrom(result.TransactionResult.ReturnValue);
 
-        result = AsyncHelper.RunSync(async () =>await ZeroContractStub.DeploySmartContract.SendAsync(new ContractDeploymentInput
-        {   
-            Category = KernelConstants.CodeCoverageRunnerCategory,
-            Code = ByteString.CopyFrom(
-                File.ReadAllBytes(typeof(ReportContract).Assembly.Location))
-        }));
+        result = AsyncHelper.RunSync(async () => await ZeroContractStub.DeploySmartContract.SendAsync(
+            new ContractDeploymentInput
+            {
+                Category = KernelConstants.CodeCoverageRunnerCategory,
+                Code = ByteString.CopyFrom(
+                    File.ReadAllBytes(typeof(ReportContract).Assembly.Location))
+            }));
         ReportContractAddress = Address.Parser.ParseFrom(result.TransactionResult.ReturnValue);
-        
+
         var code = File.ReadAllBytes(typeof(TokenPoolContract).Assembly.Location);
         var contractOperation = new ContractOperation
         {
@@ -194,7 +204,14 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
             }));
         TokenPoolContractAddress = Address.Parser.ParseFrom(result.TransactionResult.ReturnValue);
 
-        
+        result = AsyncHelper.RunSync(async () => await ZeroContractStub.DeploySmartContract.SendAsync(
+            new ContractDeploymentInput
+            {
+                Category = KernelConstants.CodeCoverageRunnerCategory,
+                Code = ByteString.CopyFrom(File.ReadAllBytes(typeof(RampContract).Assembly.Location))
+            }));
+        RampContractAddress = Address.Parser.ParseFrom(result.TransactionResult.ReturnValue);
+
         BridgeContractStub = GetBridgeContractStub(DefaultKeypair);
         BridgeContractImplStub = GetBridgeContractImplStub(DefaultKeypair);
         BridgeContractImplUserStub = GetTester<BridgeContractImplContainer.BridgeContractImplStub>(
@@ -247,7 +264,7 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
         var signature = CryptoHelper.SignWithPrivateKey(privateKey, dataHash.ToByteArray());
         return ByteStringHelper.FromHexString(signature.ToHex());
     }
-    
+
     internal MerkleTreeContractContainer.MerkleTreeContractStub
         GetMerkleTreeContractStub(
             ECKeyPair senderKeyPair)
@@ -333,6 +350,7 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
             AssociationContractAddress,
             senderKeyPair);
     }
+
     internal TokenPoolContractContainer.TokenPoolContractStub
         GetTokenPoolContractStub(
             ECKeyPair senderKeyPair)
@@ -350,7 +368,7 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
             senderKeyPair
         );
     }
-    
+
     internal async Task InitialOracleContractAsync()
     {
         await OracleContractStub.Initialize.SendAsync(new Oracle.InitializeInput
@@ -400,7 +418,7 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
             OracleContractAddress = OracleContractAddress,
             RegimentContractAddress = RegimentContractAddress,
             ReportFee = 0,
-            InitialRegisterWhiteList = {DefaultSenderAddress}
+            InitialRegisterWhiteList = { DefaultSenderAddress }
         });
     }
 
@@ -438,7 +456,7 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
             Symbol = "PORT",
             TotalSupply = 10_00000000_00000000
         });
-    
+
         // Issue PORT token.
         await TokenContractStub.Issue.SendAsync(new IssueInput
         {
@@ -453,7 +471,7 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
             Amount = 5_00000000_00000000,
             Symbol = "PORT"
         });
-    
+
         // Approve Oracle Contract.
         var transmitterTokenContractStub = GetTokenContractStub(Transmitters.First().KeyPair);
         await transmitterTokenContractStub.Approve.SendAsync(new ApproveInput
@@ -485,6 +503,7 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
             IssueChainId = 0,
         });
     }
+
     private async Task CreateUsdt()
     {
         var seedOwnedSymbol = "USDT";
@@ -685,7 +704,7 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
         })).Balance;
         balance.ShouldBe(supposedBalance);
     }
-    
+
     internal async Task<Hash> ProposalToRestartContract((Address, Address) organizationAddress)
     {
         var executionResult = await AssociationContractImplStub.CreateProposal.SendAsync(new CreateProposalInput
@@ -719,93 +738,95 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
         await AssociationContractImplStub.Approve.SendAsync(proposalId);
         return proposalId;
     }
-    
+
     internal async Task CreateRegimentTest()
+    {
+        // Create regiment.
+        var executionResult = await OracleContractStub.CreateRegiment.SendAsync(new CreateRegimentInput
         {
-            // Create regiment.
-            var executionResult = await OracleContractStub.CreateRegiment.SendAsync(new CreateRegimentInput
-            {
-                Manager = DefaultSenderAddress,
-                InitialMemberList = {Transmitters.Select(a => a.Address)}
-            });
-    
-            var regimentAddress = RegimentCreated.Parser
-                .ParseFrom(executionResult.TransactionResult.Logs.First(l => l.Name == nameof(RegimentCreated))
-                    .NonIndexed).RegimentAddress;
-            _regimentAddress = regimentAddress;
-            var regimentInfo = await RegimentContractStub.GetRegimentInfo.CallAsync(_regimentAddress);
-            var manager = regimentInfo.Manager;
-            manager.ShouldBe(DefaultSenderAddress);
-    
-            await OracleContractStub.AddAdmins.SendAsync(new AddAdminsInput
-            {
-                RegimentAddress = _regimentAddress,
-                OriginSenderAddress = manager,
-                NewAdmins = {BridgeContractAddress}
-            });
-        }
-    
+            Manager = DefaultSenderAddress,
+            InitialMemberList = { Transmitters.Select(a => a.Address) }
+        });
+
+        var regimentAddress = RegimentCreated.Parser
+            .ParseFrom(executionResult.TransactionResult.Logs.First(l => l.Name == nameof(RegimentCreated))
+                .NonIndexed).RegimentAddress;
+        _regimentAddress = regimentAddress;
+        var regimentInfo = await RegimentContractStub.GetRegimentInfo.CallAsync(_regimentAddress);
+        var manager = regimentInfo.Manager;
+        manager.ShouldBe(DefaultSenderAddress);
+
+        await OracleContractStub.AddAdmins.SendAsync(new AddAdminsInput
+        {
+            RegimentAddress = _regimentAddress,
+            OriginSenderAddress = manager,
+            NewAdmins = { BridgeContractAddress }
+        });
+    }
+
     internal async Task<(Address, Address)> CreateOrganizationTest()
     {
-        var executionResult = await AssociationContractStub.CreateOrganization.SendAsync(new AElf.Contracts.Association.CreateOrganizationInput
-        {
-            OrganizationMemberList = new OrganizationMemberList
+        var executionResult = await AssociationContractStub.CreateOrganization.SendAsync(
+            new AElf.Contracts.Association.CreateOrganizationInput
             {
-                OrganizationMembers =
+                OrganizationMemberList = new OrganizationMemberList
                 {
-                    RestartNodes[0].Address,
-                    RestartNodes[1].Address,
-                    RestartNodes[2].Address,
-                    RestartNodes[3].Address,
-                    RestartNodes[4].Address,
-                }
-            },
-            ProposalReleaseThreshold = new ProposalReleaseThreshold
-            {
-                MinimalApprovalThreshold = 4,
-                MaximalRejectionThreshold = 1,
-                MinimalVoteThreshold = 4
-            },
-            CreationToken = HashHelper.ComputeFrom("restart"),
-            ProposerWhiteList = new ProposerWhiteList
-            {
-                Proposers =
+                    OrganizationMembers =
+                    {
+                        RestartNodes[0].Address,
+                        RestartNodes[1].Address,
+                        RestartNodes[2].Address,
+                        RestartNodes[3].Address,
+                        RestartNodes[4].Address,
+                    }
+                },
+                ProposalReleaseThreshold = new ProposalReleaseThreshold
                 {
-                    RestartNodes[0].Address,
-                    RestartNodes[1].Address,
-                    RestartNodes[2].Address,
-                    RestartNodes[3].Address,
-                    RestartNodes[4].Address,
+                    MinimalApprovalThreshold = 4,
+                    MaximalRejectionThreshold = 1,
+                    MinimalVoteThreshold = 4
+                },
+                CreationToken = HashHelper.ComputeFrom("restart"),
+                ProposerWhiteList = new ProposerWhiteList
+                {
+                    Proposers =
+                    {
+                        RestartNodes[0].Address,
+                        RestartNodes[1].Address,
+                        RestartNodes[2].Address,
+                        RestartNodes[3].Address,
+                        RestartNodes[4].Address,
+                    }
                 }
-            }
-        });
+            });
         var organizationAddress = (OrganizationCreated.Parser.ParseFrom(executionResult.TransactionResult.Logs
             .FirstOrDefault(e => e.Name == nameof(OrganizationCreated))?.NonIndexed)).OrganizationAddress;
-        var executionResult1 = await AssociationContractStub.CreateOrganization.SendAsync(new AElf.Contracts.Association.CreateOrganizationInput
-        {
-            OrganizationMemberList = new OrganizationMemberList
+        var executionResult1 = await AssociationContractStub.CreateOrganization.SendAsync(
+            new AElf.Contracts.Association.CreateOrganizationInput
             {
-                OrganizationMembers =
+                OrganizationMemberList = new OrganizationMemberList
                 {
-                    DefaultAccount.Address,
-                    organizationAddress
-                }
-            },
-            ProposalReleaseThreshold = new ProposalReleaseThreshold
-            {
-                MinimalApprovalThreshold = 2,
-                MaximalRejectionThreshold = 0,
-                MinimalVoteThreshold = 2
-            },
-            CreationToken = HashHelper.ComputeFrom("restart"),
-            ProposerWhiteList = new ProposerWhiteList
-            {
-                Proposers =
+                    OrganizationMembers =
+                    {
+                        DefaultAccount.Address,
+                        organizationAddress
+                    }
+                },
+                ProposalReleaseThreshold = new ProposalReleaseThreshold
                 {
-                    DefaultAccount.Address
+                    MinimalApprovalThreshold = 2,
+                    MaximalRejectionThreshold = 0,
+                    MinimalVoteThreshold = 2
+                },
+                CreationToken = HashHelper.ComputeFrom("restart"),
+                ProposerWhiteList = new ProposerWhiteList
+                {
+                    Proposers =
+                    {
+                        DefaultAccount.Address
+                    }
                 }
-            }
-        });
+            });
         var organizationAddress1 = (OrganizationCreated.Parser.ParseFrom(executionResult1.TransactionResult.Logs
             .FirstOrDefault(e => e.Name == nameof(OrganizationCreated))?.NonIndexed)).OrganizationAddress;
         return (organizationAddress, organizationAddress1);
@@ -813,71 +834,72 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
 
     internal async Task<(Address, Address)> CreateOrganizationSecondTest()
     {
-        var executionResult = await AssociationContractStub.CreateOrganization.SendAsync(new AElf.Contracts.Association.CreateOrganizationInput
-        {
-            OrganizationMemberList = new OrganizationMemberList
+        var executionResult = await AssociationContractStub.CreateOrganization.SendAsync(
+            new AElf.Contracts.Association.CreateOrganizationInput
             {
-                OrganizationMembers =
+                OrganizationMemberList = new OrganizationMemberList
                 {
-                    RestartNodes[0].Address,
-                    RestartNodes[1].Address,
-                    RestartNodes[2].Address,
-                    RestartNodes[3].Address,
-                    RestartNodes[4].Address,
-                }
-            },
-            ProposalReleaseThreshold = new ProposalReleaseThreshold
-            {
-                MinimalApprovalThreshold = 4,
-                MaximalRejectionThreshold = 1,
-                MinimalVoteThreshold = 4
-            },
-            CreationToken = HashHelper.ComputeFrom("test"),
-            ProposerWhiteList = new ProposerWhiteList
-            {
-                Proposers =
+                    OrganizationMembers =
+                    {
+                        RestartNodes[0].Address,
+                        RestartNodes[1].Address,
+                        RestartNodes[2].Address,
+                        RestartNodes[3].Address,
+                        RestartNodes[4].Address,
+                    }
+                },
+                ProposalReleaseThreshold = new ProposalReleaseThreshold
                 {
-                    RestartNodes[0].Address,
-                    RestartNodes[1].Address,
-                    RestartNodes[2].Address,
-                    RestartNodes[3].Address,
-                    RestartNodes[4].Address,
+                    MinimalApprovalThreshold = 4,
+                    MaximalRejectionThreshold = 1,
+                    MinimalVoteThreshold = 4
+                },
+                CreationToken = HashHelper.ComputeFrom("test"),
+                ProposerWhiteList = new ProposerWhiteList
+                {
+                    Proposers =
+                    {
+                        RestartNodes[0].Address,
+                        RestartNodes[1].Address,
+                        RestartNodes[2].Address,
+                        RestartNodes[3].Address,
+                        RestartNodes[4].Address,
+                    }
                 }
-            }
-        });
+            });
         var organizationAddress = (OrganizationCreated.Parser.ParseFrom(executionResult.TransactionResult.Logs
             .FirstOrDefault(e => e.Name == nameof(OrganizationCreated))?.NonIndexed)).OrganizationAddress;
-        var executionResult1 = await AssociationContractStub.CreateOrganization.SendAsync(new AElf.Contracts.Association.CreateOrganizationInput
-        {
-            OrganizationMemberList = new OrganizationMemberList
+        var executionResult1 = await AssociationContractStub.CreateOrganization.SendAsync(
+            new AElf.Contracts.Association.CreateOrganizationInput
             {
-                OrganizationMembers =
+                OrganizationMemberList = new OrganizationMemberList
                 {
-                    DefaultAccount.Address,
-                    organizationAddress
-                }
-            },
-            ProposalReleaseThreshold = new ProposalReleaseThreshold
-            {
-                MinimalApprovalThreshold = 2,
-                MaximalRejectionThreshold = 0,
-                MinimalVoteThreshold = 2
-            },
-            CreationToken = HashHelper.ComputeFrom("ttt"),
-            ProposerWhiteList = new ProposerWhiteList
-            {
-                Proposers =
+                    OrganizationMembers =
+                    {
+                        DefaultAccount.Address,
+                        organizationAddress
+                    }
+                },
+                ProposalReleaseThreshold = new ProposalReleaseThreshold
                 {
-                    DefaultAccount.Address
+                    MinimalApprovalThreshold = 2,
+                    MaximalRejectionThreshold = 0,
+                    MinimalVoteThreshold = 2
+                },
+                CreationToken = HashHelper.ComputeFrom("ttt"),
+                ProposerWhiteList = new ProposerWhiteList
+                {
+                    Proposers =
+                    {
+                        DefaultAccount.Address
+                    }
                 }
-            }
-        });
+            });
         var organizationAddress1 = (OrganizationCreated.Parser.ParseFrom(executionResult1.TransactionResult.Logs
             .FirstOrDefault(e => e.Name == nameof(OrganizationCreated))?.NonIndexed)).OrganizationAddress;
         return (organizationAddress, organizationAddress1);
     }
 
-    
 
     internal async Task<Address> CreateRegiment_Use_NotAdmin()
     {
@@ -891,7 +913,7 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
                 .NonIndexed).RegimentAddress;
         return regimentAddress;
     }
-    
+
     internal ACS0Container.ACS0Stub GetContractZeroTester(
         ECKeyPair keyPair)
     {

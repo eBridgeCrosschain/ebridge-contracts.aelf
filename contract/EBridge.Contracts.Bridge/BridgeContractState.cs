@@ -19,23 +19,23 @@ public partial class BridgeContractState : ContractState
     /// Contract admin.
     /// </summary>
     public SingletonState<Address> Admin { get; set; }
-    
+
     /// <summary>
     /// Method fee controller.
     /// </summary>
     public SingletonState<AuthorityInfo> MethodFeeController { get; set; }
-    
+
 
     /// <summary>
     /// Is contract pause (true->pause/false=>start).
     /// </summary>
     public SingletonState<bool> IsContractPause { get; set; }
-    
+
     /// <summary>
     /// Organization address who can restart contract.
     /// </summary>
     public SingletonState<Address> RestartOrganizationAddress { get; set; }
-    
+
     /// <summary>
     /// Controller who can pause the contract.
     /// </summary>
@@ -56,8 +56,8 @@ public partial class BridgeContractState : ContractState
     /// <summary>
     /// Space Id -> Receipt Count
     /// </summary>
-    public MappedState<Hash,long> SpaceReceiptCountMap { get; set; }
-    
+    public MappedState<Hash, long> SpaceReceiptCountMap { get; set; }
+
     /// <summary>
     /// Swap Id -> Space Id
     /// </summary>
@@ -71,14 +71,14 @@ public partial class BridgeContractState : ContractState
     /// <summary>
     /// Swap Id -> Swap Info
     /// </summary>
-    public MappedState<Hash,SwapInfo> SwapInfo { get; set; } 
-    
+    public MappedState<Hash, SwapInfo> SwapInfo { get; set; }
+
     /// <summary>
     /// Swap Id -> Receipt Id -> SwapAmounts(receiver + received amount)
     /// </summary>
     public MappedState<Hash, string, SwapAmounts> Ledger { get; set; }
-    
-    
+
+
     /// <summary>
     /// Swap Id -> Receipt Id -> Receipt Info
     /// </summary>
@@ -88,19 +88,18 @@ public partial class BridgeContractState : ContractState
     /// Swap Id -> Symbol -> SwapPairInfo
     /// </summary>
     public MappedState<Hash, string, SwapPairInfo> SwapPairInfoMap { get; set; }
-    
+
     /// <summary>
     /// Swap Id -> Tree index
     /// </summary>
     public MappedState<Hash, long> RecordedTreeLeafIndex { get; set; }
-    
+
     /// <summary>
     /// receipt hash ->
     /// true : already record
     /// false : not record
     /// </summary>
     public MappedState<Hash, bool> ReceiptHashRecordStatus { get; set; }
-
 
     #endregion
 
@@ -110,52 +109,54 @@ public partial class BridgeContractState : ContractState
     /// payment
     /// </summary>
     public SingletonState<long> QueryPayment { get; set; }
-    
+
     /// <summary>
     /// chain id -> token white list
     /// </summary>
-    public MappedState<string,TokenSymbolList> ChainTokenWhitelist { get; set; }
+    public MappedState<string, TokenSymbolList> ChainTokenWhitelist { get; set; }
 
     /// <summary>
     /// ReceiptId Token(chainId + symbol) -> Receipt count
     /// </summary>
-    public MappedState<Hash,long> ReceiptCountMap { get; set; }
+    public MappedState<Hash, long> ReceiptCountMap { get; set; }
 
     /// <summary>
     /// Receipt Id -> Receipt
     /// </summary>
-    public MappedState<string , Receipt> ReceiptMap { get; set; }
+    public MappedState<string, Receipt> ReceiptMap { get; set; }
 
     /// <summary>
     /// ReceiptId(token) -> {chain_id + symbol} 
     /// </summary>
     public MappedState<Hash, ReceiptIdInfo> ReceiptIdInfoMap { get; set; }
-    
-    
+
+
     // To Others Chain Fee.
     /// <summary>
     /// The controller can change fee floating ratio.
     /// </summary>
     public SingletonState<AuthorityInfo> FeeRatioController { get; set; }
+
     /// <summary>
     /// ChainId -> Gas Fee
     /// </summary>
-    public MappedState<string,long> GasLimit { get; set; }
+    public MappedState<string, long> GasLimit { get; set; }
+
     /// <summary>
     ///ChainId -> Gas Price
     /// </summary>
-    public MappedState<string,long> GasPrice { get; set; }
-    
+    public MappedState<string, long> GasPrice { get; set; }
+
     /// <summary>
     /// ChainId -> PriceRatio （ETH/ELF）
     /// </summary>
     public MappedState<string, long> PriceRatio { get; set; }
-    
+
     /// <summary>
     /// ChainId -> Last PriceRatio（ETH/ELF）
     /// </summary>
-    public MappedState<string,long> PrePriceRatio { get; set; }
-    
+    public MappedState<string, long> PrePriceRatio { get; set; }
+
     /// <summary>
     /// ChainId -> Fee floating ratio (1 -> default / 1.2 -> 20% extra fee)
     /// </summary>
@@ -169,13 +170,13 @@ public partial class BridgeContractState : ContractState
     public SingletonState<long> TransactionFee { get; set; }
 
     #endregion
-    
+
     /// <summary>
     /// Daily receipt limit per token.Refresh daily at 0:00
     /// token symbol -> target chain -> { amount,refresh time }
     /// </summary>
     public MappedState<string, string, DailyLimitTokenInfo> ReceiptDailyLimit { get; set; }
-    
+
     /// <summary>
     /// Daily swap limit per token.Refresh daily at 0:00
     /// swap id -> { amount,refresh time }
@@ -186,11 +187,13 @@ public partial class BridgeContractState : ContractState
     /// token symbol -> target chain -> token bucket
     /// </summary>
     public MappedState<string, string, TokenBucket> ReceiptTokenBucketInfo { get; set; }
-    
+
     /// <summary>
     /// swap id -> token bucket
     /// </summary>
     public MappedState<Hash, TokenBucket> SwapTokenBucketInfo { get; set; }
-    
+
     public SingletonState<TonConfig> TonConfig { get; set; }
+    public MappedState<string, CrossChainConfig> CrossChainConfigMap { get; set; }
+    public MappedState<int, string> CrossChainIdMap { get; set; }
 }

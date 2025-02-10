@@ -5,6 +5,7 @@ using AElf.ContractTestBase;
 using AElf.ContractTestBase.ContractTestKit;
 using AElf.Kernel.SmartContract;
 using AElf.Kernel.SmartContract.Application;
+using AetherLink.Contracts.Ramp;
 using EBridge.Contracts.Bridge.ContractInitializationProvider;
 using EBridge.Contracts.Oracle;
 using EBridge.Contracts.Regiment;
@@ -53,6 +54,10 @@ public class BridgeContractTestModule : MainChainDAppContractTestModule
             {
                 new ReceiptMakerContractInitializationProvider().ContractCodeName,
                 File.ReadAllBytes(typeof(TestContract.ReceiptMaker.ReceiptMakerContract).Assembly.Location)
+            },
+            {
+                new RampContractInitializationProvider().ContractCodeName,
+                File.ReadAllBytes(typeof(RampContract).Assembly.Location)
             },
             {
                 new OracleContractInitializationProvider().ContractCodeName,

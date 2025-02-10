@@ -37,6 +37,7 @@ service BridgeContractImpl {
   rpc SetRampTokenSwapConfig(TokenSwapConfig) returns (google.protobuf.Empty){}
   
   rpc SetTonConfig(SetTonConfigInput) returns (google.protobuf.Empty){}
+  rpc SetCrossChainConfig(SetCrossChainConfigInput) returns (google.protobuf.Empty){}
   
   rpc GetTokenPoolContract(google.protobuf.Empty) returns (aelf.Address) {
     option (aelf.is_view) = true;
@@ -70,6 +71,9 @@ service BridgeContractImpl {
     option (aelf.is_view) = true;
   }
   rpc GetTonConfig(google.protobuf.Empty) returns (TonConfig) {
+    option (aelf.is_view) = true;
+  }
+  rpc GetCrossChainConfig(google.protobuf.StringValue) returns (CrossChainConfig) {
     option (aelf.is_view) = true;
   }
 }
@@ -185,6 +189,17 @@ message TokenSwapInfo {
 
 message SetTonConfigInput {
     TonConfig ton_config = 1;
+}
+
+message SetCrossChainConfigInput {
+    string chain_id = 1;
+    string contract_address = 2;
+    int32 chain_id_number = 3;
+}
+
+message CrossChainConfig {
+  string contract_address = 1;
+  int32 chain_id = 2;
 }
 
 message TonConfig {

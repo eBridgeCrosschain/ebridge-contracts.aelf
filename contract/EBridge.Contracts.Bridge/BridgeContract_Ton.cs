@@ -19,6 +19,21 @@ public partial class BridgeContract
         return new Empty();
     }
 
+    public override Empty SetCrossChainConfig(SetCrossChainConfigInput input)
+    {
+        Assert(Context.Sender == State.Admin.Value, "No permission.");
+        Assert(!string.IsNullOrEmpty(input.ChainId), "Invalid chain.");
+        Assert(!string.IsNullOrEmpty(input.ContractAddress), "Invalid contract address.");
+
+        State.CrossChainIdMap[input.ChainIdNumber] = input.ChainId;
+        State.CrossChainConfigMap[input.ChainId] = new()
+        {
+            ContractAddress = input.ContractAddress,
+            ChainId = input.ChainIdNumber
+        };
+        return new Empty();
+    }
+
     public override Empty SetRampContract(Address input)
     {
         Assert(IsAddressValid(input), "Invalid input.");
@@ -60,17 +75,10 @@ public partial class BridgeContract
     {
         Assert(!State.IsContractPause.Value, "Contract is paused.");
         Assert(Context.Sender == State.RampContract.Value, "No permission.");
-        var tonConfig = State.TonConfig.Value;
-        Assert(input.SourceChainId > 0 && input.SourceChainId == tonConfig.TonChainId, "Invalid source chain id.");
-        Assert(input.TargetChainId > 0 && input.TargetChainId == Context.ChainId, "Invalid target chain id.");
-        var sender = input.Sender?.ToBase64();
-        Assert(sender != null && sender == tonConfig.TonContractAddress, "Invalid sender.");
-        var receiver = Address.Parser.ParseFrom(input.Receiver);
-        Assert(receiver != null && receiver == Context.Self, "Invalid receiver.");
-        Assert(input.Message != null, "Invalid message.");
+        ValidateCrossChainMetaData(input);
+
         var leafHashValue = EncodeMessageAndVerification(input.Message, out var amount, out var targetAddress,
             out var receiptIndex, out var receiptIdHash);
-
         var tokenAmount = input.TokenAmount;
         var swapId = Hash.LoadFromHex(tokenAmount.SwapId);
         var targetContractAddress = tokenAmount.TargetContractAddress;
@@ -84,6 +92,20 @@ public partial class BridgeContract
         PerformTransferToken(swapId, targetAddress, amount, receiptId);
 
         return new Empty();
+    }
+
+    private void ValidateCrossChainMetaData(ForwardMessageInput input)
+    {
+        Assert(input.TargetChainId > 0 && input.TargetChainId == Context.ChainId, "Invalid target chain id.");
+        var receiver = Address.Parser.ParseFrom(input.Receiver);
+        Assert(receiver != null && receiver == Context.Self, "Invalid receiver.");
+        Assert(input.Message != null, "Invalid message.");
+        var chainConfigStr = State.CrossChainIdMap[(int)input.TargetChainId];
+        var chainConfig = State.CrossChainConfigMap[chainConfigStr];
+        Assert(chainConfig != null, "Not supported chain id.");
+        Assert(input.SourceChainId > 0 && input.SourceChainId == chainConfig.ChainId, "Invalid source chain id.");
+        var sender = input.Sender?.ToBase64();
+        Assert(sender != null && sender == chainConfig.ContractAddress, "Invalid sender.");
     }
 
     private Hash EncodeMessageAndVerification(ByteString message, out long amount, out Address targetAddress,
@@ -145,6 +167,9 @@ public partial class BridgeContract
     {
         return State.TonConfig.Value;
     }
+
+    public override CrossChainConfig GetCrossChainConfig(StringValue input) =>
+        State.CrossChainConfigMap[input.Value];
 
     public override Address GetRampContract(Empty input)
     {

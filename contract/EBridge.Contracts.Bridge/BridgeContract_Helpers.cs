@@ -15,6 +15,11 @@ namespace EBridge.Contracts.Bridge
 {
     public partial class BridgeContract
     {
+        private const string ArraySuffix = "[]";
+        private const string Bytes32 = "bytes32";
+        private const string Bytes32Array = Bytes32 + ArraySuffix;
+        private const string Uint256 = "uint256";
+
         private bool IsAddressValid(Address input)
         {
             return input != null && !input.Value.IsNullOrEmpty();
@@ -202,8 +207,8 @@ namespace EBridge.Contracts.Bridge
             var fee = decimal.Round((transactionFee / 1000000000) * priceRatioDecimal * feeRatio, PriceDecimals);
             return (long)decimal.Ceiling(fee) * 100000000;
         }
-        
-        private long CalculateTransactionFeeForTon(long priceRatio,long tonFee)
+
+        private long CalculateTransactionFeeForTon(long priceRatio, long tonFee)
         {
             var priceRatioDecimal = (decimal)priceRatio / 100000000;
             var fee = decimal.Round(((decimal)tonFee / 1000000000) * priceRatioDecimal, PriceDecimals);
@@ -383,6 +388,128 @@ namespace EBridge.Contracts.Bridge
         private long CalculateRefill(long capacity, long currentTokenAmount, long timeDiff, long rate)
         {
             return Math.Min(capacity, currentTokenAmount.Add(rate.Mul(timeDiff)));
+        }
+
+        #endregion
+
+        #region report
+
+        private byte[] GenerateEvmRawReport(string receiptId, string receiptHash, string receiptData)
+        {
+            var data = new List<object>();
+            var observations = new List<byte>();
+            Assert(long.TryParse(receiptId.Split(".").Last(), out var receiptIndex), "Incorrect receipt index.");
+            observations.AddRange(FillObservationBytes(ConvertLong(receiptIndex).ToArray()));
+            observations.AddRange(FillObservationBytes(ByteStringHelper.FromHexString(receiptHash).ToByteArray()));
+
+            var valueArray = receiptData.Split("-");
+            Assert(long.TryParse(valueArray.First(), out var value), "Failed to parse.");
+            observations.AddRange(FillObservationBytes(ConvertLong(value).ToArray()));
+            for (var j = 1; j < valueArray.Length; j++)
+            {
+                observations.AddRange(FillObservationBytes(ByteStringHelper
+                    .FromHexString(valueArray[j]).ToByteArray()));
+            }
+
+            observations.AddRange(FillObservationBytes(ByteStringHelper.FromHexString(receiptHash).ToByteArray()));
+            data.Add(observations);
+            return SerializeReport(data, Bytes32Array).ToArray();
+        }
+
+        private List<byte> FillObservationBytes(byte[] result)
+        {
+            if (result.Length == 0)
+                return GetByteListWithCapacity(SlotByteSize);
+            var totalBytesLength = result.Length.Sub(1).Div(SlotByteSize).Add(1);
+            var ret = GetByteListWithCapacity(totalBytesLength.Mul(SlotByteSize));
+            // Pad with zeros in front until less than 32 bytes.
+            BytesCopy(result, 0, ret, SlotByteSize - result.Length, result.Length);
+            return ret;
+        }
+
+        private List<byte> SerializeReport(List<object> data, params string[] dataType)
+        {
+            var dataLength = (long)dataType.Length;
+            Assert(dataLength == data.Count, "Invalid data length.");
+            var result = new List<byte>();
+            var currentIndex = dataLength;
+            var lazyData = new List<byte>();
+            for (var i = 0; i < dataLength; i++)
+            {
+                var typeStrLen = dataType[i].Length;
+                if (string.CompareOrdinal(dataType[i].Substring(typeStrLen.Sub(2), 2), ArraySuffix) == 0)
+                {
+                    var typePrefix = dataType[i].Substring(0, typeStrLen.Sub(2));
+                    long dataPosition;
+                    if (data[i] is IEnumerable<long> dataList)
+                    {
+                        long arrayLength = dataList.Count();
+                        dataPosition = currentIndex.Mul(SlotByteSize);
+                        result.AddRange(ConvertLong(dataPosition));
+                        currentIndex = currentIndex.Add(arrayLength).Add(1);
+                        lazyData.AddRange(ConvertLong(arrayLength));
+                        lazyData.AddRange(ConvertLongArray(typePrefix, dataList));
+                        continue;
+                    }
+
+                    var bytesList = data[i] as List<byte>;
+                    Assert(bytesList != null, "invalid observations");
+                    var bytes32Count = bytesList.Count % SlotByteSize == 0
+                        ? bytesList.Count.Div(SlotByteSize)
+                        : bytesList.Count.Div(SlotByteSize).Add(1);
+                    dataPosition = currentIndex.Mul(SlotByteSize);
+                    result.AddRange(ConvertLong(dataPosition));
+                    currentIndex = currentIndex.Add(bytes32Count).Add(1);
+                    lazyData.AddRange(ConvertLong(bytes32Count));
+                    lazyData.AddRange(ConvertBytes32Array(bytesList, bytes32Count.Mul(SlotByteSize)));
+                    continue;
+                }
+
+                if (dataType[i] == Bytes32)
+                {
+                    result.AddRange(ConvertBytes32(data[i]));
+                }
+                else if (dataType[i] == Uint256)
+                {
+                    result.AddRange(ConvertLong((long)data[i]));
+                }
+            }
+
+            result.AddRange(lazyData);
+            return result;
+        }
+
+        private List<byte> ConvertLongArray(string dataType, IEnumerable<long> dataList)
+        {
+            if (dataType != Uint256)
+                return null;
+            var dataBytes = new List<byte>();
+            foreach (var data in dataList)
+            {
+                dataBytes.AddRange(ConvertLong(data));
+            }
+
+            return dataBytes;
+        }
+
+        private List<byte> ConvertBytes32Array(List<byte> data, int dataSize)
+        {
+            if (dataSize == 0)
+            {
+                return new List<byte>();
+            }
+
+            var target = GetByteListWithCapacity(dataSize);
+            BytesCopy(data, 0, target, 0, data.Count);
+            return target;
+        }
+
+        private List<byte> ConvertBytes32(object data)
+        {
+            var dataBytes = data as List<byte>;
+            Assert(dataBytes.Count == SlotByteSize, "Invalid bytes32 data.");
+
+            return dataBytes;
         }
 
         #endregion
