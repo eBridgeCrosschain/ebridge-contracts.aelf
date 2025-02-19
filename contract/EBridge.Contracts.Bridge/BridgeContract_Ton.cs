@@ -100,7 +100,7 @@ public partial class BridgeContract
         var receiver = Address.Parser.ParseFrom(input.Receiver);
         Assert(receiver != null && receiver == Context.Self, "Invalid receiver.");
         Assert(input.Message != null, "Invalid message.");
-        var chainConfigStr = State.CrossChainIdMap[(int)input.TargetChainId];
+        var chainConfigStr = State.CrossChainIdMap[(int)input.SourceChainId];
         var chainConfig = State.CrossChainConfigMap[chainConfigStr];
         Assert(chainConfig != null, "Not supported chain id.");
         Assert(input.SourceChainId > 0 && input.SourceChainId == chainConfig.ChainId, "Invalid source chain id.");
