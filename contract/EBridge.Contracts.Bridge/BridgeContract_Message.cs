@@ -11,9 +11,12 @@ public partial class BridgeContract
 {
     public const int SlotByteSize = 32;
     public const int TonAddressByteSize = 36;
+    public const int TimeStampByteSize = 8;
+
 
     private List<byte> GenerateMessage(Hash receiptIdToken, long amount, string targetAddress, long receiptIndex)
     {
+        var timestamp = Context.CurrentBlockTime.Seconds;
         var targetAddressToBase64 = targetAddress.Replace('-', '+').Replace('_', '/');
         var receiptHash =
             CalculateReceiptHashForTon(receiptIdToken, amount, targetAddressToBase64, receiptIndex);
@@ -24,6 +27,7 @@ public partial class BridgeContract
         lazyData.AddRange(FillObservationBytes(receiptHash.ToByteArray(), SlotByteSize));
         lazyData.AddRange(FillObservationBytes(ByteString.FromBase64(targetAddressToBase64).ToByteArray(),
             TonAddressByteSize));
+        lazyData.AddRange(FillObservationBytes(ConvertLong(timestamp,TimeStampByteSize).ToArray(), TimeStampByteSize));
         return lazyData;
     }
 

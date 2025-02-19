@@ -236,14 +236,14 @@ namespace EBridge.Contracts.Bridge
             return HashHelper.ConcatAndCompute(receiptIdHash, amountHash, addressHash);
         }
 
-        private IEnumerable<byte> ConvertLong(long data)
+        private IEnumerable<byte> ConvertLong(long data,int byteSize = 32)
         {
             var b = data.ToBytes();
 
-            if (b.Length == 32)
+            if (b.Length == byteSize)
                 return b;
-            var diffCount = 32.Sub(b.Length);
-            var longDataBytes = GetByteListWithCapacity(32);
+            var diffCount = byteSize.Sub(b.Length);
+            var longDataBytes = GetByteListWithCapacity(byteSize);
             byte c = 0;
             if (data < 0)
             {
