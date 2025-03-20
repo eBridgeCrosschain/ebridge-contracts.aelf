@@ -15,11 +15,10 @@ import "google/protobuf/timestamp.proto";
 
 // the name of the C# namespace in which the contract code will be,
 
-message TokenAmount {
-    string swap_id = 1;
-    int64 target_chain_id = 2;
-    string target_contract_address = 3;
-    string token_address = 4;
-    string origin_token = 5;
-    int64 amount = 6;
+message TokenTransferMetadata {
+    int64 target_chain_id = 1;
+    string token_address = 2;
+    string symbol = 3;
+    int64 amount = 4;
+    bytes extra_data = 5;
 }

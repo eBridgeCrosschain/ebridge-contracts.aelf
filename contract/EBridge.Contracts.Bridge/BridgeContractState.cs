@@ -192,8 +192,10 @@ public partial class BridgeContractState : ContractState
     /// swap id -> token bucket
     /// </summary>
     public MappedState<Hash, TokenBucket> SwapTokenBucketInfo { get; set; }
-
-    public SingletonState<TonConfig> TonConfig { get; set; }
+    
+    /// <summary>
+    ///chain id name -> config
+    /// </summary>
     public MappedState<string, CrossChainConfig> CrossChainConfigMap { get; set; }
     public MappedState<int, string> CrossChainIdMap { get; set; }
 }

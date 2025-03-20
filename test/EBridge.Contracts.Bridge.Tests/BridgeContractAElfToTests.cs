@@ -45,6 +45,11 @@ public partial class BridgeContractTests : BridgeContractTestBase
                 },
                 new ChainToken
                 {
+                    ChainId = "Sepolia",
+                    Symbol = "ELF"
+                },
+                new ChainToken
+                {
                     ChainId = "Kovan",
                     Symbol = "USDT"
                 },
@@ -191,8 +196,8 @@ public partial class BridgeContractTests : BridgeContractTestBase
             {
                 Symbol = "ELF",
                 Amount = 100_00000000,
-                TargetAddress = "0x643C7DCAd9321b36de85FEaC19763BE492dB5a04",
-                TargetChainId = "Ethereum"
+                TargetAddress = "0xa2263d5c14f9c711a8b3c4aa2fd522efdb5d5e44",
+                TargetChainId = "Sepolia"
             });
             {
                 var dailyLimit = await BridgeContractImplStub.GetReceiptDailyLimit.CallAsync(
@@ -431,27 +436,27 @@ public partial class BridgeContractTests : BridgeContractTestBase
         var time = await SetLimit();
         var creatReceiptTime = TimestampHelper.GetUtcNow().ToDateTime();
         await InitialSetGas();
-        var input = new SetTonConfigInput
-        {
-            TonConfig = new TonConfig
-            {
-                TonChainId = 1101,
-                TonContractAddress = "EQAOADR4NzUEVdZRLrq/Qg2G5mrXRZkX/NXLm/uW9W4Nqok4",
-                TonFee = 30000000
-            }
-        };
-        var res = await BridgeContractImplStub.SetTonConfig.SendAsync(input);
         await BridgeContractImplStub.SetCrossChainConfig.SendAsync(new()
         {
             ChainId = "Ton",
-            ContractAddress = "EQAOADR4NzUEVdZRLrq/Qg2G5mrXRZkX/NXLm/uW9W4Nqok4",
-            ChainIdNumber = 1101
+            ContractAddress = "kQDS511tzowt2x1xyIDgpglhaz6wG9uVP2t4BixFTViYQoM/",
+            ChainIdNumber = 1100,
+            ChainType = ChainType.Tvm,
+            ContractAddressForReceive = "kQDS511tzowt2x1xyIDgpglhaz6wG9uVP2t4BixFTViYQoM/"
         });
         var executionResult = await BridgeContractStub.CreateReceipt.SendAsync(new CreateReceiptInput
         {
             Symbol = "ELF",
             Amount = 1000000000000,
-            TargetAddress = "kQDYnId__pLw2tqEK6TQs30lMYWECEX-bwpNrwfFGpr2dpU8",
+            TargetAddress = "EQBvA4zKQaQOjwu7HbyHiWJU7xQyzV4hre1YXq2PzVR2UTyT",
+            TargetChainId = "Ton",
+            TargetChainType = 1
+        });
+        await BridgeContractStub.CreateReceipt.SendAsync(new CreateReceiptInput
+        {
+            Symbol = "ELF",
+            Amount = 3000000000000,
+            TargetAddress = "EQBvA4zKQaQOjwu7HbyHiWJU7xQyzV4hre1YXq2PzVR2UTyT",
             TargetChainId = "Ton",
             TargetChainType = 1
         });
@@ -2412,22 +2417,24 @@ public partial class BridgeContractTests : BridgeContractTestBase
     {
         await BridgeContractImplStub.SetCrossChainConfig.SendAsync(new()
         {
-            ChainId = "Ethereum",
-            ContractAddress = "EQAOADR4NzUEVdZRLrq/Qg2G5mrXRZkX/NXLm/uW9W4Nqok4",
-            ChainIdNumber = 1
+            ChainId = "Sepolia",
+            ContractAddress = "0x3c37E0A09eAFEaA7eFB57107802De1B28A6f5F07",
+            ChainIdNumber = 11155111,
+            ChainType = ChainType.Evm,
+            ContractAddressForReceive = "0x8243C4927257ef20dbF360b012C9f72f9A6427c3"
         });
-        await BridgeContractImplStub.SetCrossChainConfig.SendAsync(new()
-        {
-            ChainId = "BSC",
-            ContractAddress = "EQAOADR4NzUEVdZRLrq/Qg2G5mrXRZkX/NXLm/uW9W4Nqok4",
-            ChainIdNumber = 3
-        });
-        await BridgeContractImplStub.SetCrossChainConfig.SendAsync(new()
-        {
-            ChainId = "Ton",
-            ContractAddress = "EQAOADR4NzUEVdZRLrq/Qg2G5mrXRZkX/NXLm/uW9W4Nqok4",
-            ChainIdNumber = 1101
-        });
+        // await BridgeContractImplStub.SetCrossChainConfig.SendAsync(new()
+        // {
+        //     ChainId = "BSC",
+        //     ContractAddress = "EQAOADR4NzUEVdZRLrq/Qg2G5mrXRZkX/NXLm/uW9W4Nqok4",
+        //     ChainIdNumber = 3
+        // });
+        // await BridgeContractImplStub.SetCrossChainConfig.SendAsync(new()
+        // {
+        //     ChainId = "Ton",
+        //     ContractAddress = "EQAOADR4NzUEVdZRLrq/Qg2G5mrXRZkX/NXLm/uW9W4Nqok4",
+        //     ChainIdNumber = 1101
+        // });
     }
 
     #endregion

@@ -126,7 +126,8 @@ public partial class BridgeContract
         var fee = 0L;
         if (State.GasLimit[input.Value] == 0)
         {
-            fee = CalculateTransactionFeeForTon(State.PriceRatio[input.Value], State.TonConfig.Value.TonFee);
+            var tonFee = State.CrossChainConfigMap[input.Value]?.Fee;
+            fee = CalculateTransactionFeeForTon(State.PriceRatio[input.Value], tonFee ?? 0);
         }
         else
         {

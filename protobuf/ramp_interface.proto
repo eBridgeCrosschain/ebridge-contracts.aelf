@@ -21,7 +21,7 @@ message ForwardMessageInput {
     bytes sender = 3;
     bytes receiver = 4;
     bytes message = 5;
-    ramp.TokenAmount token_amount = 6;
+    ramp.TokenTransferMetadata token_transfer_metadata = 6;
 }
 
 message RateLimiterTokenBucket {

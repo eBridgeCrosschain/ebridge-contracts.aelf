@@ -10,6 +10,7 @@ using EBridge.Contracts.Oracle;
 using EBridge.Contracts.TokenPool;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
+using Ramp;
 using Shouldly;
 using Xunit;
 using CallbackInfo = EBridge.Contracts.Oracle.CallbackInfo;
@@ -1641,4 +1642,18 @@ public partial class BridgeContractTests
     }
 
     #endregion
+
+    [Fact]
+    public async Task ForwardMessage()
+    {
+        var result = await BridgeContractImplStub.ForwardMessage.SendAsync(new ForwardMessageInput
+        {
+            Message = ByteStringHelper.FromHexString("0x0000000000000000000000000000000000000000000000000000000000000001ec2254e74a111a096e62efecdec614231ae7b08851350c8158cf213adb338f0100000000000000000000000000000000000000000000000002c68af0bb14000049c48aa06f80f45c095846c7fa9a3b9cbf58d50646774fc47ea2a09171739a22ccd9a84c51904e45da72957b70e2e86c9d8796010d9dd627848645ca06f43cf7"),
+            TokenTransferMetadata = new TokenTransferMetadata
+            {
+                ExtraData = ByteString.FromBase64("a1/8yphKQOmShGW1aQj6uHsQB7kB4aYgUeSGEgJLrCs=")
+                    
+            }
+        });
+    }
 }

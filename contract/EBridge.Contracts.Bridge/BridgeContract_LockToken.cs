@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using AElf;
 using AElf.Contracts.MultiToken;
@@ -107,36 +109,19 @@ public partial class BridgeContract
 
         State.ReceiptMap[receiptId] = receipt;
 
-        long nativeTokenFee = 0;
-        var message = ByteString.Empty;
         switch (input.TargetChainType)
         {
             case 0:
-                if (!decimal.TryParse(State.FeeFloatingRatio[input.TargetChainId], out var floatingRatio))
-                {
-                    floatingRatio = 1;
-                }
-
-                nativeTokenFee = CalculateTransactionFee(State.GasLimit[input.TargetChainId],
-                    State.GasPrice[input.TargetChainId], State.PriceRatio[input.TargetChainId], floatingRatio);
-                var receiptHash = CalculateReceiptHash(receiptId, receipt.Amount, receipt.TargetAddress).ToHex();
-                var receiptData = $"{receipt.Amount}-{receipt.TargetAddress}-{receiptIdToken.ToHex()}";
-                var evmMessage = GenerateEvmRawReport(receiptId, receiptHash, receiptData);
-                message = ByteString.CopyFrom(evmMessage.ToArray());
+                DealWithEvmChain(input.TargetChainId, receiptIdToken, receipt.Amount, receipt.TargetAddress,
+                    receiptCount, input.Symbol);
                 break;
             case 1:
-                var config = State.TonConfig.Value;
-                nativeTokenFee = CalculateTransactionFeeForTon(State.PriceRatio[input.TargetChainId], config.TonFee);
-                var tonMessage = GenerateMessage(receiptIdToken, receipt.Amount, receipt.TargetAddress, receiptCount);
-                message = ByteString.CopyFrom(tonMessage.ToArray());
+                DealWithTonChain(input.TargetChainId, receiptIdToken, receipt.Amount, receipt.TargetAddress,
+                    receiptCount, input.Symbol);
                 break;
             default:
                 throw new AssertionException("Invalid chain type.");
         }
-
-        State.TransactionFee.Value = State.TransactionFee.Value.Add(nativeTokenFee);
-        TransferFee(DefaultFeeSymbol, nativeTokenFee, Context.Sender, Context.Self);
-        StartRampRequest(input.TargetChainId, message, receipt.Symbol);
 
         Context.Fire(new ReceiptCreated
         {
@@ -151,19 +136,54 @@ public partial class BridgeContract
         return new Empty();
     }
 
-    private void StartRampRequest(string chainId, ByteString message, string symbol)
+    private void DealWithTonChain(string chainId, Hash receiptIdToken, long amount, string targetAddress,
+        long receiptCount,
+        string symbol)
     {
         var config = State.CrossChainConfigMap[chainId];
+        var nativeTokenFee = CalculateTransactionFeeForTon(State.PriceRatio[chainId], config.Fee);
+        State.TransactionFee.Value = State.TransactionFee.Value.Add(nativeTokenFee);
+        TransferFee(DefaultFeeSymbol, nativeTokenFee, Context.Sender, Context.Self);
+        var message = GenerateMessage(receiptIdToken, amount, targetAddress, receiptCount);
+        StartRampRequest(chainId, ByteString.CopyFrom(message.ToArray()), symbol, amount);
+    }
+
+    private void DealWithEvmChain(string chainId, Hash receiptIdToken, long amount, string targetAddress,
+        long receiptCount, string symbol)
+    {
+        if (!decimal.TryParse(State.FeeFloatingRatio[chainId], out var floatingRatio))
+        {
+            floatingRatio = 1;
+        }
+
+        var nativeTokenFee = CalculateTransactionFee(State.GasLimit[chainId],
+            State.GasPrice[chainId],
+            State.PriceRatio[chainId], floatingRatio);
+        State.TransactionFee.Value = State.TransactionFee.Value.Add(nativeTokenFee);
+        TransferFee(DefaultFeeSymbol, nativeTokenFee, Context.Sender, Context.Self);
+        var message = GenerateEvmMessage(receiptIdToken, amount, targetAddress, receiptCount);
+        StartRampRequest(chainId, ByteString.CopyFrom(message.ToArray()), symbol, amount);
+    }
+
+    private void StartRampRequest(string chainId, ByteString message, string symbol, long amount)
+    {
+        var config = State.CrossChainConfigMap[chainId];
+        var receiver = config.ChainType switch
+        {
+            ChainType.Evm => ByteStringHelper.FromHexString(config.ContractAddress),
+            ChainType.Tvm => ByteString.FromBase64(config.ContractAddress),
+            _ => throw new AssertionException("Invalid chain type.")
+        };
         State.RampContract.Send.Send(new SendInput
         {
             TargetChainId = config.ChainId,
-            Receiver = ByteString.FromBase64(config.ContractAddress),
+            Receiver = receiver,
             Message = message,
-            TokenAmount = new TokenAmount
+            TokenTransferMetadata = new TokenTransferMetadata
             {
                 TargetChainId = config.ChainId,
-                TargetContractAddress = config.ContractAddress,
-                OriginToken = symbol
+                Symbol = symbol,
+                Amount = amount
             }
         });
     }

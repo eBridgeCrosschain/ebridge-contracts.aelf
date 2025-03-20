@@ -25,23 +25,21 @@ service BridgeContractImpl {
   option (aelf.base) = "receipt_maker.proto";
   option (aelf.base) = "bridge_contract.proto";
   option (aelf.base) = "ramp_interface.proto";
-  
+
   rpc SetReceiptDailyLimit (SetReceiptDailyLimitInput) returns (google.protobuf.Empty) {}
   rpc SetSwapDailyLimit (SetSwapDailyLimitInput) returns (google.protobuf.Empty) {}
   rpc ConfigReceiptTokenBucket (ConfigReceiptTokenBucketInput) returns (google.protobuf.Empty) {}
   rpc ConfigSwapTokenBucket (ConfigSwapTokenBucketInput) returns (google.protobuf.Empty) {}
   rpc SetTokenPoolContract(aelf.Address) returns (google.protobuf.Empty){}
-  rpc AssetsMigrator(AssetsMigratorInput) returns (google.protobuf.Empty){}
-  
+
   rpc SetRampContract(aelf.Address) returns (google.protobuf.Empty){}
   rpc SetRampTokenSwapConfig(TokenSwapConfig) returns (google.protobuf.Empty){}
-  
-  rpc SetTonConfig(SetTonConfigInput) returns (google.protobuf.Empty){}
+
   rpc SetCrossChainConfig(SetCrossChainConfigInput) returns (google.protobuf.Empty){}
-  
+
   rpc GetTokenPoolContract(google.protobuf.Empty) returns (aelf.Address) {
     option (aelf.is_view) = true;
-  } 
+  }
 
   rpc GetReceiptDailyLimit (GetReceiptDailyLimitInput) returns (DailyLimitTokenInfo) {
     option (aelf.is_view) = true;
@@ -66,11 +64,8 @@ service BridgeContractImpl {
   rpc GetSwapMinWaitTimeInSeconds (GetSwapMinWaitTimeInSecondsInput) returns (google.protobuf.Int64Value){
     option (aelf.is_view) = true;
   }
-  
+
   rpc GetRampContract(google.protobuf.Empty) returns (aelf.Address) {
-    option (aelf.is_view) = true;
-  }
-  rpc GetTonConfig(google.protobuf.Empty) returns (TonConfig) {
     option (aelf.is_view) = true;
   }
   rpc GetCrossChainConfig(google.protobuf.StringValue) returns (CrossChainConfig) {
@@ -148,10 +143,6 @@ message ConfigSwapTokenBucketInput {
   repeated SwapTokenBucketConfig swap_token_bucket_configs = 1;
 }
 
-message AssetsMigratorInput {
-  repeated aelf.Hash swapId = 1;
-  aelf.Address provider = 2;
-}
 
 message AssetsInfo {
   aelf.Hash swapId = 1;
@@ -180,33 +171,34 @@ message TokenSwapList {
 
 message TokenSwapInfo {
   int64 target_chain_id = 1;
-  string target_contract_address = 2;
-  string token_address = 3;
-  string origin_token = 4;
-  string swap_id = 5;
-  int64 source_chain_id = 6;
-}
-
-message SetTonConfigInput {
-    TonConfig ton_config = 1;
+  int64 source_chain_id = 2;
+  string receiver = 3;
+  string token_address = 4;
+  string symbol = 5;
+  bytes extra_data = 6;
 }
 
 message SetCrossChainConfigInput {
-    string chain_id = 1;
-    string contract_address = 2;
-    int32 chain_id_number = 3;
+  string chain_id = 1;
+  string contract_address = 2;  // bridge out
+  int32 chain_id_number = 3;
+  ChainType chain_type = 4;
+  string contract_address_for_receive = 5; // bridge in
 }
 
 message CrossChainConfig {
   string contract_address = 1;
   int32 chain_id = 2;
+  int64 fee = 3;
+  ChainType chain_type = 4;
+  string contract_address_for_receive = 5;
 }
 
-message TonConfig {
-  string ton_contract_address = 1;
-  int32 ton_chain_id = 2;
-  int64 ton_fee = 3;
+enum ChainType {
+  EVM = 0;
+  TVM = 1;
 }
+
 
 message TestEvent {
   option (aelf.is_event) = true;

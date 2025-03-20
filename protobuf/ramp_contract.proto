@@ -71,7 +71,7 @@ message CommitInput {
 message Report {
     ReportContext report_context = 1;
     bytes message = 2;
-    ramp.TokenAmount token_amount = 3;
+    ramp.TokenTransferMetadata token_amount = 3;
 }
 
 message ReportContext {
@@ -86,7 +86,7 @@ message SendInput {
     int64 target_chain_id = 1;
     bytes receiver = 2;
     bytes message = 3;
-    ramp.TokenAmount token_amount = 4;
+    ramp.TokenTransferMetadata token_transfer_metadata = 4;
 }
 
 message MessageInfo {
@@ -96,7 +96,7 @@ message MessageInfo {
     bytes sender = 4;
     bytes receiver = 5;
     bytes message = 6;
-    ramp.TokenAmount token_amount = 7;
+    ramp.TokenTransferMetadata token_transfer_metadata = 7;
     google.protobuf.Timestamp created = 8;
 }
 
@@ -107,14 +107,13 @@ message TokenSwapConfig {
 message TokenSwapList {
     repeated TokenSwapInfo token_swap_info_list = 1;
 }
-
 message TokenSwapInfo {
     int64 target_chain_id = 1;
     int64 source_chain_id = 2;
-    string target_contract_address = 3;
+    string receiver = 3;
     string token_address = 4;
-    string origin_token = 5;
-    string swap_id = 6;
+    string symbol = 5;
+    bytes extra_data = 6;
 }
 
 // log event
@@ -146,7 +145,7 @@ message SendRequested {
     bytes receiver = 4;
     aelf.Address sender = 5;
     bytes message = 6;
-    ramp.TokenAmount token_amount = 7;
+    ramp.TokenTransferMetadata token_transfer_metadata = 7;
     int64 epoch = 8;
 }
 

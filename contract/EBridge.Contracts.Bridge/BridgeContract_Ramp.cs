@@ -1,6 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using AElf;
+using AElf.Sdk.CSharp;
 using AElf.Types;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
@@ -9,27 +12,20 @@ namespace EBridge.Contracts.Bridge;
 
 public partial class BridgeContract
 {
-    public override Empty SetTonConfig(SetTonConfigInput input)
-    {
-        Assert(Context.Sender == State.Admin.Value, "No permission.");
-        Assert(input.TonConfig != null, "Invalid input.");
-        var config = input.TonConfig;
-        Assert(config.TonChainId > 0 && config.TonContractAddress != null && config.TonFee > 0, "Invalid input value.");
-        State.TonConfig.Value = config;
-        return new Empty();
-    }
-
     public override Empty SetCrossChainConfig(SetCrossChainConfigInput input)
     {
         Assert(Context.Sender == State.Admin.Value, "No permission.");
         Assert(!string.IsNullOrEmpty(input.ChainId), "Invalid chain.");
         Assert(!string.IsNullOrEmpty(input.ContractAddress), "Invalid contract address.");
+        Assert(!string.IsNullOrEmpty(input.ContractAddressForReceive), "Invalid contract address for receive.");
 
         State.CrossChainIdMap[input.ChainIdNumber] = input.ChainId;
         State.CrossChainConfigMap[input.ChainId] = new()
         {
             ContractAddress = input.ContractAddress,
-            ChainId = input.ChainIdNumber
+            ChainId = input.ChainIdNumber,
+            ChainType = input.ChainType,
+            ContractAddressForReceive = input.ContractAddressForReceive
         };
         return new Empty();
     }
@@ -53,10 +49,10 @@ public partial class BridgeContract
             tokenSwapList.Add(new AetherLink.Contracts.Ramp.TokenSwapInfo
             {
                 TargetChainId = swap.TargetChainId,
-                TargetContractAddress = swap.TargetContractAddress,
                 TokenAddress = swap.TokenAddress,
-                OriginToken = swap.OriginToken,
-                SwapId = swap.SwapId,
+                Symbol = swap.Symbol,
+                ExtraData = swap.ExtraData,
+                Receiver = swap.Receiver,
                 SourceChainId = swap.SourceChainId == 0 ? Context.ChainId : swap.SourceChainId
             });
         }
@@ -79,14 +75,11 @@ public partial class BridgeContract
 
         var leafHashValue = EncodeMessageAndVerification(input.Message, out var amount, out var targetAddress,
             out var receiptIndex, out var receiptIdHash);
-        var tokenAmount = input.TokenAmount;
-        var swapId = Hash.LoadFromHex(tokenAmount.SwapId);
-        var targetContractAddress = tokenAmount.TargetContractAddress;
-        Assert(targetContractAddress != null && Address.FromBase58(targetContractAddress) == Context.Self,
-            "Invalid target contract address.");
+        var metadata = input.TokenTransferMetadata;
+        var swapId = Hash.LoadFromByteArray(metadata.ExtraData.ToByteArray());
         ConsumeSwapAmount(swapId, amount);
         State.ReceiptHashRecordStatus[leafHashValue] = true;
-
+        
         //Transfer token.
         var receiptId = $"{receiptIdHash.ToHex()}.{receiptIndex}";
         PerformTransferToken(swapId, targetAddress, amount, receiptId);
@@ -104,8 +97,14 @@ public partial class BridgeContract
         var chainConfig = State.CrossChainConfigMap[chainConfigStr];
         Assert(chainConfig != null, "Not supported chain id.");
         Assert(input.SourceChainId > 0 && input.SourceChainId == chainConfig.ChainId, "Invalid source chain id.");
-        var sender = input.Sender?.ToBase64();
-        Assert(sender != null && sender == chainConfig.ContractAddress, "Invalid sender.");
+        var sender = chainConfig.ChainType switch
+        {
+            ChainType.Evm => input.Sender?.ToHex(true),
+            ChainType.Tvm => input.Sender?.ToBase64(),
+            _ => throw new AssertionException("Invalid chain type.")
+        };
+        Assert(sender != null && string.Compare(sender, chainConfig.ContractAddressForReceive, true) == 0,
+            "Invalid sender.");
     }
 
     private Hash EncodeMessageAndVerification(ByteString message, out long amount, out Address targetAddress,
@@ -161,11 +160,6 @@ public partial class BridgeContract
         }
 
         return result;
-    }
-
-    public override TonConfig GetTonConfig(Empty input)
-    {
-        return State.TonConfig.Value;
     }
 
     public override CrossChainConfig GetCrossChainConfig(StringValue input) =>

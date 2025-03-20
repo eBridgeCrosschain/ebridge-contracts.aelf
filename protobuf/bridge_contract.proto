@@ -322,10 +322,6 @@ message CreateReceiptInput{
 //    ChainType target_chain_type = 6;
 }
 
-enum ChainType {
-    EVM = 0;
-    TVM = 1;
-}
 message SetGasLimitInput{
     repeated GasLimit gas_limit_list = 1;
 }
