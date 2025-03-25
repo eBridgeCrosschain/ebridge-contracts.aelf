@@ -119,6 +119,10 @@ public partial class BridgeContract
                 DealWithTonChain(input.TargetChainId, receiptIdToken, receipt.Amount, receipt.TargetAddress,
                     receiptCount, input.Symbol);
                 break;
+            case 2:
+                DealWithSolanaChain(input.TargetChainId, receiptIdToken, receipt.Amount, receipt.TargetAddress,
+                    receiptCount, input.Symbol);
+                break;
             default:
                 throw new AssertionException("Invalid chain type.");
         }
@@ -164,6 +168,17 @@ public partial class BridgeContract
         var message = GenerateEvmMessage(receiptIdToken, amount, targetAddress, receiptCount);
         StartRampRequest(chainId, ByteString.CopyFrom(message.ToArray()), symbol, amount);
     }
+    
+    private void DealWithSolanaChain(string chainId, Hash receiptIdToken, long amount, string targetAddress,
+        long receiptCount, string symbol)
+    {
+        var config = State.CrossChainConfigMap[chainId];
+        var nativeTokenFee = CalculateTransactionFeeForSolana(State.PriceRatio[chainId], config.Fee);
+        State.TransactionFee.Value = State.TransactionFee.Value.Add(nativeTokenFee);
+        TransferFee(DefaultFeeSymbol, nativeTokenFee, Context.Sender, Context.Self);
+        var message = GenerateSolanaMessage(receiptIdToken, amount, targetAddress, receiptCount);
+        StartRampRequest(chainId, ByteString.CopyFrom(message.ToArray()), symbol, amount);
+    }
 
     private void StartRampRequest(string chainId, ByteString message, string symbol, long amount)
     {
@@ -172,6 +187,7 @@ public partial class BridgeContract
         {
             ChainType.Evm => ByteStringHelper.FromHexString(config.ContractAddress),
             ChainType.Tvm => ByteString.FromBase64(config.ContractAddress),
+            ChainType.Svm => ByteString.CopyFrom(DecodeSolanaAddress(config.ContractAddress)),
             _ => throw new AssertionException("Invalid chain type.")
         };
         State.RampContract.Send.Send(new SendInput

@@ -646,6 +646,11 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
                 {
                     ChainId = "Ton",
                     Ratio_ = 1185454500
+                },
+                new Ratio
+                {
+                    ChainId = "Solana",
+                    Ratio_ = 51369918699
                 }
             }
         });

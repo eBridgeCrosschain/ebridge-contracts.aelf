@@ -57,6 +57,11 @@ public partial class BridgeContractTests : BridgeContractTestBase
                 {
                     ChainId = "Ton",
                     Symbol = "ELF"
+                },
+                new ChainToken
+                {
+                    ChainId = "Solana",
+                    Symbol = "ELF"
                 }
             }
         });
@@ -134,6 +139,13 @@ public partial class BridgeContractTests : BridgeContractTestBase
                 DefaultTokenAmount = 10_0000_00000000,
                 StartTime = Timestamp.FromDateTime(time)
             },
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "ELF",
+                TargetChain = "Solana",
+                DefaultTokenAmount = 10_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            }
         };
 
         await BridgeContractImplStub.SetReceiptDailyLimit.SendAsync(new SetReceiptDailyLimitInput
@@ -163,6 +175,14 @@ public partial class BridgeContractTests : BridgeContractTestBase
             {
                 Symbol = "ELF",
                 TargetChain = "Ton",
+                IsEnable = true,
+                TokenCapacity = 5_0000_00000000,
+                Rate = 1_00000000
+            },
+            new ReceiptTokenBucketConfig
+            {
+                Symbol = "ELF",
+                TargetChain = "Solana",
                 IsEnable = true,
                 TokenCapacity = 5_0000_00000000,
                 Rate = 1_00000000
@@ -459,6 +479,39 @@ public partial class BridgeContractTests : BridgeContractTestBase
             TargetAddress = "EQBvA4zKQaQOjwu7HbyHiWJU7xQyzV4hre1YXq2PzVR2UTyT",
             TargetChainId = "Ton",
             TargetChainType = 1
+        });
+    }
+    
+    [Fact]
+    public async Task AElfToSolanaPipeline()
+    {
+        await InitialAElfTo();
+        var time = await SetLimit();
+        var creatReceiptTime = TimestampHelper.GetUtcNow().ToDateTime();
+        await InitialSetGas();
+        await BridgeContractImplStub.SetCrossChainConfig.SendAsync(new()
+        {
+            ChainId = "Solana",
+            ContractAddress = "cZdJRL8GKmo3UDdr3TkwQAPADfdNnd3xTk8vBmCEx5y",
+            ChainIdNumber = 1200,
+            ChainType = ChainType.Svm,
+            ContractAddressForReceive = "cZdJRL8GKmo3UDdr3TkwQAPADfdNnd3xTk8vBmCEx5y"
+        });
+        var executionResult = await BridgeContractStub.CreateReceipt.SendAsync(new CreateReceiptInput
+        {
+            Symbol = "ELF",
+            Amount = 1000000000000,
+            TargetAddress = "HvKwUSwTjKXbjMMwH9VyXTuXUCKSpSvavZAFJANGGHcn",
+            TargetChainId = "Solana",
+            TargetChainType = 2
+        });
+        await BridgeContractStub.CreateReceipt.SendAsync(new CreateReceiptInput
+        {
+            Symbol = "ELF",
+            Amount = 3000000000000,
+            TargetAddress = "HvKwUSwTjKXbjMMwH9VyXTuXUCKSpSvavZAFJANGGHcn",
+            TargetChainId = "Solana",
+            TargetChainType = 2
         });
     }
 
