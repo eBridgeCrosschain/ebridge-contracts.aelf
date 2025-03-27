@@ -8,6 +8,7 @@ using AElf.CSharp.Core.Extension;
 using AElf.Sdk.CSharp;
 using AElf.Types;
 using EBridge.Contracts.TokenPool;
+using Google.Protobuf;
 using LockInput = EBridge.Contracts.TokenPool.LockInput;
 
 namespace EBridge.Contracts.Bridge
@@ -201,6 +202,13 @@ namespace EBridge.Contracts.Bridge
             return (long)decimal.Ceiling(fee) * 100000000;
         }
 
+        private long CalculateTransactionFeeForTon(long priceRatio, long tonFee)
+        {
+            var priceRatioDecimal = (decimal)priceRatio / 100000000;
+            var fee = decimal.Round(((decimal)tonFee / 1000000000) * priceRatioDecimal, PriceDecimals);
+            return (long)(fee * 100000000);
+        }
+        
         private Hash CalculateReceiptHash(string receiptId, long amount, string targetAddress)
         {
             var addressHash = HashHelper.ComputeFrom(ByteArrayHelper.HexStringToByteArray(targetAddress));
@@ -210,13 +218,26 @@ namespace EBridge.Contracts.Bridge
             return HashHelper.ConcatAndCompute(receiptIdHash, amountHash, addressHash);
         }
 
-        private IEnumerable<byte> ConvertLong(long data)
+        private Hash CalculateReceiptHashForTon(Hash receiptIdToken, long amount, string targetAddress,
+            long receiptIndex)
+        {
+            var addressHash = HashHelper.ComputeFrom(ByteString.FromBase64(targetAddress).ToByteArray());
+            var amountTon = ConvertLong(amount);
+            var amountHash = HashHelper.ComputeFrom(amountTon.ToArray());
+            var receiptIndexTon = ConvertLong(receiptIndex);
+            var receiptIndexHash = HashHelper.ComputeFrom(receiptIndexTon.ToArray());
+            var receiptIdHash = HashHelper.ConcatAndCompute(receiptIdToken, receiptIndexHash);
+            return HashHelper.ConcatAndCompute(receiptIdHash, amountHash, addressHash);
+        }
+
+        private IEnumerable<byte> ConvertLong(long data, int byteSize = 32)
         {
             var b = data.ToBytes();
-            if (b.Length == 32)
+
+            if (b.Length == byteSize)
                 return b;
-            var diffCount = 32.Sub(b.Length);
-            var longDataBytes = GetByteListWithCapacity(32);
+            var diffCount = byteSize.Sub(b.Length);
+            var longDataBytes = GetByteListWithCapacity(byteSize);
             byte c = 0;
             if (data < 0)
             {

@@ -3,8 +3,12 @@ using AElf;
 using AElf.Contracts.MultiToken;
 using AElf.CSharp.Core;
 using AElf.Sdk.CSharp;
+using AElf.Types;
+using AetherLink.Contracts.Ramp;
 using EBridge.Contracts.Report;
+using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
+using Ramp;
 
 namespace EBridge.Contracts.Bridge;
 
@@ -103,17 +107,19 @@ public partial class BridgeContract
         };
 
         State.ReceiptMap[receiptId] = receipt;
-
-        if (!decimal.TryParse(State.FeeFloatingRatio[input.TargetChainId], out var floatingRatio))
+        
+        switch (input.TargetChainType)
         {
-            floatingRatio = 1;
+            case 0:
+                DealWithEvmChain(input.TargetChainId, receiptId, receipt.Amount, receipt.TargetAddress, receiptIdToken.ToHex());
+                break;
+            case 1:
+                DealWithTonChain(input.TargetChainId, receiptIdToken, receipt.Amount, receipt.TargetAddress,
+                    receiptCount, input.Symbol);
+                break;
+            default:
+                throw new AssertionException("Invalid chain type.");
         }
-
-        var nativeTokenFee = CalculateTransactionFee(State.GasLimit[input.TargetChainId],
-            State.GasPrice[input.TargetChainId],
-            State.PriceRatio[input.TargetChainId], floatingRatio);
-        State.TransactionFee.Value = State.TransactionFee.Value.Add(nativeTokenFee);
-        TransferFee(DefaultFeeSymbol, nativeTokenFee, Context.Sender, Context.Self);
 
         Context.Fire(new ReceiptCreated
         {
@@ -125,20 +131,71 @@ public partial class BridgeContract
             TargetChainId = input.TargetChainId
         });
 
-        var receiptHash = CalculateReceiptHash(receiptId, receipt.Amount, receipt.TargetAddress);
-
-        Context.SendInline(State.ReportContract.Value, nameof(State.ReportContract.QueryOracle), new QueryOracleInput
-        {
-            QueryInfo = new OffChainQueryInfo
-            {
-                Title = $"lock_token_{receiptId}",
-                Options = { receiptHash.ToHex(),$"{receipt.Amount}-{receipt.TargetAddress}-{receiptIdToken.ToHex()}"}
-            },
-            ChainId = input.TargetChainId,
-            Payment = State.QueryPayment.Value
-        });
-
         return new Empty();
+    }
+
+    private void DealWithTonChain(string chainId, Hash receiptIdToken, long amount, string targetAddress,
+        long receiptCount,
+        string symbol)
+    {
+        var config = State.CrossChainConfigMap[chainId];
+        var nativeTokenFee = CalculateTransactionFeeForTon(State.PriceRatio[chainId], config.Fee);
+        State.TransactionFee.Value = State.TransactionFee.Value.Add(nativeTokenFee);
+        TransferFee(DefaultFeeSymbol, nativeTokenFee, Context.Sender, Context.Self);
+        var message = GenerateMessage(receiptIdToken, amount, targetAddress, receiptCount);
+        StartRampRequest(chainId, ByteString.CopyFrom(message.ToArray()), symbol, amount);
+    }
+
+    private void DealWithEvmChain(string chainId, string receiptId, long amount, string targetAddress,
+        string receiptIdToken)
+    {
+        if (!decimal.TryParse(State.FeeFloatingRatio[chainId], out var floatingRatio))
+        {
+            floatingRatio = 1;
+        }
+
+        var nativeTokenFee = CalculateTransactionFee(State.GasLimit[chainId],
+            State.GasPrice[chainId],
+            State.PriceRatio[chainId], floatingRatio);
+        State.TransactionFee.Value = State.TransactionFee.Value.Add(nativeTokenFee);
+        TransferFee(DefaultFeeSymbol, nativeTokenFee, Context.Sender, Context.Self);
+        var receiptHash = CalculateReceiptHash(receiptId, amount, targetAddress);
+        Context.SendInline(State.ReportContract.Value, nameof(State.ReportContract.QueryOracle),
+            new QueryOracleInput
+            {
+                QueryInfo = new OffChainQueryInfo
+                {
+                    Title = $"lock_token_{receiptId}",
+                    Options =
+                    {
+                        receiptHash.ToHex(), $"{amount}-{targetAddress}-{receiptIdToken}"
+                    }
+                },
+                ChainId = chainId,
+                Payment = State.QueryPayment.Value
+            });
+    }
+    private void StartRampRequest(string chainId, ByteString message, string symbol, long amount)
+    {
+        var config = State.CrossChainConfigMap[chainId];
+        var receiver = config.ChainType switch
+        {
+            ChainType.Evm => ByteStringHelper.FromHexString(config.ContractAddress),
+            ChainType.Tvm => ByteString.FromBase64(config.ContractAddress),
+            _ => throw new AssertionException("Invalid chain type.")
+        };
+        State.RampContract.Send.Send(new SendInput
+        {
+            TargetChainId = config.ChainId,
+            Receiver = receiver,
+            Message = message,
+            TokenTransferMetadata = new TokenTransferMetadata
+            {
+                TargetChainId = config.ChainId,
+                Symbol = symbol,
+                Amount = amount
+            }
+        });
     }
 
     private void ConsumeReceiptAmount(string symbol, string targetChainId, long amount)

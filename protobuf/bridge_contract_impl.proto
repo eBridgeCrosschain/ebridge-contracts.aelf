@@ -12,6 +12,7 @@ import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
 import "aelf/core.proto";
 import "aelf/options.proto";
+import "ramp_interface.proto";
 
 option csharp_namespace = "EBridge.Contracts.Bridge";
 
@@ -23,17 +24,22 @@ service BridgeContractImpl {
   option (aelf.base) = "acs13.proto";
   option (aelf.base) = "receipt_maker.proto";
   option (aelf.base) = "bridge_contract.proto";
+  option (aelf.base) = "ramp_interface.proto";
 
   rpc SetReceiptDailyLimit (SetReceiptDailyLimitInput) returns (google.protobuf.Empty) {}
   rpc SetSwapDailyLimit (SetSwapDailyLimitInput) returns (google.protobuf.Empty) {}
   rpc ConfigReceiptTokenBucket (ConfigReceiptTokenBucketInput) returns (google.protobuf.Empty) {}
   rpc ConfigSwapTokenBucket (ConfigSwapTokenBucketInput) returns (google.protobuf.Empty) {}
   rpc SetTokenPoolContract(aelf.Address) returns (google.protobuf.Empty){}
-  rpc AssetsMigrator(AssetsMigratorInput) returns (google.protobuf.Empty){}
-  
+
+  rpc SetRampContract(aelf.Address) returns (google.protobuf.Empty){}
+  rpc SetRampTokenSwapConfig(TokenSwapConfig) returns (google.protobuf.Empty){}
+
+  rpc SetCrossChainConfig(SetCrossChainConfigInput) returns (google.protobuf.Empty){}
+
   rpc GetTokenPoolContract(google.protobuf.Empty) returns (aelf.Address) {
     option (aelf.is_view) = true;
-  } 
+  }
 
   rpc GetReceiptDailyLimit (GetReceiptDailyLimitInput) returns (DailyLimitTokenInfo) {
     option (aelf.is_view) = true;
@@ -58,6 +64,16 @@ service BridgeContractImpl {
   rpc GetSwapMinWaitTimeInSeconds (GetSwapMinWaitTimeInSecondsInput) returns (google.protobuf.Int64Value){
     option (aelf.is_view) = true;
   }
+
+  rpc GetRampContract(google.protobuf.Empty) returns (aelf.Address) {
+    option (aelf.is_view) = true;
+  }
+  rpc GetCrossChainConfig(google.protobuf.StringValue) returns (CrossChainConfig) {
+    option (aelf.is_view) = true;
+  }
+  rpc GetChainIdMap(google.protobuf.Int32Value) returns (google.protobuf.StringValue) {
+    option (aelf.is_view) = true;
+  }
 }
 
 // Data struct
@@ -76,6 +92,7 @@ message TokenBucket {
 }
 
 // Input
+
 message SetReceiptDailyLimitInput {
   repeated ReceiptDailyLimitInfo receipt_daily_limit_infos = 1;
 }
@@ -129,10 +146,6 @@ message ConfigSwapTokenBucketInput {
   repeated SwapTokenBucketConfig swap_token_bucket_configs = 1;
 }
 
-message AssetsMigratorInput {
-  repeated aelf.Hash swapId = 1;
-  aelf.Address provider = 2;
-}
 
 message AssetsInfo {
   aelf.Hash swapId = 1;
@@ -149,6 +162,57 @@ message SwapTokenBucketConfig {
 message GetSwapMinWaitTimeInSecondsInput {
   aelf.Hash swapId = 1;
   int64 token_amount = 2;
+}
+
+message TokenSwapConfig {
+  TokenSwapList token_swap_list = 1;
+}
+
+message TokenSwapList {
+  repeated TokenSwapInfo token_swap_info_list = 1;
+}
+
+message TokenSwapInfo {
+  int64 target_chain_id = 1;
+  int64 source_chain_id = 2;
+  string receiver = 3;
+  string token_address = 4;
+  string symbol = 5;
+  bytes extra_data = 6;
+}
+
+message SetCrossChainConfigInput {
+  string chain_id = 1;
+  string contract_address = 2;  // bridge out
+  int32 chain_id_number = 3;
+  ChainType chain_type = 4;
+  string contract_address_for_receive = 5; // bridge in
+  int64 fee = 6;
+}
+
+message CrossChainConfig {
+  string contract_address = 1;
+  int32 chain_id = 2;
+  int64 fee = 3;
+  ChainType chain_type = 4;
+  string contract_address_for_receive = 5;
+}
+
+enum ChainType {
+  EVM = 0;
+  TVM = 1;
+}
+
+
+message TestEvent {
+  option (aelf.is_event) = true;
+  string sender = 1;
+  string receiver = 2;
+  bytes message = 3;
+  aelf.Hash swapId = 4;
+  string symbol = 5;
+  string tokenAddress = 6;
+  string targetContractAddress = 7;
 }
 
 message ReceiptDailyLimitSet {

@@ -123,8 +123,18 @@ public partial class BridgeContract
             floatingRatio = 1;
         }
 
-        var fee = CalculateTransactionFee(State.GasLimit[input.Value], State.GasPrice[input.Value],
-            State.PriceRatio[input.Value], floatingRatio);
+        var fee = 0L;
+        if (State.GasLimit[input.Value] == 0)
+        {
+            var tonFee = State.CrossChainConfigMap[input.Value]?.Fee;
+            fee = CalculateTransactionFeeForTon(State.PriceRatio[input.Value], tonFee ?? 0);
+        }
+        else
+        {
+            fee = CalculateTransactionFee(State.GasLimit[input.Value], State.GasPrice[input.Value],
+                State.PriceRatio[input.Value], floatingRatio);
+        }
+
         return new Int64Value
         {
             Value = fee
@@ -133,12 +143,12 @@ public partial class BridgeContract
 
     public override Int32Value GetPriceFluctuationRatio(StringValue input)
     {
-        return new Int32Value{ Value = State.PriceFluctuationRatio[input.Value] };
+        return new Int32Value { Value = State.PriceFluctuationRatio[input.Value] };
     }
 
     public override Int64Value GetCurrentTransactionFee(Empty input)
     {
-        return new Int64Value{ Value = State.TransactionFee.Value };
+        return new Int64Value { Value = State.TransactionFee.Value };
     }
 
     #endregion

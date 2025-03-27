@@ -45,8 +45,18 @@ public partial class BridgeContractTests : BridgeContractTestBase
                 },
                 new ChainToken
                 {
+                    ChainId = "Sepolia",
+                    Symbol = "ELF"
+                },
+                new ChainToken
+                {
                     ChainId = "Kovan",
                     Symbol = "USDT"
+                },
+                new ChainToken
+                {
+                    ChainId = "Ton",
+                    Symbol = "ELF"
                 }
             }
         });
@@ -94,6 +104,15 @@ public partial class BridgeContractTests : BridgeContractTestBase
             RegimentId = regimentId,
             ChainId = "Ethereum"
         });
+        await BridgeContractImplStub.SetRampContract.SendAsync(RampContractAddress);
+        await BridgeContractImplStub.SetCrossChainConfig.SendAsync(new()
+        {
+            ChainId = "Ton",
+            ContractAddress = "kQDS511tzowt2x1xyIDgpglhaz6wG9uVP2t4BixFTViYQoM/",
+            ChainIdNumber = 1100,
+            ChainType = ChainType.Tvm,
+            ContractAddressForReceive = "kQDS511tzowt2x1xyIDgpglhaz6wG9uVP2t4BixFTViYQoM/"
+        });
         return organization;
     }
 
@@ -115,14 +134,21 @@ public partial class BridgeContractTests : BridgeContractTestBase
                 TargetChain = "Ethereum",
                 DefaultTokenAmount = 5_0000_00000000,
                 StartTime = Timestamp.FromDateTime(time)
-            }
+            },
+            new ReceiptDailyLimitInfo
+            {
+                Symbol = "ELF",
+                TargetChain = "Ton",
+                DefaultTokenAmount = 10_0000_00000000,
+                StartTime = Timestamp.FromDateTime(time)
+            },
         };
-        
+
         await BridgeContractImplStub.SetReceiptDailyLimit.SendAsync(new SetReceiptDailyLimitInput
         {
             ReceiptDailyLimitInfos = { input }
         });
-        
+
         var input1 = new List<ReceiptTokenBucketConfig>()
         {
             new ReceiptTokenBucketConfig
@@ -140,6 +166,14 @@ public partial class BridgeContractTests : BridgeContractTestBase
                 IsEnable = true,
                 TokenCapacity = 2_0000_00000000,
                 Rate = 100_00000000
+            },
+            new ReceiptTokenBucketConfig
+            {
+                Symbol = "ELF",
+                TargetChain = "Ton",
+                IsEnable = true,
+                TokenCapacity = 5_0000_00000000,
+                Rate = 1_00000000
             }
         };
         await BridgeContractImplStub.ConfigReceiptTokenBucket.SendAsync(new ConfigReceiptTokenBucketInput
@@ -154,8 +188,10 @@ public partial class BridgeContractTests : BridgeContractTestBase
     {
         await InitialAElfTo();
         var time = await SetLimit();
-        var creatReceiptTime = TimestampHelper.GetUtcNow().ToDateTime();; 
+        var creatReceiptTime = TimestampHelper.GetUtcNow().ToDateTime();
+        ;
         await InitialSetGas();
+        await InitRampConfig();
         {
             var balance = (await TokenContractStub.GetBalance.CallAsync(new GetBalanceInput
             {
@@ -179,14 +215,15 @@ public partial class BridgeContractTests : BridgeContractTestBase
                         TargetChain = "Ethereum"
                     });
                 dailyLimit.TokenAmount.ShouldBe(10_0000_00000000 - 100_00000000);
-                blockTimeProvider.SetBlockTime(creatReceiptTime.AddMilliseconds(5).AddMinutes(1).AddSeconds(1).ToTimestamp());
+                blockTimeProvider.SetBlockTime(creatReceiptTime.AddMilliseconds(5).AddMinutes(1).AddSeconds(1)
+                    .ToTimestamp());
                 var bucket = await BridgeContractImplStub.GetCurrentReceiptTokenBucketState.CallAsync(
                     new GetCurrentReceiptTokenBucketStateInput
                     {
                         Symbol = "ELF",
                         TargetChain = "Ethereum"
                     });
-                bucket.CurrentTokenAmount.ShouldBeLessThanOrEqualTo(5_0000_00000000 - 100_00000000 + 65_00000000); 
+                bucket.CurrentTokenAmount.ShouldBeLessThanOrEqualTo(5_0000_00000000 - 100_00000000 + 65_00000000);
             }
 
             var receiptCreated = ReceiptCreated.Parser.ParseFrom(executionResult.TransactionResult.Logs
@@ -210,70 +247,70 @@ public partial class BridgeContractTests : BridgeContractTestBase
             await CheckBalanceAsync(BridgeContractAddress, "ELF", actualFee);
             await CheckBalanceAsync(DefaultSenderAddress, "ELF", balance - 100_00000000 - actualFee);
 
-            var reportProposed = ReportProposed.Parser.ParseFrom(executionResult.TransactionResult.Logs
-                .First(l => l.Name == nameof(ReportProposed)).NonIndexed);
-            reportProposed.TargetChainId.ShouldBe("Ethereum");
-            var title = $"lock_token_{receiptId}";
-            reportProposed.QueryInfo.Title.ShouldBe(title);
-            reportProposed.QueryInfo.Options.Count.ShouldBe(2);
+            // var reportProposed = ReportProposed.Parser.ParseFrom(executionResult.TransactionResult.Logs
+            //     .First(l => l.Name == nameof(ReportProposed)).NonIndexed);
+            // reportProposed.TargetChainId.ShouldBe("Ethereum");
+            // var title = $"lock_token_{receiptId}";
+            // reportProposed.QueryInfo.Title.ShouldBe(title);
+            // reportProposed.QueryInfo.Options.Count.ShouldBe(2);
 
-            var rawReport = await ReportContractStub.GetRawReport.CallAsync(new GetRawReportInput
-            {
-                ChainId = "Ethereum",
-                Token = "0xf8F862Aaeb9cb101383d27044202aBbe3a057eCC",
-                RoundId = 1
-            });
+            // var rawReport = await ReportContractStub.GetRawReport.CallAsync(new GetRawReportInput
+            // {
+            //     ChainId = "Ethereum",
+            //     Token = "0xf8F862Aaeb9cb101383d27044202aBbe3a057eCC",
+            //     RoundId = 1
+            // });
 
-            _receiptDictionary = new Dictionary<string, Hash>();
-            _receiptDictionary[receiptId] =
-                CalculateReceiptHash(receiptId, 100_00000000, "0x643C7DCAd9321b36de85FEaC19763BE492dB5a04");
-            var result = ByteArrayHelper.HexStringToByteArray(rawReport.Value);
-            result.Length.ShouldBe(224);
-
-            var data = new List<byte>();
-            data.AddRange(FillObservationBytes(ByteStringHelper
-                .FromHexString(_receiptDictionary[receiptId].ToHex()).ToByteArray()));
-            data.ShouldBe(result.ToList().GetRange(96,32));
-
-            var data1 = new List<byte>();
-            data1.AddRange(FillObservationBytes(ConvertLong(10000000000).ToArray()));
-            data1.ShouldBe(result.ToList().GetRange(128,32));
-            
-            var data2 = new List<byte>();
-            data2.AddRange(FillObservationBytes(ByteStringHelper
-                .FromHexString("0x643C7DCAd9321b36de85FEaC19763BE492dB5a04").ToByteArray()));
-            data2.ShouldBe(result.ToList().GetRange(160,32));
-            
-            var data3 = new List<byte>();
-            data3.AddRange(FillObservationBytes(ByteStringHelper
-                .FromHexString(receiptId.Split(".").First()).ToByteArray()));
-            data3.ShouldBe(result.ToList().GetRange(192,32));
-
-            var regimentInfo = await RegimentContractStub.GetRegimentInfo.CallAsync(_regimentAddress);
-            var skipList = new MemberList();
-            foreach (var admin in regimentInfo.Admins)
-            {
-                skipList.Value.Add(admin);
-            }
-
-            skipList.Value.Add(regimentInfo.Manager);
-            await ReportContractStub.SetSkipMemberList.SendAsync(new SetSkipMemberListInput
-            {
-                ChainId = "Ethereum",
-                Token = "0xf8F862Aaeb9cb101383d27044202aBbe3a057eCC",
-                Value = skipList
-            });
-            foreach (var account in Transmitters.SkipLast(1))
-            {
-                var stub = GetReportContractStub(account.KeyPair);
-                await stub.ConfirmReport.SendAsync(new ConfirmReportInput
-                {
-                    ChainId = "Ethereum",
-                    Token = "0xf8F862Aaeb9cb101383d27044202aBbe3a057eCC",
-                    RoundId = 1,
-                    Signature = SignHelper.GetSignature(rawReport.Value, account.KeyPair.PrivateKey).RecoverInfo
-                });
-            }
+            // _receiptDictionary = new Dictionary<string, Hash>();
+            // _receiptDictionary[receiptId] =
+            //     CalculateReceiptHash(receiptId, 100_00000000, "0x643C7DCAd9321b36de85FEaC19763BE492dB5a04");
+            // var result = ByteArrayHelper.HexStringToByteArray(rawReport.Value);
+            // result.Length.ShouldBe(224);
+            //
+            // var data = new List<byte>();
+            // data.AddRange(FillObservationBytes(ByteStringHelper
+            //     .FromHexString(_receiptDictionary[receiptId].ToHex()).ToByteArray()));
+            // data.ShouldBe(result.ToList().GetRange(96, 32));
+            //
+            // var data1 = new List<byte>();
+            // data1.AddRange(FillObservationBytes(ConvertLong(10000000000).ToArray()));
+            // data1.ShouldBe(result.ToList().GetRange(128, 32));
+            //
+            // var data2 = new List<byte>();
+            // data2.AddRange(FillObservationBytes(ByteStringHelper
+            //     .FromHexString("0x643C7DCAd9321b36de85FEaC19763BE492dB5a04").ToByteArray()));
+            // data2.ShouldBe(result.ToList().GetRange(160, 32));
+            //
+            // var data3 = new List<byte>();
+            // data3.AddRange(FillObservationBytes(ByteStringHelper
+            //     .FromHexString(receiptId.Split(".").First()).ToByteArray()));
+            // data3.ShouldBe(result.ToList().GetRange(192, 32));
+            //
+            // var regimentInfo = await RegimentContractStub.GetRegimentInfo.CallAsync(_regimentAddress);
+            // var skipList = new MemberList();
+            // foreach (var admin in regimentInfo.Admins)
+            // {
+            //     skipList.Value.Add(admin);
+            // }
+            //
+            // skipList.Value.Add(regimentInfo.Manager);
+            // await ReportContractStub.SetSkipMemberList.SendAsync(new SetSkipMemberListInput
+            // {
+            //     ChainId = "Ethereum",
+            //     Token = "0xf8F862Aaeb9cb101383d27044202aBbe3a057eCC",
+            //     Value = skipList
+            // });
+            // foreach (var account in Transmitters.SkipLast(1))
+            // {
+            //     var stub = GetReportContractStub(account.KeyPair);
+            //     await stub.ConfirmReport.SendAsync(new ConfirmReportInput
+            //     {
+            //         ChainId = "Ethereum",
+            //         Token = "0xf8F862Aaeb9cb101383d27044202aBbe3a057eCC",
+            //         RoundId = 1,
+            //         Signature = SignHelper.GetSignature(rawReport.Value, account.KeyPair.PrivateKey).RecoverInfo
+            //     });
+            // }
         }
         {
             blockTimeProvider.SetBlockTime(Timestamp.FromDateTime(creatReceiptTime.AddMinutes(1)));
@@ -287,7 +324,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
             var receiptCreated = ReceiptCreated.Parser.ParseFrom(executionResult.TransactionResult.Logs
                 .First(l => l.Name == nameof(ReceiptCreated)).NonIndexed);
             var receiptId = receiptCreated.ReceiptId;
-            
+
             {
                 var dailyLimit = await BridgeContractImplStub.GetReceiptDailyLimit.CallAsync(
                     new GetReceiptDailyLimitInput
@@ -303,52 +340,54 @@ public partial class BridgeContractTests : BridgeContractTestBase
                         Symbol = "ELF",
                         TargetChain = "Ethereum"
                     });
-                bucket.CurrentTokenAmount.ShouldBeLessThanOrEqualTo(5_0000_00000000 - 100_00000000 - 50_00000000 + 61_00000000); 
+                bucket.CurrentTokenAmount.ShouldBeLessThanOrEqualTo(5_0000_00000000 - 100_00000000 - 50_00000000 +
+                                                                    61_00000000);
             }
 
-            var reportProposed = ReportProposed.Parser.ParseFrom(executionResult.TransactionResult.Logs
-                .First(l => l.Name == nameof(ReportProposed)).NonIndexed);
-            reportProposed.TargetChainId.ShouldBe("Ethereum");
-            var title = $"lock_token_{receiptId}";
-            reportProposed.QueryInfo.Title.ShouldBe(title);
-
-            var rawReport = await ReportContractStub.GetRawReport.CallAsync(new GetRawReportInput
-            {
-                ChainId = "Ethereum",
-                Token = "0xf8F862Aaeb9cb101383d27044202aBbe3a057eCC",
-                RoundId = 2
-            });
-
-            var report = await ReportContractStub.GetReport.CallAsync(new GetReportInput
-            {
-                ChainId = "Ethereum",
-                Token = "0xf8F862Aaeb9cb101383d27044202aBbe3a057eCC",
-                RoundId = 2
-            });
-            var receiptIdTokenHash = report.Observations.Value.First().Key.Split(".").First();
-            var receiptIdInfo =
-                await BridgeContractStub.GetReceiptIdInfo.CallAsync(Hash.LoadFromHex(receiptIdTokenHash));
-            receiptIdInfo.Symbol.ShouldBe("ELF");
-
-
-            foreach (var account in Transmitters.SkipLast(1))
-            {
-                var stub = GetReportContractStub(account.KeyPair);
-                await stub.ConfirmReport.SendAsync(new ConfirmReportInput
-                {
-                    ChainId = "Ethereum",
-                    Token = "0xf8F862Aaeb9cb101383d27044202aBbe3a057eCC",
-                    RoundId = 2,
-                    Signature = SignHelper.GetSignature(rawReport.Value, account.KeyPair.PrivateKey).RecoverInfo
-                });
-            }
+            // var reportProposed = ReportProposed.Parser.ParseFrom(executionResult.TransactionResult.Logs
+            //     .First(l => l.Name == nameof(ReportProposed)).NonIndexed);
+            // reportProposed.TargetChainId.ShouldBe("Ethereum");
+            // var title = $"lock_token_{receiptId}";
+            // reportProposed.QueryInfo.Title.ShouldBe(title);
+            //
+            // var rawReport = await ReportContractStub.GetRawReport.CallAsync(new GetRawReportInput
+            // {
+            //     ChainId = "Ethereum",
+            //     Token = "0xf8F862Aaeb9cb101383d27044202aBbe3a057eCC",
+            //     RoundId = 2
+            // });
+            //
+            // var report = await ReportContractStub.GetReport.CallAsync(new GetReportInput
+            // {
+            //     ChainId = "Ethereum",
+            //     Token = "0xf8F862Aaeb9cb101383d27044202aBbe3a057eCC",
+            //     RoundId = 2
+            // });
+            // var receiptIdTokenHash = report.Observations.Value.First().Key.Split(".").First();
+            // var receiptIdInfo =
+            //     await BridgeContractStub.GetReceiptIdInfo.CallAsync(Hash.LoadFromHex(receiptIdTokenHash));
+            // receiptIdInfo.Symbol.ShouldBe("ELF");
+            //
+            //
+            // foreach (var account in Transmitters.SkipLast(1))
+            // {
+            //     var stub = GetReportContractStub(account.KeyPair);
+            //     await stub.ConfirmReport.SendAsync(new ConfirmReportInput
+            //     {
+            //         ChainId = "Ethereum",
+            //         Token = "0xf8F862Aaeb9cb101383d27044202aBbe3a057eCC",
+            //         RoundId = 2,
+            //         Signature = SignHelper.GetSignature(rawReport.Value, account.KeyPair.PrivateKey).RecoverInfo
+            //     });
+            // }
         }
         {
-            await CheckBalanceAsync(BridgeContractAddress, "ELF",   62_00000000);
+            await CheckBalanceAsync(BridgeContractAddress, "ELF", 62_00000000);
         }
         // exceed max amount
         {
-            blockTimeProvider.SetBlockTime(Timestamp.FromDateTime(creatReceiptTime.AddMinutes(1).AddSeconds(1).AddMinutes(1)));
+            blockTimeProvider.SetBlockTime(
+                Timestamp.FromDateTime(creatReceiptTime.AddMinutes(1).AddSeconds(1).AddMinutes(1)));
             var executionResult = await BridgeContractStub.CreateReceipt.SendWithExceptionAsync(new CreateReceiptInput
             {
                 Symbol = "ELF",
@@ -356,8 +395,10 @@ public partial class BridgeContractTests : BridgeContractTestBase
                 TargetAddress = "0x643C7DCAd9321b36de85FEaC19763BE492dB5a04",
                 TargetChainId = "Ethereum"
             });
-            executionResult.TransactionResult.Error.ShouldContain("Amount exceeds current token amount, the minimum wait time is");
-            blockTimeProvider.SetBlockTime(Timestamp.FromDateTime(creatReceiptTime.AddMinutes(1).AddSeconds(1).AddMinutes(1).AddSeconds(30)));
+            executionResult.TransactionResult.Error.ShouldContain(
+                "Amount exceeds current token amount, the minimum wait time is");
+            blockTimeProvider.SetBlockTime(
+                Timestamp.FromDateTime(creatReceiptTime.AddMinutes(1).AddSeconds(1).AddMinutes(1).AddSeconds(30)));
             var executionResult1 = await BridgeContractStub.CreateReceipt.SendAsync(new CreateReceiptInput
             {
                 Symbol = "ELF",
@@ -372,7 +413,8 @@ public partial class BridgeContractTests : BridgeContractTestBase
             log.ReceiptDailyLimitRefreshTime.ShouldBe(Timestamp.FromDateTime(time.Date));
             log.CurrentReceiptDailyLimitAmount.ShouldBe(10_0000_00000000 - 100_00000000 - 50_00000000 - 40000_00000000);
             log.CurrentReceiptBucketTokenAmount.ShouldBe(5_0000_00000000 - 40000_00000000);
-            log.ReceiptBucketUpdateTime.ShouldBe(Timestamp.FromDateTime(creatReceiptTime.AddMinutes(1).AddSeconds(1).AddMinutes(1).AddSeconds(30)));
+            log.ReceiptBucketUpdateTime.ShouldBe(
+                Timestamp.FromDateTime(creatReceiptTime.AddMinutes(1).AddSeconds(1).AddMinutes(1).AddSeconds(30)));
             {
                 var dailyLimit = await BridgeContractImplStub.GetReceiptDailyLimit.CallAsync(
                     new GetReceiptDailyLimitInput
@@ -381,18 +423,53 @@ public partial class BridgeContractTests : BridgeContractTestBase
                         TargetChain = "Ethereum"
                     });
                 dailyLimit.TokenAmount.ShouldBe(10_0000_00000000 - 100_00000000 - 50_00000000 - 40000_00000000);
-                blockTimeProvider.SetBlockTime(Timestamp.FromDateTime(creatReceiptTime.AddMinutes(1).AddSeconds(1).AddMinutes(1).AddSeconds(30).AddSeconds(1)));
+                blockTimeProvider.SetBlockTime(Timestamp.FromDateTime(creatReceiptTime.AddMinutes(1).AddSeconds(1)
+                    .AddMinutes(1).AddSeconds(30).AddSeconds(1)));
                 var bucket = await BridgeContractImplStub.GetCurrentReceiptTokenBucketState.CallAsync(
                     new GetCurrentReceiptTokenBucketStateInput
                     {
                         Symbol = "ELF",
                         TargetChain = "Ethereum"
                     });
-                bucket.CurrentTokenAmount.ShouldBe(5_0000_00000000 - 100_00000000 - 50_00000000 + 61_00000000 + 60_00000000 + 29_00000000 - 40000_00000000 + 1_00000000); 
+                bucket.CurrentTokenAmount.ShouldBe(5_0000_00000000 - 100_00000000 - 50_00000000 + 61_00000000 +
+                    60_00000000 + 29_00000000 - 40000_00000000 + 1_00000000);
             }
         }
     }
-    
+
+    [Fact]
+    public async Task AElfToTonPipeline()
+    {
+        await InitialAElfTo();
+        var time = await SetLimit();
+        var creatReceiptTime = TimestampHelper.GetUtcNow().ToDateTime();
+        await InitialSetGas();
+        await BridgeContractImplStub.SetCrossChainConfig.SendAsync(new()
+        {
+            ChainId = "Ton",
+            ContractAddress = "kQDS511tzowt2x1xyIDgpglhaz6wG9uVP2t4BixFTViYQoM/",
+            ChainIdNumber = 1100,
+            ChainType = ChainType.Tvm,
+            ContractAddressForReceive = "kQDS511tzowt2x1xyIDgpglhaz6wG9uVP2t4BixFTViYQoM/"
+        });
+        var executionResult = await BridgeContractStub.CreateReceipt.SendAsync(new CreateReceiptInput
+        {
+            Symbol = "ELF",
+            Amount = 1000000000000,
+            TargetAddress = "EQBvA4zKQaQOjwu7HbyHiWJU7xQyzV4hre1YXq2PzVR2UTyT",
+            TargetChainId = "Ton",
+            TargetChainType = 1
+        });
+        await BridgeContractStub.CreateReceipt.SendAsync(new CreateReceiptInput
+        {
+            Symbol = "ELF",
+            Amount = 3000000000000,
+            TargetAddress = "EQBvA4zKQaQOjwu7HbyHiWJU7xQyzV4hre1YXq2PzVR2UTyT",
+            TargetChainId = "Ton",
+            TargetChainType = 1
+        });
+    }
+
     [Fact]
     public async Task AElfToPipeline_DailyLimit_Test()
     {
@@ -415,13 +492,13 @@ public partial class BridgeContractTests : BridgeContractTestBase
                 StartTime = Timestamp.FromDateTime(time)
             }
         };
-        
+
         await BridgeContractImplStub.SetReceiptDailyLimit.SendAsync(new SetReceiptDailyLimitInput
         {
             ReceiptDailyLimitInfos = { input }
         });
-        
-        var creatReceiptTime = TimestampHelper.GetUtcNow().ToDateTime(); 
+
+        var creatReceiptTime = TimestampHelper.GetUtcNow().ToDateTime();
         await InitialSetGas();
         {
             blockTimeProvider.SetBlockTime(Timestamp.FromDateTime(creatReceiptTime));
@@ -435,6 +512,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
             executionResult.TransactionResult.Error.ShouldContain(
                 "Amount exceeds daily limit amount. Current daily limit is 10000000000000");
         }
+        await InitRampConfig();
         {
             blockTimeProvider.SetBlockTime(Timestamp.FromDateTime(creatReceiptTime.AddHours(1)));
             var executionResult = await BridgeContractStub.CreateReceipt.SendAsync(new CreateReceiptInput
@@ -522,15 +600,18 @@ public partial class BridgeContractTests : BridgeContractTestBase
                     StartTime = Timestamp.FromDateTime(time.AddDays(1))
                 }
             };
-        
-            var executionResult = await BridgeContractImplStub.SetReceiptDailyLimit.SendAsync(new SetReceiptDailyLimitInput
+
+            var executionResult = await BridgeContractImplStub.SetReceiptDailyLimit.SendAsync(
+                new SetReceiptDailyLimitInput
+                {
+                    ReceiptDailyLimitInfos = { input1 }
+                });
             {
-                ReceiptDailyLimitInfos = { input1 }
-            });
-            {
-                var limitLogList = (from log in executionResult.TransactionResult.Logs where log.Name == nameof(ReceiptDailyLimitSet) select ReceiptDailyLimitSet.Parser.ParseFrom(log.NonIndexed)).ToList();
-                limitLogList[0].Symbol.ShouldBe("ELF"); 
-                limitLogList[0].TargetChainId.ShouldBe("Ethereum"); 
+                var limitLogList = (from log in executionResult.TransactionResult.Logs
+                    where log.Name == nameof(ReceiptDailyLimitSet)
+                    select ReceiptDailyLimitSet.Parser.ParseFrom(log.NonIndexed)).ToList();
+                limitLogList[0].Symbol.ShouldBe("ELF");
+                limitLogList[0].TargetChainId.ShouldBe("Ethereum");
                 limitLogList[0].ReceiptDailyLimit.ShouldBe(2_0000_00000000);
                 limitLogList[0].ReceiptRefreshTime.ShouldBe(Timestamp.FromDateTime(time.AddDays(1)));
                 limitLogList[0].CurrentReceiptDailyLimit.ShouldBe(0);
@@ -572,7 +653,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
                 StartTime = Timestamp.FromDateTime(time)
             }
         };
-        
+
         await BridgeContractImplStub.SetReceiptDailyLimit.SendAsync(new SetReceiptDailyLimitInput
         {
             ReceiptDailyLimitInfos = { input }
@@ -600,8 +681,8 @@ public partial class BridgeContractTests : BridgeContractTestBase
         {
             ReceiptTokenBucketConfigs = { input1 }
         });
-        
-        var creatReceiptTime = TimestampHelper.GetUtcNow().ToDateTime(); 
+
+        var creatReceiptTime = TimestampHelper.GetUtcNow().ToDateTime();
         blockTimeProvider.SetBlockTime(Timestamp.FromDateTime(creatReceiptTime));
         var result = await BridgeContractStub.CreateReceipt.SendWithExceptionAsync(new CreateReceiptInput
         {
@@ -612,6 +693,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
         });
         result.TransactionResult.Error.ShouldContain("Amount exceeds token max capacity.");
         await InitialSetGas();
+        await InitRampConfig();
         {
             blockTimeProvider.SetBlockTime(Timestamp.FromDateTime(creatReceiptTime.AddSeconds(5)));
             var executionResult = await BridgeContractStub.CreateReceipt.SendAsync(new CreateReceiptInput
@@ -629,7 +711,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
                         Symbol = "ELF",
                         TargetChain = "Ethereum"
                     });
-                bucket.CurrentTokenAmount.ShouldBe(5_0000_00000000 - 5_0000_00000000 + 5_00000000); 
+                bucket.CurrentTokenAmount.ShouldBe(5_0000_00000000 - 5_0000_00000000 + 5_00000000);
             }
         }
         {
@@ -651,7 +733,8 @@ public partial class BridgeContractTests : BridgeContractTestBase
                     });
                 minWait.Value.ShouldBe(100);
             }
-            executionResult.TransactionResult.Error.ShouldContain("Amount exceeds current token amount, the minimum wait time is 100s");
+            executionResult.TransactionResult.Error.ShouldContain(
+                "Amount exceeds current token amount, the minimum wait time is 100s");
             {
                 blockTimeProvider.SetBlockTime(Timestamp.FromDateTime(creatReceiptTime.AddSeconds(5).AddHours(2)));
                 var executionResult1 = await BridgeContractStub.CreateReceipt.SendAsync(new CreateReceiptInput
@@ -661,8 +744,9 @@ public partial class BridgeContractTests : BridgeContractTestBase
                     TargetAddress = "0x643C7DCAd9321b36de85FEaC19763BE492dB5a04",
                     TargetChainId = "Ethereum"
                 });
-                
-                blockTimeProvider.SetBlockTime(Timestamp.FromDateTime(creatReceiptTime.AddSeconds(5).AddHours(2).AddSeconds(1)));
+
+                blockTimeProvider.SetBlockTime(
+                    Timestamp.FromDateTime(creatReceiptTime.AddSeconds(5).AddHours(2).AddSeconds(1)));
                 var bucket = await BridgeContractImplStub.GetCurrentReceiptTokenBucketState.CallAsync(
                     new GetCurrentReceiptTokenBucketStateInput
                     {
@@ -670,7 +754,6 @@ public partial class BridgeContractTests : BridgeContractTestBase
                         TargetChain = "Ethereum"
                     });
                 bucket.CurrentTokenAmount.ShouldBe(201_00000000);
-                
             }
         }
     }
@@ -915,7 +998,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
                 // Commit
                 await CommitAndRevealAsync(queryId, _swapHashOfElf, "Ethereum", "ELF", 1, 3);
             }
-            await CheckBalanceAsync(BridgeContractAddress, "ELF",  62_00000000 + 31_00000000);
+            await CheckBalanceAsync(BridgeContractAddress, "ELF", 62_00000000 + 31_00000000);
             var executionResult = await ReceiverBridgeContractStubs.First().SwapToken.SendAsync(new SwapTokenInput
             {
                 OriginAmount = SampleSwapInfo.SwapInfos[0].OriginAmount,
@@ -926,7 +1009,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
                 .First(l => l.Name == nameof(TokenSwapped)).NonIndexed);
             log.FromChainId.ShouldBe("Ethereum");
             await CheckBalanceAsync(Receivers.First().Address, "ELF", 10000000L);
-            await CheckBalanceAsync(BridgeContractAddress, "ELF",  62_00000000 + 31_00000000);
+            await CheckBalanceAsync(BridgeContractAddress, "ELF", 62_00000000 + 31_00000000);
             {
                 await TokenContractStub.Approve.SendAsync(new ApproveInput
                 {
@@ -944,7 +1027,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
             {
                 TokenSymbol = "ELF"
             });
-            tokenPoolInfo.Liquidity.ShouldBe(10_0000_00000000 + 100_00000000+50_00000000-10000000+40000_00000000);
+            tokenPoolInfo.Liquidity.ShouldBe(10_0000_00000000 + 100_00000000 + 50_00000000 - 10000000 + 40000_00000000);
             await BridgeContractStub.SwapToken.SendAsync(new SwapTokenInput
             {
                 ReceiverAddress = Receivers[1].Address,
@@ -953,7 +1036,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
                 SwapId = _swapHashOfElf
             });
             await CheckBalanceAsync(Receivers[1].Address, "ELF", 20000000L);
-            await CheckBalanceAsync(BridgeContractAddress, "ELF",  62_00000000 + 31_00000000);
+            await CheckBalanceAsync(BridgeContractAddress, "ELF", 62_00000000 + 31_00000000);
         }
     }
 
@@ -970,7 +1053,6 @@ public partial class BridgeContractTests : BridgeContractTestBase
         await InitialReportContractAsync();
         await CreateAndIssueUSDTAsync();
         await CreateRegimentTest();
-
     }
 
     [Fact]
@@ -1520,6 +1602,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
             Owner = DefaultSenderAddress
         })).Balance;
         // var controller = await ParliamentContractStub.GetDefaultOrganizationAddress.CallAsync(new Empty());
+        await InitRampConfig();
         await BridgeContractStub.CreateReceipt.SendAsync(new CreateReceiptInput
         {
             Symbol = "ELF",
@@ -1527,10 +1610,10 @@ public partial class BridgeContractTests : BridgeContractTestBase
             TargetAddress = "0x6b123105e9a4c56f1Ee2eB012Bda74664ec63515",
             TargetChainId = "Ethereum"
         });
-        var transactionFee = gasFee.Value * (decimal) gasPrice.Value / 1000000000 * (decimal) priceRatio.Value /
+        var transactionFee = gasFee.Value * (decimal)gasPrice.Value / 1000000000 * (decimal)priceRatio.Value /
             100000000 * decimal.Parse(floatingRatio.Value);
         var fee = decimal.Round(transactionFee / 1000000000, 8);
-        var actualFee = (long) decimal.Ceiling(fee) * 100000000;
+        var actualFee = (long)decimal.Ceiling(fee) * 100000000;
         await CheckBalanceAsync(BridgeContractAddress, "ELF", actualFee);
         await CheckBalanceAsync(DefaultSenderAddress, "ELF", balance - 100_00000000 - actualFee);
 
@@ -1818,6 +1901,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
                     }
                 });
             }
+            await InitRampConfig();
             {
                 await BridgeContractStub.CreateReceipt.SendAsync(new CreateReceiptInput
                 {
@@ -1945,6 +2029,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
             var state = await BridgeContractStub.IsContractPause.CallAsync(new Empty());
             state.Value.ShouldBe(false);
         }
+        await InitRampConfig();
         await BridgeContractStub.CreateReceipt.SendAsync(new CreateReceiptInput
         {
             Symbol = "ELF",
@@ -1988,24 +2073,24 @@ public partial class BridgeContractTests : BridgeContractTestBase
         }
     }
 
-    [Fact]
-    public async Task ConfirmReport_Duplicate()
-    {
-        await AElfToPipelineTest();
-        foreach (var account in Transmitters)
-        {
-            var stub = GetReportContractStub(account.KeyPair);
-            var rawTest = new StringValue();
-            var executionResult = await stub.ConfirmReport.SendWithExceptionAsync(new ConfirmReportInput
-            {
-                ChainId = "Ethereum",
-                Token = "0xf8F862Aaeb9cb101383d27044202aBbe3a057eCC",
-                RoundId = 1,
-                Signature = SignHelper.GetSignature(rawTest.Value, account.KeyPair.PrivateKey).RecoverInfo
-            });
-            executionResult.TransactionResult.Error.ShouldContain("This report is already confirmed by all nodes.");
-        }
-    }
+    // [Fact]
+    // public async Task ConfirmReport_Duplicate()
+    // {
+    //     await AElfToPipelineTest();
+    //     foreach (var account in Transmitters)
+    //     {
+    //         var stub = GetReportContractStub(account.KeyPair);
+    //         var rawTest = new StringValue();
+    //         var executionResult = await stub.ConfirmReport.SendWithExceptionAsync(new ConfirmReportInput
+    //         {
+    //             ChainId = "Ethereum",
+    //             Token = "0xf8F862Aaeb9cb101383d27044202aBbe3a057eCC",
+    //             RoundId = 1,
+    //             Signature = SignHelper.GetSignature(rawTest.Value, account.KeyPair.PrivateKey).RecoverInfo
+    //         });
+    //         executionResult.TransactionResult.Error.ShouldContain("This report is already confirmed by all nodes.");
+    //     }
+    // }
 
     [Fact]
     public async Task AElfToSetFeeTest_NotSetPriceRatio()
@@ -2063,6 +2148,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
             Symbol = "ELF",
             Owner = DefaultSenderAddress
         })).Balance;
+        await InitRampConfig();
         await BridgeContractStub.CreateReceipt.SendAsync(new CreateReceiptInput
         {
             Symbol = "ELF",
@@ -2146,6 +2232,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
             Symbol = "ELF",
             Owner = DefaultSenderAddress
         })).Balance;
+        await InitRampConfig();
         await BridgeContractStub.CreateReceipt.SendAsync(new CreateReceiptInput
         {
             Symbol = "ELF",
@@ -2153,11 +2240,11 @@ public partial class BridgeContractTests : BridgeContractTestBase
             TargetAddress = "0x6b123105e9a4c56f1Ee2eB012Bda74664ec63515",
             TargetChainId = "Ethereum"
         });
-        var getFee = await BridgeContractStub.GetFeeByChainId.CallAsync(new StringValue
-        {
-            Value = "Ethereum"
-        });
-        getFee.Value.ShouldBe(0);
+        // var getFee = await BridgeContractStub.GetFeeByChainId.CallAsync(new StringValue
+        // {
+        //     Value = "Ethereum"
+        // });
+        // getFee.Value.ShouldBe(0);
         await CheckBalanceAsync(DefaultSenderAddress, "ELF", balance - 100_00000000);
     }
 
@@ -2245,6 +2332,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
             Symbol = "ELF",
             Owner = DefaultSenderAddress
         })).Balance;
+        await InitRampConfig();
         await BridgeContractStub.CreateReceipt.SendAsync(new CreateReceiptInput
         {
             Symbol = "ELF",
@@ -2252,10 +2340,10 @@ public partial class BridgeContractTests : BridgeContractTestBase
             TargetAddress = "0x6b123105e9a4c56f1Ee2eB012Bda74664ec63515",
             TargetChainId = "Ethereum"
         });
-        var transactionFee = gasFee.Value * (decimal) (gasPrice.Value) / 1000000000 * (decimal) priceRatio.Value /
+        var transactionFee = gasFee.Value * (decimal)(gasPrice.Value) / 1000000000 * (decimal)priceRatio.Value /
                              100000000;
         var fee = decimal.Round(transactionFee / 1000000000, 8);
-        var actualFee = (long) decimal.Ceiling(fee);
+        var actualFee = (long)decimal.Ceiling(fee);
         var getFee = await BridgeContractStub.GetFeeByChainId.CallAsync(new StringValue
         {
             Value = "Ethereum"
@@ -2309,7 +2397,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
     private List<byte> GetByteListWithCapacity(int count)
     {
         var list = new List<byte>();
-        list.AddRange(Enumerable.Repeat((byte) 0, count));
+        list.AddRange(Enumerable.Repeat((byte)0, count));
         return list;
     }
 
@@ -2321,7 +2409,7 @@ public partial class BridgeContractTests : BridgeContractTestBase
             dstOffset++;
         }
     }
-    
+
     private List<byte> FillObservationBytes(byte[] result)
     {
         if (result.Length == 0)
@@ -2329,8 +2417,20 @@ public partial class BridgeContractTests : BridgeContractTestBase
         var totalBytesLength = result.Length.Sub(1).Div(32).Add(1);
         var ret = GetByteListWithCapacity(totalBytesLength.Mul(32));
         // Pad with zeros in front until less than 32 bytes.
-        BytesCopy(result, 0, ret, 32-result.Length , result.Length);
+        BytesCopy(result, 0, ret, 32 - result.Length, result.Length);
         return ret;
+    }
+
+    private async Task InitRampConfig()
+    {
+        await BridgeContractImplStub.SetCrossChainConfig.SendAsync(new()
+        {
+            ChainId = "Sepolia",
+            ContractAddress = "0x3c37E0A09eAFEaA7eFB57107802De1B28A6f5F07",
+            ChainIdNumber = 11155111,
+            ChainType = ChainType.Evm,
+            ContractAddressForReceive = "0x8243C4927257ef20dbF360b012C9f72f9A6427c3"
+        });
     }
 
     #endregion

@@ -10,6 +10,7 @@ using EBridge.Contracts.Oracle;
 using EBridge.Contracts.TokenPool;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
+using Ramp;
 using Shouldly;
 using Xunit;
 using CallbackInfo = EBridge.Contracts.Oracle.CallbackInfo;

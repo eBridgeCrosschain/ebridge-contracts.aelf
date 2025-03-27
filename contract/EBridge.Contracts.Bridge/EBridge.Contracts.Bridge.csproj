@@ -3,6 +3,7 @@
         <TargetFramework>net6.0</TargetFramework>
         <IsContract>true</IsContract>
         <RootNamespace>EBridge.Contracts.Bridge</RootNamespace>
+        <Version>1.0.13</Version>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
         <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
@@ -20,6 +21,12 @@
         </CommonMessage>
         <CommonMessage Include="..\..\protobuf\authority_info.proto">
             <Link>Protobuf\Proto\authority_info.proto</Link>
+        </CommonMessage>
+        <CommonMessage Include="..\..\protobuf\ramp_common_message.proto">
+            <Link>Protobuf\Proto\ramp_common_message.proto</Link>
+        </CommonMessage>
+        <CommonMessage Include="..\..\protobuf\oracle_common_message.proto">
+            <Link>Protobuf\Proto\oracle_common_message.proto</Link>
         </CommonMessage>
     </ItemGroup>
 
@@ -54,6 +61,9 @@
         <ContractReference Include="..\..\protobuf\token_pool_contract.proto">
             <Link>Protobuf\Proto\reference\token_pool_contract.proto</Link>
         </ContractReference>
+        <ContractReference Include="..\..\protobuf\ramp_contract.proto">
+            <Link>Protobuf\Proto\ramp_contract.proto</Link>
+        </ContractReference>
     </ItemGroup>
 
     <ItemGroup>
@@ -68,6 +78,9 @@
         </ContractBase>
         <ContractBase Include="..\..\protobuf\bridge_contract.proto">
             <Link>Protobuf\Proto\bridge_contract.proto</Link>
+        </ContractBase>
+        <ContractBase Include="..\..\protobuf\ramp_interface.proto">
+            <Link>Protobuf\Proto\ramp_interface.proto</Link>
         </ContractBase>
     </ItemGroup>
     
