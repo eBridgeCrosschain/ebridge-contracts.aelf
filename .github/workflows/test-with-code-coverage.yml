@@ -39,7 +39,7 @@ jobs:
           for name in `ls ./test/*.Tests/*.csproj | awk '{print $NF}'`;
           do
             echo "Running tests for $name..."
-            dotnet test $name --no-restore --no-build --logger trx /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:CoverletOutput=../coverage/coverage.xml
+            dotnet test $name --no-restore --no-build --logger trx --settings CodeCoverage.runsettings --results-directory coverage --collect:"XPlat Code Coverage"
             echo "Finished running tests for $name." 
           done
 
