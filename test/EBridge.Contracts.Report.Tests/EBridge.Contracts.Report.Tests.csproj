@@ -77,10 +77,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\contract\EBridge.Contracts.Report\EBridge.Contracts.Report.csproj" />
-        <ProjectReference Include="..\..\contract\EBridge.Contracts.Regiment\EBridge.Contracts.Regiment.csproj" />
-        <ProjectReference Include="..\..\contract\EBridge.Contracts.Oracle\EBridge.Contracts.Oracle.csproj" />
-        <ProjectReference Include="..\..\contract\EBridge.Contracts.StringAggregator\EBridge.Contracts.StringAggregator.csproj" />
         <ProjectReference Include="..\..\src\AElf.Boilerplate.TestBase\AElf.Boilerplate.TestBase.csproj" />
         <ProjectReference Include="..\EBridge.Contracts.Bridge.Tests\EBridge.Contracts.Bridge.Tests.csproj" />
     </ItemGroup>

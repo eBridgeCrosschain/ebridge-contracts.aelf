@@ -106,10 +106,6 @@
     <ItemGroup>
         <ProjectReference Include="..\..\contract\EBridge.Contracts.TokenPool\EBridge.Contracts.TokenPool.csproj" />
         <ProjectReference Include="..\..\contract\EBridge.Contracts.Bridge\EBridge.Contracts.Bridge.csproj" />
-        <ProjectReference Include="..\..\contract\EBridge.Contracts.MerkleTree\EBridge.Contracts.MerkleTree.csproj" />
-        <ProjectReference Include="..\..\contract\EBridge.Contracts.Oracle\EBridge.Contracts.Oracle.csproj" />
-        <ProjectReference Include="..\..\contract\EBridge.Contracts.StringAggregator\EBridge.Contracts.StringAggregator.csproj" />
-        <ProjectReference Include="..\..\contract\EBridge.Contracts.Report\EBridge.Contracts.Report.csproj" />       
         <ProjectReference Include="..\..\src\AElf.Boilerplate.TestBase\AElf.Boilerplate.TestBase.csproj" />
 
     </ItemGroup>

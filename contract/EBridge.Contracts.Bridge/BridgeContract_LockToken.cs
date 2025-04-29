@@ -5,7 +5,6 @@ using AElf.CSharp.Core;
 using AElf.Sdk.CSharp;
 using AElf.Types;
 using AetherLink.Contracts.Ramp;
-using EBridge.Contracts.Report;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Ramp;
@@ -93,8 +92,7 @@ public partial class BridgeContract
         TransferDepositTo(input.Symbol, input.Amount, Context.Sender, input.TargetChainId);
 
         var receiptIdToken = HashHelper.ConcatAndCompute(HashHelper.ComputeFrom(Context.ChainId),
-            HashHelper.ComputeFrom(input.TargetChainId),
-            HashHelper.ComputeFrom(input.Symbol));
+            HashHelper.ComputeFrom(input.TargetChainId), HashHelper.ComputeFrom(input.Symbol));
 
         var receiptCount = State.ReceiptCountMap[receiptIdToken].Add(1);
         var receiptId = $"{receiptIdToken.ToHex()}.{receiptCount}";
@@ -107,11 +105,12 @@ public partial class BridgeContract
         };
 
         State.ReceiptMap[receiptId] = receipt;
-        
+
         switch (input.TargetChainType)
         {
             case 0:
-                DealWithEvmChain(input.TargetChainId, receiptId, receipt.Amount, receipt.TargetAddress, receiptIdToken.ToHex());
+                DealWithEvmChain(input.TargetChainId, receiptIdToken, receipt.Amount, receipt.TargetAddress,
+                    receiptCount, input.Symbol);
                 break;
             case 1:
                 DealWithTonChain(input.TargetChainId, receiptIdToken, receipt.Amount, receipt.TargetAddress,
@@ -146,8 +145,8 @@ public partial class BridgeContract
         StartRampRequest(chainId, ByteString.CopyFrom(message.ToArray()), symbol, amount);
     }
 
-    private void DealWithEvmChain(string chainId, string receiptId, long amount, string targetAddress,
-        string receiptIdToken)
+    private void DealWithEvmChain(string chainId, Hash receiptIdToken, long amount, string targetAddress,
+        long receiptCount, string symbol)
     {
         if (!decimal.TryParse(State.FeeFloatingRatio[chainId], out var floatingRatio))
         {
@@ -159,22 +158,10 @@ public partial class BridgeContract
             State.PriceRatio[chainId], floatingRatio);
         State.TransactionFee.Value = State.TransactionFee.Value.Add(nativeTokenFee);
         TransferFee(DefaultFeeSymbol, nativeTokenFee, Context.Sender, Context.Self);
-        var receiptHash = CalculateReceiptHash(receiptId, amount, targetAddress);
-        Context.SendInline(State.ReportContract.Value, nameof(State.ReportContract.QueryOracle),
-            new QueryOracleInput
-            {
-                QueryInfo = new OffChainQueryInfo
-                {
-                    Title = $"lock_token_{receiptId}",
-                    Options =
-                    {
-                        receiptHash.ToHex(), $"{amount}-{targetAddress}-{receiptIdToken}"
-                    }
-                },
-                ChainId = chainId,
-                Payment = State.QueryPayment.Value
-            });
+        var message = GenerateEvmMessage(receiptIdToken, amount, targetAddress, receiptCount);
+        // StartRampRequest(chainId, ByteString.CopyFrom(message.ToArray()), symbol, amount);
     }
+
     private void StartRampRequest(string chainId, ByteString message, string symbol, long amount)
     {
         var config = State.CrossChainConfigMap[chainId];

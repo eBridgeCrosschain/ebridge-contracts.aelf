@@ -1,21 +1,15 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using AElf;
-using AElf.Contracts.Association;
 using AElf.Contracts.MultiToken;
 using AElf.ContractTestBase.ContractTestKit;
 using AElf.CSharp.Core.Extension;
 using AElf.Standards.ACS3;
 using AElf.Types;
-using EBridge.Contracts.Regiment;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Shouldly;
 using Xunit;
-using AddAdminsInput = EBridge.Contracts.Oracle.AddAdminsInput;
-using CreateRegimentInput = EBridge.Contracts.Oracle.CreateRegimentInput;
-using DeleteAdminsInput = EBridge.Contracts.Oracle.DeleteAdminsInput;
 
 namespace EBridge.Contracts.Bridge;
 
@@ -29,10 +23,6 @@ public partial class BridgeContractTests : BridgeContractTestBase
         await InitialBridgeContractAsync();
         var executionResult = await BridgeContractStub.Initialize.SendWithExceptionAsync(new InitializeInput
         {
-            MerkleTreeContractAddress = MerkleTreeContractAddress,
-            OracleContractAddress = OracleContractAddress,
-            RegimentContractAddress = RegimentContractAddress,
-            ReportContractAddress = ReportContractAddress,
             Admin = DefaultSenderAddress,
             Controller = DefaultSenderAddress
         });
@@ -143,51 +133,6 @@ public partial class BridgeContractTests : BridgeContractTestBase
             await BridgeContractSetFeeRatioStub.ChangeRestartOrganization.SendWithExceptionAsync(organizationSecond
                 .Item2);
         execution.TransactionResult.Error.ShouldContain("No permission.");
-    }
-
-    #endregion
-
-    #region Regiment
-
-    [Fact]
-    public async Task Regiment_AddAdminTest()
-    {
-        await InitialOracleContractAsync();
-        await RegimentContractStub.Initialize.SendAsync(new Regiment.InitializeInput
-        {
-            Controller = OracleContractAddress
-        });
-        await CreateRegimentTest();
-        await OracleContractStub.AddAdmins.SendAsync(new AddAdminsInput
-        {
-            RegimentAddress = _regimentAddress,
-            OriginSenderAddress = DefaultSenderAddress,
-            NewAdmins = {Lockers[0].Address}
-        });
-        var memberList = await RegimentContractStub.GetRegimentMemberList.CallAsync(_regimentAddress);
-        memberList.Value.Count.ShouldBe(8);
-        memberList.Value.ShouldContain(Lockers[0].Address);
-        var regimentInfo = await RegimentContractStub.GetRegimentInfo.CallAsync(_regimentAddress);
-        regimentInfo.Admins.Count.ShouldBe(2);
-        regimentInfo.Admins[1].ShouldBe(Lockers[0].Address);
-    }
-
-    [Fact]
-    public async Task Regiment_RemoveAdminTest()
-    {
-        await Regiment_AddAdminTest();
-        await OracleContractStub.DeleteAdmins.SendAsync(new DeleteAdminsInput
-        {
-            RegimentAddress = _regimentAddress,
-            OriginSenderAddress = DefaultSenderAddress,
-            DeleteAdmins = {Lockers[0].Address}
-        });
-        var memberList = await RegimentContractStub.GetRegimentMemberList.CallAsync(_regimentAddress);
-        memberList.Value.Count.ShouldBe(7);
-        memberList.Value.ShouldNotContain(Lockers[0].Address);
-        var regimentInfo = await RegimentContractStub.GetRegimentInfo.CallAsync(_regimentAddress);
-        regimentInfo.Admins.Count.ShouldBe(1);
-        regimentInfo.Admins[0].ShouldBe(BridgeContractAddress);
     }
 
     #endregion

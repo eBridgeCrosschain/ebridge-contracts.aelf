@@ -60,11 +60,6 @@ public partial class BridgeContract
         return State.RecorderReceiptInfoMap[input.SwapId][input.ReceiptId];
     }
 
-    public override Hash GetSpaceIdBySwapId(Hash input)
-    {
-        return State.SwapSpaceIdMap[input];
-    }
-
     public override Hash GetSwapIdByToken(GetSwapIdByTokenInput input)
     {
         return State.ChainTokenSwapIdMap[input.ChainId][input.Symbol];

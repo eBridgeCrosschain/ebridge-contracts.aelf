@@ -3,6 +3,7 @@
         <TargetFramework>net6.0</TargetFramework>
         <IsContract>true</IsContract>
         <RootNamespace>EBridge.Contracts.Bridge</RootNamespace>
+        <Version>1.0.2</Version>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
         <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
@@ -14,9 +15,6 @@
     <ItemGroup>
         <CommonMessage Include="..\..\protobuf\acs13.proto">
             <Link>Protobuf\Proto\acs13.proto</Link>
-        </CommonMessage>
-        <CommonMessage Include="..\..\protobuf\callback_input.proto">
-            <Link>Protobuf\Proto\callback_input.proto</Link>
         </CommonMessage>
         <CommonMessage Include="..\..\protobuf\authority_info.proto">
             <Link>Protobuf\Proto\authority_info.proto</Link>
@@ -42,20 +40,8 @@
         <ContractReference Include="..\..\protobuf\parliament_contract.proto">
             <Link>Protobuf\Proto\reference\parliament_contract.proto</Link>
         </ContractReference>
-        <ContractReference Include="..\..\protobuf\oracle_contract.proto">
-            <Link>Protobuf\Proto\reference\oracle_contract.proto</Link>
-        </ContractReference>
         <ContractReference Include="..\..\protobuf\association_contract.proto">
             <Link>Protobuf\Proto\reference\association_contract.proto</Link>
-        </ContractReference>
-        <ContractReference Include="..\..\protobuf\regiment_contract.proto">
-            <Link>Protobuf\Proto\reference\regiment_contract.proto</Link>
-        </ContractReference>
-        <ContractReference Include="..\..\protobuf\merkle_tree_contract.proto">
-            <Link>Protobuf\Proto\reference\merkle_tree_contract.proto</Link>
-        </ContractReference>
-        <ContractReference Include="..\..\protobuf\report_contract.proto">
-            <Link>Protobuf\Proto\reference\report_contract.proto</Link>
         </ContractReference>
         <ContractReference Include="..\..\protobuf\token_pool_contract.proto">
             <Link>Protobuf\Proto\reference\token_pool_contract.proto</Link>
@@ -66,14 +52,8 @@
     </ItemGroup>
 
     <ItemGroup>
-<!--        <ContractBase Include="..\..\protobuf\acs1.proto">-->
-<!--            <Link>Protobuf\Proto\acs1.proto</Link>-->
-<!--        </ContractBase>-->
         <ContractBase Include="..\..\protobuf\acs12.proto">
             <Link>Protobuf\Proto\acs12.proto</Link>
-        </ContractBase>
-        <ContractBase Include="..\..\protobuf\receipt_maker.proto">
-            <Link>Protobuf\Proto\receipt_maker.proto</Link>
         </ContractBase>
         <ContractBase Include="..\..\protobuf\bridge_contract.proto">
             <Link>Protobuf\Proto\bridge_contract.proto</Link>

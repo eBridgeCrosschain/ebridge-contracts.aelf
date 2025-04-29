@@ -19,7 +19,7 @@ public partial class BridgeContract
         var timestamp = Context.CurrentBlockTime.Seconds;
         var targetAddressToBase64 = targetAddress.Replace('-', '+').Replace('_', '/');
         var receiptHash =
-            CalculateReceiptHashForTon(receiptIdToken, amount, targetAddressToBase64, receiptIndex);
+            CalculateReceiptHash(receiptIdToken, amount, targetAddressToBase64, receiptIndex,ChainType.Tvm);
         var lazyData = new List<byte>();
         lazyData.AddRange(FillObservationBytes(ConvertLong(receiptIndex).ToArray(), SlotByteSize));
         lazyData.AddRange(FillObservationBytes(receiptIdToken.ToByteArray(), SlotByteSize));
@@ -31,6 +31,19 @@ public partial class BridgeContract
         return lazyData;
     }
 
+    private List<byte> GenerateEvmMessage(Hash receiptIdToken, long amount, string targetAddress, long receiptIndex)
+    {
+        var receiptHash =
+            CalculateReceiptHash(receiptIdToken, amount, targetAddress, receiptIndex,ChainType.Evm);
+        var lazyData = new List<byte>();
+        lazyData.AddRange(FillObservationBytes(ConvertLong(receiptIndex).ToArray(), SlotByteSize));
+        lazyData.AddRange(FillObservationBytes(receiptIdToken.ToByteArray(), SlotByteSize));
+        lazyData.AddRange(FillObservationBytes(ConvertLong(amount).ToArray(), SlotByteSize));
+        lazyData.AddRange(FillObservationBytes(receiptHash.ToByteArray(), SlotByteSize));
+        lazyData.AddRange(FillObservationBytes(ByteStringHelper.FromHexString(targetAddress).ToByteArray(),SlotByteSize));
+        return lazyData;
+    }
+    
     private List<byte> FillObservationBytes(byte[] result, int byteSize)
     {
         if (result.Length == 0)

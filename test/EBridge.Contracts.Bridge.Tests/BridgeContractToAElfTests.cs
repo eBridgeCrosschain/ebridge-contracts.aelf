@@ -6,14 +6,12 @@ using AElf;
 using AElf.Contracts.MultiToken;
 using AElf.Kernel;
 using AElf.Types;
-using EBridge.Contracts.Oracle;
 using EBridge.Contracts.TokenPool;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Ramp;
 using Shouldly;
 using Xunit;
-using CallbackInfo = EBridge.Contracts.Oracle.CallbackInfo;
 
 
 namespace EBridge.Contracts.Bridge;
@@ -23,16 +21,8 @@ public partial class BridgeContractTests
     [Fact]
     public async Task<(Address, Address)> InitialSwapAsync()
     {
-        await InitialOracleContractAsync();
-        await RegimentContractStub.Initialize.SendAsync(new Regiment.InitializeInput
-        {
-            Controller = OracleContractAddress
-        });
         var organization = await InitialBridgeContractAsync();
-        await InitialMerkleTreeContractAsync();
         await CreateAndIssueUSDTAsync();
-
-        await CreateRegimentTest();
 
         await BridgeContractStub.AddToken.SendAsync(new AddTokenInput
         {
@@ -70,46 +60,7 @@ public partial class BridgeContractTests
         });
         return organization;
     }
-
-    private async Task OracleQueryCommitAndReveal()
-    {
-        {
-            // Query
-            var queryId = await MakeQueryAsync(_swapHashOfElf.ToString(), 1, 3);
-
-            // Commit
-            await CommitAndRevealAsync(queryId, _swapHashOfElf, "Ethereum", "ELF", 1, 3);
-        }
-        {
-            // Query
-            var queryId = await MakeQueryAsync(_swapHashOfElf.ToString(), 4, 5);
-
-            // Commit
-            await CommitAndRevealAsync(queryId, _swapHashOfElf, "Ethereum", "ELF", 4, 5);
-        }
-        {
-            // Query
-            var queryId = await MakeQueryAsync(_swapHashOfElf.ToString(), 6, 6);
-
-            // Commit
-            await CommitAndRevealAsync(queryId, _swapHashOfElf, "Ethereum", "ELF", 6, 6);
-        }
-
-        {
-            // Query
-            var queryId = await MakeQueryAsync(_swapHashOfUsdt.ToString(), 1, 4);
-
-            // Commit
-            await CommitAndRevealAsync(queryId, _swapHashOfUsdt, "Ploygon", "USDT", 1, 4);
-        }
-        {
-            // Query
-            var queryId = await MakeQueryAsync(_swapHashOfUsdt.ToString(), 5, 5);
-
-            // Commit
-            await CommitAndRevealAsync(queryId, _swapHashOfUsdt, "Ploygon", "USDT", 5, 5);
-        }
-    }
+    
     
     private async Task<DateTime> SetSwapLimit()
     {
@@ -163,7 +114,6 @@ public partial class BridgeContractTests
     public async Task ToAElfPipelineTest()
     {
         await CreateSwapTestAsync();
-        await OracleQueryCommitAndReveal();
         var time = await SetSwapLimit();
         
         {
@@ -338,11 +288,9 @@ public partial class BridgeContractTests
     public async Task<(Address, Address)> CreateSwapTestAsync()
     {
         var organization = await InitialSwapAsync();
-        var regimentId = HashHelper.ComputeFrom(_regimentAddress);
         // Create swap.
         var createSwapResult = await BridgeContractStub.CreateSwap.SendAsync(new CreateSwapInput
         {
-            RegimentId = regimentId,
             SwapTargetToken =
                 new SwapTargetToken
                 {
@@ -356,7 +304,6 @@ public partial class BridgeContractTests
                 }
         });
         _swapHashOfElf = createSwapResult.Output;
-        _swapOfElfSpaceId = await BridgeContractStub.GetSpaceIdBySwapId.CallAsync(_swapHashOfElf);
         var swapId = await BridgeContractStub.GetSwapIdByToken.CallAsync(new GetSwapIdByTokenInput
         {
             ChainId = "Ethereum",
@@ -385,7 +332,6 @@ public partial class BridgeContractTests
         // Create another swap.
         createSwapResult = await BridgeContractStub.CreateSwap.SendAsync(new CreateSwapInput
         {
-            RegimentId = regimentId,
             SwapTargetToken =
                 new SwapTargetToken
                 {
@@ -399,7 +345,6 @@ public partial class BridgeContractTests
                 }
         });
         _swapHashOfUsdt = createSwapResult.Output;
-        _swapOfUsdtSpaceId = await BridgeContractStub.GetSpaceIdBySwapId.CallAsync(_swapHashOfUsdt);
         await TokenContractStub.Approve.SendAsync(new ApproveInput
         {
             Symbol = "USDT",
@@ -418,7 +363,6 @@ public partial class BridgeContractTests
             });
             tokenPoolInfo.Liquidity.ShouldBe(10_0000_00000000);
         }
-        await PortTokenCreate();
         return organization;
     }
 
@@ -426,11 +370,8 @@ public partial class BridgeContractTests
     public async Task CreateSwapTest_NoPermission()
     {
         await InitialSwapAsync();
-        var regimentId = await RegimentContractStub.GetRegimentId.CallAsync(_regimentAddress);
         var executionResult = await LockBridgeContractStubs[0].CreateSwap.SendWithExceptionAsync(new CreateSwapInput
         {
-            MerkleTreeLeafLimit = 1024,
-            RegimentId = regimentId,
             SwapTargetToken =
                 new SwapTargetToken
                 {
@@ -452,7 +393,6 @@ public partial class BridgeContractTests
         await InitialSwapAsync();
         var executionResult = await BridgeContractStub.CreateSwap.SendWithExceptionAsync(new CreateSwapInput
         {
-            MerkleTreeLeafLimit = 1024,
             SwapTargetToken =
                 new SwapTargetToken
                 {
@@ -471,15 +411,8 @@ public partial class BridgeContractTests
     [Fact]
     public async Task CreateSwapTest_NotAdmin()
     {
-        await InitialOracleContractAsync();
-        await RegimentContractStub.Initialize.SendAsync(new Regiment.InitializeInput
-        {
-            Controller = OracleContractAddress
-        });
         await InitialBridgeContractAsync();
         await CreateAndIssueUSDTAsync();
-
-        var regimentAddress = await CreateRegiment_Use_NotAdmin();
 
         await TokenContractStub.Approve.SendAsync(new ApproveInput
         {
@@ -494,11 +427,8 @@ public partial class BridgeContractTests
             Spender = BridgeContractAddress,
             Symbol = "USDT"
         });
-        var regimentId = await RegimentContractStub.GetRegimentId.CallAsync(regimentAddress);
         var executionResult = await BridgeContractStub.CreateSwap.SendWithExceptionAsync(new CreateSwapInput
         {
-            MerkleTreeLeafLimit = 1024,
-            RegimentId = regimentId,
             SwapTargetToken =
                 new SwapTargetToken
                 {
@@ -518,10 +448,8 @@ public partial class BridgeContractTests
     public async Task CreateSwapTest_Repeat()
     {
         await CreateSwapTestAsync();
-        var regimentId = HashHelper.ComputeFrom(_regimentAddress);
         var result = await BridgeContractStub.CreateSwap.SendWithExceptionAsync(new CreateSwapInput
         {
-            RegimentId = regimentId,
             SwapTargetToken =
                 new SwapTargetToken
                 {
@@ -541,10 +469,8 @@ public partial class BridgeContractTests
     public async Task CreateSwapTest_SymbolNotExist()
     {
         await InitialSwapAsync();
-        var regimentId = await RegimentContractStub.GetRegimentId.CallAsync(_regimentAddress);
         var executionResult = await BridgeContractStub.CreateSwap.SendWithExceptionAsync(new CreateSwapInput
         {
-            RegimentId = regimentId,
             SwapTargetToken =
                 new SwapTargetToken
                 {
@@ -564,11 +490,8 @@ public partial class BridgeContractTests
     public async Task CreateSwapTest_InvalidSwapRatio()
     {
         await InitialSwapAsync();
-        var regimentId = await RegimentContractStub.GetRegimentId.CallAsync(_regimentAddress);
         var executionResult = await BridgeContractStub.CreateSwap.SendWithExceptionAsync(new CreateSwapInput
         {
-            MerkleTreeLeafLimit = 1024,
-            RegimentId = regimentId,
             SwapTargetToken =
                 new SwapTargetToken
                 {
@@ -589,16 +512,11 @@ public partial class BridgeContractTests
     {
         await BridgeContractStub.Initialize.SendAsync(new InitializeInput
         {
-            OracleContractAddress = OracleContractAddress,
-            RegimentContractAddress = RegimentContractAddress,
-            ReportContractAddress = ReportContractAddress,
             Admin = DefaultSenderAddress,
             Controller = DefaultSenderAddress
         });
         var executionResult = await BridgeContractStub.CreateSwap.SendWithExceptionAsync(new CreateSwapInput
         {
-            MerkleTreeLeafLimit = 1024,
-            RegimentId = HashHelper.ComputeFrom("regiment"),
             SwapTargetToken =
                 new SwapTargetToken
                 {
@@ -742,13 +660,7 @@ public partial class BridgeContractTests
     {
         var organization = await CreateSwapTestAsync();
 
-        // Query
-        var queryId = await MakeQueryAsync(_swapHashOfElf.ToString(), 1, 3);
-
         await BridgeContractStub.Pause.SendAsync(new Empty());
-
-        // Commit
-        await CommitAndReveal_Pause(queryId, _swapHashOfElf, "Ethereum", "ELF", 1, 3);
 
         return organization;
     }
@@ -762,126 +674,44 @@ public partial class BridgeContractTests
         await AssociationContractImplStub.Release.SendAsync(proposalId);
         var state = await BridgeContractStub.IsContractPause.CallAsync(new Empty());
         state.Value.ShouldBe(false);
-        // Query
-        var queryId = await MakeQueryAsync(_swapHashOfElf.ToString(), 1, 3);
-        await CommitAndRevealAsync(queryId, _swapHashOfElf, "Ethereum", "ELF", 1, 3);
     }
-
-    [Fact]
-    public async Task ToAElfTest_RecordedIncorrectIndex()
-    {
-        await CreateSwapTestAsync();
-        {
-            // Query
-            var queryId = await MakeQueryAsync(_swapHashOfElf.ToString(), 1, 3);
-
-            // Commit
-            await CommitAndRevealAsync(queryId, _swapHashOfElf, "Ethereum", "ELF", 1, 3);
-        }
-        {
-            // Query
-            var queryId = await MakeQueryAsync(_swapHashOfElf.ToString(), 2, 3);
-
-            // Commit
-            await CommitAndReveal_IncorrectReceiptIndex(queryId, _swapHashOfElf, "Ethereum", "ELF", 2, 3);
-        }
-    }
+    
 
     [Fact]
     public async Task ToAElfTest_ExceedDailyLimit()
     {
         await CreateSwapTestAsync();
-        {
-            // Query
-            var queryId = await MakeQueryAsync(_swapHashOfElf.ToString(), 1, 3);
-
-            // Commit
-            await CommitAndRevealAsync(queryId, _swapHashOfElf, "Ethereum", "ELF", 1, 3);
-        }
-        {
-            // Query
-            var queryId = await MakeQueryAsync(_swapHashOfElf.ToString(), 2, 3);
-
-            // Commit
-            await CommitAndReveal_IncorrectReceiptIndex(queryId, _swapHashOfElf, "Ethereum", "ELF", 2, 3);
-        }
+        
     }
 
     [Fact]
     public async Task ToAElfTest_ExceedBucketLimit()
     {
         await CreateSwapTestAsync();
-        {
-            // Query
-            var queryId = await MakeQueryAsync(_swapHashOfElf.ToString(), 1, 3);
-
-            // Commit
-            await CommitAndRevealAsync(queryId, _swapHashOfElf, "Ethereum", "ELF", 1, 3);
-        }
-        {
-            // Query
-            var queryId = await MakeQueryAsync(_swapHashOfElf.ToString(), 2, 3);
-
-            // Commit
-            await CommitAndReveal_IncorrectReceiptIndex(queryId, _swapHashOfElf, "Ethereum", "ELF", 2, 3);
-        }
     }
 
     [Fact]
     public async Task ToAElfTest_DuplicateCommit()
     {
         await CreateSwapTestAsync();
-        {
-            // Query
-            var queryId = await MakeQueryAsync(_swapHashOfElf.ToString(), 1, 2);
-
-            // Commit
-            await Commit_Duplicate(queryId, _swapHashOfElf, "Ethereum", "ELF", 1, 2);
-        }
     }
 
     [Fact]
     public async Task ToAElfTest_SwapIdIsNull()
     {
         await CreateSwapTestAsync();
-        {
-            // Query
-            var queryId = await MakeQueryAsync(_swapHashOfElf.ToString(), 1, 3);
-
-            // Commit
-            await CommitAndRevealAsync_SwapIdIsNull(queryId, _swapHashOfElf, "Ethereum", "ELF", 1, 3);
-        }
     }
 
     [Fact]
     public async Task ToAElfTest_SpaceIdIsNull()
     {
         await CreateSwapTestAsync();
-        {
-            // Query
-            var queryId = await MakeQueryAsync(_swapHashOfElf.ToString(), 1, 3);
-
-            // Commit
-            await CommitAndRevealAsync_SpaceIdIsNull(queryId, _swapHashOfElf, "Ethereum", "ELF", 1, 3);
-        }
-    }
-
-    [Fact]
-    public async Task RecordReceiptHash_NoPermission()
-    {
-        var executionResult = await BridgeContractStub.FulfillQuery.SendWithExceptionAsync(new CallbackInput
-        {
-            QueryId = new Hash(),
-            Result = new StringValue().ToByteString()
-        });
-        executionResult.TransactionResult.Error.ShouldContain("No permission.");
     }
 
     [Fact]
     public async Task<(Address, Address)> SwapTokenTest_Pause()
     {
         var organization = await CreateSwapTestAsync();
-        await OracleQueryCommitAndReveal();
         await BridgeContractStub.Pause.SendAsync(new Empty());
         var executionResult = await ReceiverBridgeContractStubs.First().SwapToken.SendWithExceptionAsync(
             new SwapTokenInput
@@ -963,11 +793,9 @@ public partial class BridgeContractTests
     public async Task SwapTokenTest_NoDeposit()
     {
         await InitialSwapAsync();
-        var regimentId = HashHelper.ComputeFrom(_regimentAddress);
         // Create swap.
         var createSwapResult = await BridgeContractStub.CreateSwap.SendAsync(new CreateSwapInput
         {
-            RegimentId = regimentId,
             SwapTargetToken =
                 new SwapTargetToken
                 {
@@ -981,7 +809,6 @@ public partial class BridgeContractTests
                 }
         });
         _swapHashOfElf = createSwapResult.Output;
-        _swapOfElfSpaceId = await BridgeContractStub.GetSpaceIdBySwapId.CallAsync(_swapHashOfElf);
         var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
         var input = new List<SwapDailyLimitInfo>
         {
@@ -996,14 +823,7 @@ public partial class BridgeContractTests
         {
             SwapDailyLimitInfos = { input }
         });
-        await PortTokenCreate();
-        {
-            // Query
-            var queryId = await MakeQueryAsync(_swapHashOfElf.ToString(), 1, 3);
-
-            // Commit
-            await CommitAndRevealAsync(queryId, _swapHashOfElf, "Ethereum", "ELF", 1, 3);
-        }
+       
         {
             // Swap
             var executionResult = await BridgeContractStub.SwapToken.SendWithExceptionAsync(new SwapTokenInput
@@ -1041,13 +861,7 @@ public partial class BridgeContractTests
         {
             SwapDailyLimitInfos = { input }
         });
-        {
-            // Query
-            var queryId = await MakeQueryAsync(_swapHashOfElf.ToString(), 1, 3);
-
-            // Commit
-            await CommitAndRevealAsync(queryId, _swapHashOfElf, "Ethereum", "ELF", 1, 3);
-        }
+        
         {
             var executionResult = await BridgeContractStub.SwapToken.SendWithExceptionAsync(new SwapTokenInput
             {
@@ -1064,13 +878,7 @@ public partial class BridgeContractTests
     public async Task SwapTokenTest_SwapIdIsNull()
     {
         await CreateSwapTestAsync();
-        {
-            // Query
-            var queryId = await MakeQueryAsync(_swapHashOfElf.ToString(), 1, 3);
-
-            // Commit
-            await CommitAndRevealAsync(queryId, _swapHashOfElf, "Ethereum", "ELF", 1, 3);
-        }
+        
         {
             var executionResult = await BridgeContractStub.SwapToken.SendWithExceptionAsync(new SwapTokenInput
             {
@@ -1087,13 +895,7 @@ public partial class BridgeContractTests
     public async Task SwapTokenTest_ProofFail_AmountIsZero()
     {
         await CreateSwapTestAsync();
-        {
-            // Query
-            var queryId = await MakeQueryAsync(_swapHashOfElf.ToString(), 1, 3);
-
-            // Commit
-            await CommitAndRevealAsync(queryId, _swapHashOfElf, "Ethereum", "ELF", 1, 3);
-        }
+        
         {
             var executionResult = await BridgeContractStub.SwapToken.SendWithExceptionAsync(new SwapTokenInput
             {
@@ -1130,13 +932,7 @@ public partial class BridgeContractTests
         {
             SwapDailyLimitInfos = { input }
         });
-        {
-            // Query
-            var queryId = await MakeQueryAsync(_swapHashOfElf.ToString(), 1, 3);
-
-            // Commit
-            await CommitAndRevealAsync(queryId, _swapHashOfElf, "Ethereum", "ELF", 1, 3);
-        }
+        
         {
             var executionResult = await BridgeContractStub.SwapToken.SendWithExceptionAsync(new SwapTokenInput
             {
@@ -1331,315 +1127,4 @@ public partial class BridgeContractTests
     // }
     //
     // #endregion
-
-    #region Helper
-
-    private async Task<Hash> MakeQueryAsync(string swapId, long from, long end)
-    {
-        var queryInput = new QueryInput
-        {
-            Payment = 10000,
-            QueryInfo = new QueryInfo
-            {
-                Title = $"record_receipts_{swapId}",
-                Options = { $"{from}", $"{end}" }
-            },
-            AggregatorContractAddress = StringAggregatorContractAddress,
-            CallbackInfo = new CallbackInfo
-            {
-                ContractAddress = BridgeContractAddress
-            },
-            DesignatedNodeList = new AddressList
-            {
-                Value = { _regimentAddress }
-            }
-        };
-        var executionResult = await TransmittersOracleContractStubs.First().Query.SendAsync(queryInput);
-        return executionResult.Output;
-    }
-
-    private async Task CommitAndRevealAsync(Hash queryId, Hash swapId, string chainId, string symbol, long from,
-        long end)
-    {
-        var tokenId = HashHelper.ConcatAndCompute(HashHelper.ComputeFrom(chainId), HashHelper.ComputeFrom(symbol));
-        var receiptHashMap = new ReceiptHashMap
-        {
-            SwapId = swapId.ToHex()
-        };
-        for (var index = from; index <= end; index++)
-        {
-            var receiptId = $"{tokenId}.{index}";
-            receiptHashMap.Value.Add(receiptId,
-                chainId == "Ploygon"
-                    ? SampleSwapInfo.SwapInfos[(int)index + 4].ReceiptHash.ToHex()
-                    : SampleSwapInfo.SwapInfos[(int)index - 1].ReceiptHash.ToHex());
-        }
-
-        var salt = HashHelper.ComputeFrom("Salt");
-
-        foreach (var account in Transmitters)
-        {
-            var stub = GetOracleContractStub(account.KeyPair);
-            var dataHash = HashHelper.ComputeFrom(receiptHashMap.ToString());
-            var commitInput = new CommitInput
-            {
-                QueryId = queryId,
-                Commitment = HashHelper.ConcatAndCompute(
-                    dataHash,
-                    HashHelper.ConcatAndCompute(salt, HashHelper.ComputeFrom(account.Address.ToBase58())))
-            };
-            await stub.Commit.SendAsync(commitInput);
-        }
-
-        foreach (var stub in TransmittersOracleContractStubs.Take(3))
-        {
-            await stub.Reveal.SendAsync(new RevealInput
-            {
-                Data = receiptHashMap.ToString(),
-                Salt = salt,
-                QueryId = queryId
-            });
-        }
-    }
-
-    private async Task CommitAndReveal_Pause(Hash queryId, Hash swapId, string chainId, string symbol,
-        long from, long end)
-    {
-        var tokenId = HashHelper.ConcatAndCompute(HashHelper.ComputeFrom(chainId), HashHelper.ComputeFrom(symbol));
-        var receiptHashMap = new ReceiptHashMap
-        {
-            SwapId = swapId.ToHex()
-        };
-        for (var index = from; index <= end; index++)
-        {
-            var receiptId = $"{tokenId}.{index}";
-            receiptHashMap.Value.Add(receiptId,
-                chainId == "Ploygon"
-                    ? SampleSwapInfo.SwapInfos[(int)index + 4].ReceiptHash.ToHex()
-                    : SampleSwapInfo.SwapInfos[(int)index - 1].ReceiptHash.ToHex());
-        }
-
-        var salt = HashHelper.ComputeFrom("Salt");
-
-        foreach (var account in Transmitters)
-        {
-            var stub = GetOracleContractStub(account.KeyPair);
-            var dataHash = HashHelper.ComputeFrom(receiptHashMap.ToString());
-            var commitInput = new CommitInput
-            {
-                QueryId = queryId,
-                Commitment = HashHelper.ConcatAndCompute(
-                    dataHash,
-                    HashHelper.ConcatAndCompute(salt, HashHelper.ComputeFrom(account.Address.ToBase58())))
-            };
-            await stub.Commit.SendAsync(commitInput);
-        }
-
-        foreach (var stub in TransmittersOracleContractStubs.Take(2))
-        {
-            await stub.Reveal.SendAsync(new RevealInput
-            {
-                Data = receiptHashMap.ToString(),
-                Salt = salt,
-                QueryId = queryId
-            });
-        }
-
-        var executionResult = await TransmittersOracleContractStubs[2].Reveal.SendWithExceptionAsync(new RevealInput
-        {
-            Data = receiptHashMap.ToString(),
-            Salt = salt,
-            QueryId = queryId
-        });
-        executionResult.TransactionResult.Error.ShouldContain("Contract is paused.");
-    }
-
-    private async Task CommitAndReveal_IncorrectReceiptIndex(Hash queryId, Hash swapId, string chainId, string symbol,
-        long from, long end)
-    {
-        var tokenId = HashHelper.ConcatAndCompute(HashHelper.ComputeFrom(chainId), HashHelper.ComputeFrom(symbol));
-        var receiptHashMap = new ReceiptHashMap
-        {
-            SwapId = swapId.ToHex()
-        };
-        for (var index = from; index <= end; index++)
-        {
-            var receiptId = $"{tokenId}.{index}";
-            receiptHashMap.Value.Add(receiptId,
-                chainId == "Ploygon"
-                    ? SampleSwapInfo.SwapInfos[(int)index + 4].ReceiptHash.ToHex()
-                    : SampleSwapInfo.SwapInfos[(int)index - 1].ReceiptHash.ToHex());
-        }
-
-        var salt = HashHelper.ComputeFrom("Salt");
-
-        foreach (var account in Transmitters)
-        {
-            var stub = GetOracleContractStub(account.KeyPair);
-            var dataHash = HashHelper.ComputeFrom(receiptHashMap.ToString());
-            var commitInput = new CommitInput
-            {
-                QueryId = queryId,
-                Commitment = HashHelper.ConcatAndCompute(
-                    dataHash,
-                    HashHelper.ConcatAndCompute(salt, HashHelper.ComputeFrom(account.Address.ToBase58())))
-            };
-            await stub.Commit.SendAsync(commitInput);
-        }
-
-        foreach (var stub in TransmittersOracleContractStubs.Take(2))
-        {
-            await stub.Reveal.SendAsync(new RevealInput
-            {
-                Data = receiptHashMap.ToString(),
-                Salt = salt,
-                QueryId = queryId
-            });
-        }
-
-        var executionResult = await TransmittersOracleContractStubs[2].Reveal.SendWithExceptionAsync(new RevealInput
-        {
-            Data = receiptHashMap.ToString(),
-            Salt = salt,
-            QueryId = queryId
-        });
-        executionResult.TransactionResult.Error.ShouldContain("Incorrect receipt index.");
-    }
-
-    private async Task Commit_Duplicate(Hash queryId, Hash swapId, string chainId, string symbol,
-        long from, long end)
-    {
-        var tokenId = HashHelper.ConcatAndCompute(HashHelper.ComputeFrom(chainId), HashHelper.ComputeFrom(symbol));
-        var receiptHashMap = new ReceiptHashMap
-        {
-            SwapId = swapId.ToHex()
-        };
-        for (var index = from; index <= end; index++)
-        {
-            var receiptId = $"{tokenId}.{index}";
-            receiptHashMap.Value.Add(receiptId,
-                chainId == "Ploygon"
-                    ? SampleSwapInfo.SwapInfos[(int)index + 4].ReceiptHash.ToHex()
-                    : SampleSwapInfo.SwapInfos[(int)index - 1].ReceiptHash.ToHex());
-        }
-
-        var salt = HashHelper.ComputeFrom("Salt");
-
-        var account = Transmitters[0];
-        var stub = GetOracleContractStub(account.KeyPair);
-        var dataHash = HashHelper.ComputeFrom(receiptHashMap.ToString());
-        var commitInput = new CommitInput
-        {
-            QueryId = queryId,
-            Commitment = HashHelper.ConcatAndCompute(
-                dataHash,
-                HashHelper.ConcatAndCompute(salt, HashHelper.ComputeFrom(account.Address.ToBase58())))
-        };
-        await stub.Commit.SendAsync(commitInput);
-        var executeResult = await stub.Commit.SendWithExceptionAsync(commitInput);
-        executeResult.TransactionResult.Error.ShouldContain("already submit commitment");
-    }
-
-    private async Task CommitAndRevealAsync_SwapIdIsNull(Hash queryId, Hash swapId, string chainId, string symbol,
-        long from, long end)
-    {
-        var tokenId = HashHelper.ConcatAndCompute(HashHelper.ComputeFrom(chainId), HashHelper.ComputeFrom(symbol));
-        var receiptHashMap = new ReceiptHashMap();
-        for (var index = from; index <= end; index++)
-        {
-            var receiptId = $"{tokenId}.{index}";
-            receiptHashMap.Value.Add(receiptId,
-                chainId == "Ploygon"
-                    ? SampleSwapInfo.SwapInfos[(int)index + 4].ReceiptHash.ToHex()
-                    : SampleSwapInfo.SwapInfos[(int)index - 1].ReceiptHash.ToHex());
-        }
-
-        var salt = HashHelper.ComputeFrom("Salt");
-
-        foreach (var account in Transmitters)
-        {
-            var stub = GetOracleContractStub(account.KeyPair);
-            var dataHash = HashHelper.ComputeFrom(receiptHashMap.ToString());
-            var commitInput = new CommitInput
-            {
-                QueryId = queryId,
-                Commitment = HashHelper.ConcatAndCompute(
-                    dataHash,
-                    HashHelper.ConcatAndCompute(salt, HashHelper.ComputeFrom(account.Address.ToBase58())))
-            };
-            await stub.Commit.SendAsync(commitInput);
-        }
-
-        foreach (var stub in TransmittersOracleContractStubs.Take(2))
-        {
-            await stub.Reveal.SendAsync(new RevealInput
-            {
-                Data = receiptHashMap.ToString(),
-                Salt = salt,
-                QueryId = queryId
-            });
-        }
-
-        var executionResult = await TransmittersOracleContractStubs[2].Reveal.SendWithExceptionAsync(new RevealInput
-        {
-            Data = receiptHashMap.ToString(),
-            Salt = salt,
-            QueryId = queryId
-        });
-        executionResult.TransactionResult.Error.ShouldContain("Swap id is null.");
-    }
-
-    private async Task CommitAndRevealAsync_SpaceIdIsNull(Hash queryId, Hash swapId, string chainId, string symbol,
-        long from, long end)
-    {
-        var tokenId = HashHelper.ConcatAndCompute(HashHelper.ComputeFrom(chainId), HashHelper.ComputeFrom(symbol));
-        var receiptHashMap = new ReceiptHashMap
-        {
-            SwapId = HashHelper.ComputeFrom("111").ToHex()
-        };
-        for (var index = from; index <= end; index++)
-        {
-            var receiptId = $"{tokenId}.{index}";
-            receiptHashMap.Value.Add(receiptId,
-                chainId == "Ploygon"
-                    ? SampleSwapInfo.SwapInfos[(int)index + 4].ReceiptHash.ToHex()
-                    : SampleSwapInfo.SwapInfos[(int)index - 1].ReceiptHash.ToHex());
-        }
-
-        var salt = HashHelper.ComputeFrom("Salt");
-
-        foreach (var account in Transmitters)
-        {
-            var stub = GetOracleContractStub(account.KeyPair);
-            var dataHash = HashHelper.ComputeFrom(receiptHashMap.ToString());
-            var commitInput = new CommitInput
-            {
-                QueryId = queryId,
-                Commitment = HashHelper.ConcatAndCompute(
-                    dataHash,
-                    HashHelper.ConcatAndCompute(salt, HashHelper.ComputeFrom(account.Address.ToBase58())))
-            };
-            await stub.Commit.SendAsync(commitInput);
-        }
-
-        foreach (var stub in TransmittersOracleContractStubs.Take(2))
-        {
-            await stub.Reveal.SendAsync(new RevealInput
-            {
-                Data = receiptHashMap.ToString(),
-                Salt = salt,
-                QueryId = queryId
-            });
-        }
-
-        var executionResult = await TransmittersOracleContractStubs[2].Reveal.SendWithExceptionAsync(new RevealInput
-        {
-            Data = receiptHashMap.ToString(),
-            Salt = salt,
-            QueryId = queryId
-        });
-        executionResult.TransactionResult.Error.ShouldContain("Space id is null.");
-    }
-
-    #endregion
 }

@@ -208,20 +208,16 @@ namespace EBridge.Contracts.Bridge
             var fee = decimal.Round(((decimal)tonFee / 1000000000) * priceRatioDecimal, PriceDecimals);
             return (long)(fee * 100000000);
         }
-        
-        private Hash CalculateReceiptHash(string receiptId, long amount, string targetAddress)
-        {
-            var addressHash = HashHelper.ComputeFrom(ByteArrayHelper.HexStringToByteArray(targetAddress));
-            var amountEthereum = ConvertLong(amount);
-            var amountHash = HashHelper.ComputeFrom(amountEthereum.ToArray());
-            var receiptIdHash = HashHelper.ComputeFrom(receiptId);
-            return HashHelper.ConcatAndCompute(receiptIdHash, amountHash, addressHash);
-        }
 
-        private Hash CalculateReceiptHashForTon(Hash receiptIdToken, long amount, string targetAddress,
-            long receiptIndex)
+        private Hash CalculateReceiptHash(Hash receiptIdToken, long amount, string targetAddress,
+            long receiptIndex, ChainType chainType)
         {
-            var addressHash = HashHelper.ComputeFrom(ByteString.FromBase64(targetAddress).ToByteArray());
+            var addressHash = chainType switch
+            {
+                ChainType.Evm => HashHelper.ComputeFrom(ByteArrayHelper.HexStringToByteArray(targetAddress)),
+                ChainType.Tvm => HashHelper.ComputeFrom(ByteString.FromBase64(targetAddress).ToByteArray()),
+                _ => throw new AssertionException("Invalid chain type.")
+            };
             var amountTon = ConvertLong(amount);
             var amountHash = HashHelper.ComputeFrom(amountTon.ToArray());
             var receiptIndexTon = ConvertLong(receiptIndex);
@@ -296,7 +292,6 @@ namespace EBridge.Contracts.Bridge
                 Amount = amount,
                 Sender = from
             });
-
         }
 
         private void TransferFee(string symbol, long amount, Address from, Address to)
@@ -364,7 +359,7 @@ namespace EBridge.Contracts.Bridge
             Assert(amount <= dailyLimitTokenInfo.TokenAmount,
                 $"Amount exceeds daily limit amount. Current daily limit is {dailyLimitTokenInfo.TokenAmount}");
             dailyLimitTokenInfo.TokenAmount = dailyLimitTokenInfo.TokenAmount.Sub(amount);
-            
+
             if (tokenBucket != null)
             {
                 Assert(amount <= tokenBucket.TokenCapacity, "Amount exceeds token max capacity.");
@@ -375,6 +370,7 @@ namespace EBridge.Contracts.Bridge
                     throw new AssertionException(
                         $"Amount exceeds current token amount, the minimum wait time is {minWaitInSeconds}s");
                 }
+
                 tokenBucket.CurrentTokenAmount = tokenBucket.CurrentTokenAmount.Sub(amount);
             }
         }

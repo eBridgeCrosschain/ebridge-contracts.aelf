@@ -2,11 +2,9 @@ syntax = "proto3";
 
 package BridgeContractImpl;
 
-//import "acs1.proto";
 import "acs12.proto";
 import "acs13.proto";
 import "bridge_contract.proto";
-import "receipt_maker.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
@@ -19,10 +17,8 @@ option csharp_namespace = "EBridge.Contracts.Bridge";
 service BridgeContractImpl {
 
   option (aelf.csharp_state) = "EBridge.Contracts.Bridge.BridgeContractState";
-  //  option (aelf.base) = "acs1.proto";
   option (aelf.base) = "acs12.proto";
   option (aelf.base) = "acs13.proto";
-  option (aelf.base) = "receipt_maker.proto";
   option (aelf.base) = "bridge_contract.proto";
   option (aelf.base) = "ramp_interface.proto";
 
@@ -203,17 +199,6 @@ enum ChainType {
   TVM = 1;
 }
 
-
-message TestEvent {
-  option (aelf.is_event) = true;
-  string sender = 1;
-  string receiver = 2;
-  bytes message = 3;
-  aelf.Hash swapId = 4;
-  string symbol = 5;
-  string tokenAddress = 6;
-  string targetContractAddress = 7;
-}
 
 message ReceiptDailyLimitSet {
   option (aelf.is_event) = true;

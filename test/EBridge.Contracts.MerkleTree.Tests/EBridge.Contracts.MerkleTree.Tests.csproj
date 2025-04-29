@@ -75,8 +75,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\EBridge.Contracts.TestContract.ReceiptMaker\EBridge.Contracts.TestContract.ReceiptMaker.csproj" />
-        <ProjectReference Include="..\..\contract\EBridge.Contracts.Regiment\EBridge.Contracts.Regiment.csproj" />
-        <ProjectReference Include="..\..\contract\EBridge.Contracts.MerkleTree\EBridge.Contracts.MerkleTree.csproj" />
         <ProjectReference Include="..\..\src\AElf.Boilerplate.TestBase\AElf.Boilerplate.TestBase.csproj" />
     </ItemGroup>
 

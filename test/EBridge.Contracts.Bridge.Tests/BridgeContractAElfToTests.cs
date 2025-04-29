@@ -9,10 +9,8 @@ using AElf.CSharp.Core;
 using AElf.Kernel;
 using AElf.Types;
 using EBridge.Contracts.Bridge.Helpers;
-using EBridge.Contracts.Report;
 using EBridge.Contracts.TokenPool;
 using Google.Protobuf.WellKnownTypes;
-using Org.BouncyCastle.Utilities;
 using Shouldly;
 using Xunit;
 
@@ -23,16 +21,8 @@ public partial class BridgeContractTests : BridgeContractTestBase
     [Fact]
     public async Task<(Address, Address)> InitialAElfTo()
     {
-        await InitialOracleContractAsync();
-        await RegimentContractStub.Initialize.SendAsync(new Regiment.InitializeInput
-        {
-            Controller = OracleContractAddress
-        });
         var organization = await InitialBridgeContractAsync();
-        await InitialReportContractAsync();
-        await InitialMerkleTreeContractAsync();
         await CreateAndIssueUSDTAsync();
-        await CreateRegimentTest();
 
         await BridgeContractStub.AddToken.SendAsync(new AddTokenInput
         {
@@ -89,20 +79,6 @@ public partial class BridgeContractTests : BridgeContractTestBase
             Amount = long.MaxValue,
             Spender = BridgeContractAddress,
             Symbol = "ELF"
-        });
-        await TokenContractStub.Approve.SendAsync(new ApproveInput
-        {
-            Amount = long.MaxValue,
-            Spender = ReportContractAddress,
-            Symbol = "ELF"
-        });
-        var regimentId = HashHelper.ComputeFrom(_regimentAddress);
-
-        await ReportContractStub.RegisterOffChainAggregation.SendAsync(new RegisterOffChainAggregationInput
-        {
-            Token = "0xf8F862Aaeb9cb101383d27044202aBbe3a057eCC",
-            RegimentId = regimentId,
-            ChainId = "Ethereum"
         });
         await BridgeContractImplStub.SetRampContract.SendAsync(RampContractAddress);
         await BridgeContractImplStub.SetCrossChainConfig.SendAsync(new()
@@ -958,11 +934,9 @@ public partial class BridgeContractTests : BridgeContractTestBase
     {
         await AElfToPipelineTest();
         {
-            var regimentId = HashHelper.ComputeFrom(_regimentAddress);
             // Create swap.
             var createSwapResult = await BridgeContractStub.CreateSwap.SendAsync(new CreateSwapInput
             {
-                RegimentId = regimentId,
                 SwapTargetToken =
                     new SwapTargetToken
                     {
@@ -976,7 +950,6 @@ public partial class BridgeContractTests : BridgeContractTestBase
                     }
             });
             _swapHashOfElf = createSwapResult.Output;
-            _swapOfElfSpaceId = await BridgeContractStub.GetSpaceIdBySwapId.CallAsync(_swapHashOfElf);
             var time = TimestampHelper.GetUtcNow().ToDateTime().Date;
             var input = new List<SwapDailyLimitInfo>
             {
@@ -991,13 +964,6 @@ public partial class BridgeContractTests : BridgeContractTestBase
             {
                 SwapDailyLimitInfos = { input }
             });
-            {
-                // Query
-                var queryId = await MakeQueryAsync(_swapHashOfElf.ToString(), 1, 3);
-
-                // Commit
-                await CommitAndRevealAsync(queryId, _swapHashOfElf, "Ethereum", "ELF", 1, 3);
-            }
             await CheckBalanceAsync(BridgeContractAddress, "ELF", 62_00000000 + 31_00000000);
             var executionResult = await ReceiverBridgeContractStubs.First().SwapToken.SendAsync(new SwapTokenInput
             {
@@ -1044,15 +1010,8 @@ public partial class BridgeContractTests : BridgeContractTestBase
 
     private async Task AddTokenTest_Initialize()
     {
-        await InitialOracleContractAsync();
-        await RegimentContractStub.Initialize.SendAsync(new Regiment.InitializeInput
-        {
-            Controller = OracleContractAddress
-        });
         await InitialBridgeContractAsync();
-        await InitialReportContractAsync();
         await CreateAndIssueUSDTAsync();
-        await CreateRegimentTest();
     }
 
     [Fact]
@@ -2052,25 +2011,6 @@ public partial class BridgeContractTests : BridgeContractTestBase
             TargetChainId = "Ploygon"
         });
         executionResult.TransactionResult.Error.ShouldContain("No symbol list under the chain id Ploygon.");
-    }
-
-    [Fact]
-    public async Task ConfirmReport_NotProposed()
-    {
-        await InitialAElfTo();
-        foreach (var account in Transmitters)
-        {
-            var stub = GetReportContractStub(account.KeyPair);
-            var rawTest = new StringValue();
-            var executionResult = await stub.ConfirmReport.SendWithExceptionAsync(new ConfirmReportInput
-            {
-                ChainId = "Ethereum",
-                Token = "0xf8F862Aaeb9cb101383d27044202aBbe3a057eCC",
-                RoundId = 1,
-                Signature = SignHelper.GetSignature(rawTest.Value, account.KeyPair.PrivateKey).RecoverInfo
-            });
-            executionResult.TransactionResult.Error.ShouldContain("Report of round 1 not proposed.");
-        }
     }
 
     // [Fact]
