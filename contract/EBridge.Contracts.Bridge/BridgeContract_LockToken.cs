@@ -159,7 +159,7 @@ public partial class BridgeContract
         State.TransactionFee.Value = State.TransactionFee.Value.Add(nativeTokenFee);
         TransferFee(DefaultFeeSymbol, nativeTokenFee, Context.Sender, Context.Self);
         var message = GenerateEvmMessage(receiptIdToken, amount, targetAddress, receiptCount);
-        // StartRampRequest(chainId, ByteString.CopyFrom(message.ToArray()), symbol, amount);
+        StartRampRequest(chainId, ByteString.CopyFrom(message.ToArray()), symbol, amount);
     }
 
     private void StartRampRequest(string chainId, ByteString message, string symbol, long amount)
