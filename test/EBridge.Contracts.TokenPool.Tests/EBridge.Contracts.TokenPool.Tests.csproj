@@ -53,9 +53,6 @@
         </CommonMessage>
     </ItemGroup>
     <ItemGroup>
-        <ContractStub Include="..\..\protobuf\oracle_contract.proto">
-            <Link>Protobuf\Proto\oracle_contract.proto</Link>
-        </ContractStub>
         <ContractStub Include="..\..\protobuf\token_contract.proto">
             <Link>Protobuf\Proto\token_contract.proto</Link>
         </ContractStub>
@@ -71,9 +68,6 @@
         <ContractStub Include="..\..\protobuf\association_contract_impl.proto">
             <Link>Protobuf\Proto\association_contract_impl.proto</Link>
         </ContractStub>
-        <ContractStub Include="..\..\protobuf\regiment_contract.proto">
-            <Link>Protobuf\Proto\regiment_contract.proto</Link>
-        </ContractStub>
         <ContractStub Include="..\..\protobuf\acs13.proto">
             <Link>Protobuf\Proto\acs13.proto</Link>
         </ContractStub>
@@ -85,18 +79,6 @@
         </ContractStub>
         <ContractStub Include="..\..\protobuf\bridge_contract_impl.proto">
             <Link>Protobuf\Proto\bridge_contract_impl.proto</Link>
-        </ContractStub>
-        <ContractStub Include="..\..\protobuf\receipt_maker.proto">
-            <Link>Protobuf\Proto\receipt_maker.proto</Link>
-        </ContractStub>
-        <ContractStub Include="..\..\protobuf\merkle_tree_contract.proto">
-            <Link>Protobuf\Proto\merkle_tree_contract.proto</Link>
-        </ContractStub>
-        <ContractStub Include="..\..\protobuf\receipt_maker_impl.proto">
-            <Link>Protobuf\Proto\receipt_maker_impl.proto</Link>
-        </ContractStub>
-        <ContractStub Include="..\..\protobuf\report_contract.proto">
-            <Link>Protobuf\Proto\report_contract.proto</Link>
         </ContractStub>
         <ContractStub Include="..\..\protobuf\token_pool_contract.proto">
             <Link>Protobuf\Proto\token_pool_contract.proto</Link>
