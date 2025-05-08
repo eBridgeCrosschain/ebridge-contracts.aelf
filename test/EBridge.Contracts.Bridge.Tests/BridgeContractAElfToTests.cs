@@ -89,6 +89,14 @@ public partial class BridgeContractTests : BridgeContractTestBase
             ChainType = ChainType.Tvm,
             ContractAddressForReceive = "kQDS511tzowt2x1xyIDgpglhaz6wG9uVP2t4BixFTViYQoM/"
         });
+        await BridgeContractImplStub.SetCrossChainConfig.SendAsync(new()
+        {
+            ChainId = "Ethereum",
+            ContractAddress = "0x8243C4927257ef20dbF360b012C9f72f9A6427c3",
+            ChainIdNumber = 11155111,
+            ChainType = ChainType.Evm,
+            ContractAddressForReceive = "0x3c37E0A09eAFEaA7eFB57107802De1B28A6f5F07/"
+        });
         return organization;
     }
 
