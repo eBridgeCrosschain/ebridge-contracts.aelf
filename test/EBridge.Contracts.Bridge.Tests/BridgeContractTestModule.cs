@@ -5,15 +5,12 @@ using AElf.ContractTestBase;
 using AElf.ContractTestBase.ContractTestKit;
 using AElf.Kernel.SmartContract;
 using AElf.Kernel.SmartContract.Application;
+using AetherLink.Contracts.Ramp;
 using EBridge.Contracts.Bridge.ContractInitializationProvider;
-using EBridge.Contracts.Oracle;
-using EBridge.Contracts.Regiment;
-using EBridge.Contracts.StringAggregator;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp;
 using Volo.Abp.Modularity;
 using MainChainDAppContractTestDeploymentListProvider = EBridge.Contracts.Bridge.ContractInitializationProvider.MainChainDAppContractTestDeploymentListProvider;
-using ReportContract = EBridge.Contracts.Report.ReportContract;
 
 namespace EBridge.Contracts.Bridge;
 
@@ -39,28 +36,8 @@ public class BridgeContractTestModule : MainChainDAppContractTestModule
                 File.ReadAllBytes(typeof(EBridge.Contracts.Bridge.BridgeContract).Assembly.Location)
             },
             {
-                new ReportContractInitializationProvider().ContractCodeName,
-                File.ReadAllBytes(typeof(ReportContract).Assembly.Location)
-            },
-            {
-                new MerkleTreeContractInitializationProvider().ContractCodeName,
-                File.ReadAllBytes(typeof(EBridge.Contracts.MerkleTreeContract.MerkleTreeContract).Assembly.Location)
-            },
-            {
-                new RegimentContractInitializationProvider().ContractCodeName,
-                File.ReadAllBytes(typeof(RegimentContract).Assembly.Location)
-            },
-            {
-                new ReceiptMakerContractInitializationProvider().ContractCodeName,
-                File.ReadAllBytes(typeof(TestContract.ReceiptMaker.ReceiptMakerContract).Assembly.Location)
-            },
-            {
-                new OracleContractInitializationProvider().ContractCodeName,
-                File.ReadAllBytes(typeof(OracleContract).Assembly.Location)
-            },
-            {
-                new StringAggregatorContractInitializationProvider().ContractCodeName,
-                File.ReadAllBytes(typeof(StringAggregatorContract).Assembly.Location)
+                new RampContractInitializationProvider().ContractCodeName,
+                File.ReadAllBytes(typeof(RampContract).Assembly.Location)
             }
         };
         contractCodeProvider.Codes = contractCodes;

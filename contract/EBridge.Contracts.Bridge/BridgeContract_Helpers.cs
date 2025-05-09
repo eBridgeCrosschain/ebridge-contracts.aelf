@@ -8,6 +8,7 @@ using AElf.CSharp.Core.Extension;
 using AElf.Sdk.CSharp;
 using AElf.Types;
 using EBridge.Contracts.TokenPool;
+using Google.Protobuf;
 using LockInput = EBridge.Contracts.TokenPool.LockInput;
 
 namespace EBridge.Contracts.Bridge
@@ -201,22 +202,38 @@ namespace EBridge.Contracts.Bridge
             return (long)decimal.Ceiling(fee) * 100000000;
         }
 
-        private Hash CalculateReceiptHash(string receiptId, long amount, string targetAddress)
+        private long CalculateTransactionFeeForTon(long priceRatio, long tonFee)
         {
-            var addressHash = HashHelper.ComputeFrom(ByteArrayHelper.HexStringToByteArray(targetAddress));
-            var amountEthereum = ConvertLong(amount);
-            var amountHash = HashHelper.ComputeFrom(amountEthereum.ToArray());
-            var receiptIdHash = HashHelper.ComputeFrom(receiptId);
+            var priceRatioDecimal = (decimal)priceRatio / 100000000;
+            var fee = decimal.Round(((decimal)tonFee / 1000000000) * priceRatioDecimal, PriceDecimals);
+            return (long)(fee * 100000000);
+        }
+
+        private Hash CalculateReceiptHash(Hash receiptIdToken, long amount, string targetAddress,
+            long receiptIndex, ChainType chainType)
+        {
+            var addressHash = chainType switch
+            {
+                ChainType.Evm => HashHelper.ComputeFrom(ByteArrayHelper.HexStringToByteArray(targetAddress)),
+                ChainType.Tvm => HashHelper.ComputeFrom(ByteString.FromBase64(targetAddress).ToByteArray()),
+                _ => throw new AssertionException("Invalid chain type.")
+            };
+            var amountTon = ConvertLong(amount);
+            var amountHash = HashHelper.ComputeFrom(amountTon.ToArray());
+            var receiptIndexTon = ConvertLong(receiptIndex);
+            var receiptIndexHash = HashHelper.ComputeFrom(receiptIndexTon.ToArray());
+            var receiptIdHash = HashHelper.ConcatAndCompute(receiptIdToken, receiptIndexHash);
             return HashHelper.ConcatAndCompute(receiptIdHash, amountHash, addressHash);
         }
 
-        private IEnumerable<byte> ConvertLong(long data)
+        private IEnumerable<byte> ConvertLong(long data, int byteSize = 32)
         {
             var b = data.ToBytes();
-            if (b.Length == 32)
+
+            if (b.Length == byteSize)
                 return b;
-            var diffCount = 32.Sub(b.Length);
-            var longDataBytes = GetByteListWithCapacity(32);
+            var diffCount = byteSize.Sub(b.Length);
+            var longDataBytes = GetByteListWithCapacity(byteSize);
             byte c = 0;
             if (data < 0)
             {
@@ -275,7 +292,6 @@ namespace EBridge.Contracts.Bridge
                 Amount = amount,
                 Sender = from
             });
-
         }
 
         private void TransferFee(string symbol, long amount, Address from, Address to)
@@ -343,7 +359,7 @@ namespace EBridge.Contracts.Bridge
             Assert(amount <= dailyLimitTokenInfo.TokenAmount,
                 $"Amount exceeds daily limit amount. Current daily limit is {dailyLimitTokenInfo.TokenAmount}");
             dailyLimitTokenInfo.TokenAmount = dailyLimitTokenInfo.TokenAmount.Sub(amount);
-            
+
             if (tokenBucket != null)
             {
                 Assert(amount <= tokenBucket.TokenCapacity, "Amount exceeds token max capacity.");
@@ -354,6 +370,7 @@ namespace EBridge.Contracts.Bridge
                     throw new AssertionException(
                         $"Amount exceeds current token amount, the minimum wait time is {minWaitInSeconds}s");
                 }
+
                 tokenBucket.CurrentTokenAmount = tokenBucket.CurrentTokenAmount.Sub(amount);
             }
         }

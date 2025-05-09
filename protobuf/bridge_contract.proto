@@ -5,7 +5,6 @@ import "aelf/options.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
-import "callback_input.proto";
 import "authority_info.proto";
 
 option csharp_namespace = "EBridge.Contracts.Bridge";
@@ -50,12 +49,7 @@ service BridgeContract {
     }
     rpc ChangeSwapRatio (ChangeSwapRatioInput) returns (google.protobuf.Empty) {
     }
-    rpc Deposit (DepositInput) returns (google.protobuf.Empty) {
-    }
-    rpc Withdraw (WithdrawInput) returns (google.protobuf.Empty) {
-    }
-    rpc FulfillQuery (CallbackInput) returns (google.protobuf.Empty) {
-    }
+    
     //View methods.
     rpc GetSwapIdByToken(GetSwapIdByTokenInput) returns (aelf.Hash){
         option (aelf.is_view) = true;
@@ -72,9 +66,7 @@ service BridgeContract {
     rpc GetSwappedReceiptInfo (GetSwappedReceiptInfoInput) returns (SwappedReceiptInfo) {
         option (aelf.is_view) = true;
     }
-    rpc GetSpaceIdBySwapId (aelf.Hash) returns (aelf.Hash){
-        option (aelf.is_view) = true;
-    }
+
 
     //AElf to others.
     //Action methods.
@@ -143,25 +135,6 @@ message InitializeInput {
     aelf.Address approve_transfer_controller = 9;
 }
 
-message SetMaximumAmountInput{
-    repeated TokenMaximumAmount value = 1;
-}
-
-message TokenMaximumAmount{
-    string symbol = 1;
-    int64 maximum_amount = 2;
-}
-
-message ApproveTransferInput{
-    string receipt_id = 1;
-}
-
-message IsTransferCanReceiveInput{
-    string receipt_id = 1;
-    string symbol = 2;
-    string amount = 3;
-}
-
 //To AElf message.
 message SwapRatio {
     int64 origin_share = 1;
@@ -177,8 +150,6 @@ message SwapTargetToken {
 message SwapInfo {
     aelf.Hash swap_id = 1;
     SwapTargetToken swap_target_token = 2;
-    aelf.Hash regiment_id = 3;
-    aelf.Hash space_id = 4;
 }
 
 message SwapPairInfo {
@@ -199,11 +170,6 @@ message SwappedReceiptInfo {
     map<string, int64> amount_map = 4;
 }
 
-message ReceiptHashMap {
-    map<string, string> value = 1;
-    string swap_id = 2;
-}
-
 message ReceiptIdList {
     repeated string value = 1;
 }
@@ -213,22 +179,8 @@ message ReceiptIdInfo{
     string symbol = 2;
 }
 
-message SendingInfo {
-    int64 receipt_id = 1;
-    string sending_tx_id = 2;
-    string sending_time = 3;
-}
-
 message CreateSwapInput {
     SwapTargetToken swap_target_token = 1;
-    aelf.Hash regiment_id = 2;
-    int32 merkle_tree_leaf_limit = 3;
-}
-
-message DepositInput {
-    aelf.Hash swap_id = 1;
-    string target_token_symbol = 2;
-    int64 amount = 3;
 }
 
 message ChangeSwapRatioInput {
@@ -242,12 +194,6 @@ message SwapTokenInput {
     string receipt_id = 2;
     string origin_amount = 3;
     aelf.Address receiver_address = 4;
-}
-
-message WithdrawInput {
-    aelf.Hash swap_id = 1;
-    string target_token_symbol = 2;
-    int64 amount = 3;
 }
 
 message GetSwapAmountsInput {
@@ -318,6 +264,7 @@ message CreateReceiptInput{
     string targetAddress = 3;
     int64 amount = 4;
     string target_chain_id = 5;
+    int32 target_chain_type = 6; // 0: EVM, 1: TVM
 }
 
 message SetGasLimitInput{
@@ -347,8 +294,6 @@ message GetSwapIdByTokenInput{
   string chain_id = 1;
   string symbol = 2;
 }
-
-
 
 
 // Events
@@ -404,10 +349,4 @@ message Paused{
 message Unpaused{
     option (aelf.is_event) = true;
     aelf.Address sender = 1;
-}
-
-message ApproveTransfer{
-    option (aelf.is_event) = true;
-    aelf.Address sender = 1;
-    string receipt_id = 2;
 }

@@ -1,0 +1,173 @@
+// the version of the language, use proto3 for contracts
+syntax = "proto3";
+
+// some core imports for AElf chain types
+import "aelf/core.proto";
+import "aelf/options.proto";
+import "acs12.proto";
+import "oracle_common_message.proto";
+import "ramp_common_message.proto";
+
+// import for using the google.protobuf.* type.
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "AetherLink.Contracts.Ramp";
+
+service RampContract {
+    option (aelf.base) = "acs12.proto";
+    option (aelf.csharp_state) = "AetherLink.Contracts.Ramp.RampContractState";
+
+    // Admin
+    rpc Initialize (InitializeInput) returns (google.protobuf.Empty) {}
+    rpc SetConfig (Config) returns (google.protobuf.Empty) {}
+    rpc GetConfig (google.protobuf.Empty) returns (Config) { option (aelf.is_view) = true; }
+    rpc GetAdmin (google.protobuf.Empty) returns (aelf.Address) { option (aelf.is_view) = true; }
+    rpc SetOracleContractAddress (aelf.Address) returns (google.protobuf.Empty) {}
+    rpc GetOracleContractAddress (google.protobuf.Empty) returns (aelf.Address) { option (aelf.is_view) = true; }
+    rpc AddRampSender (AddRampSenderInput) returns (google.protobuf.Empty) {}
+    rpc RemoveRampSender (aelf.Address) returns (google.protobuf.Empty) {}
+    rpc SetTokenSwapConfig (TokenSwapConfig) returns (google.protobuf.Empty) {}
+    rpc GetTokenSwapConfig (aelf.Address) returns (TokenSwapConfig)  { option (aelf.is_view) = true; }
+    rpc TransferAdmin(aelf.Address) returns (google.protobuf.Empty) {}
+    rpc AcceptAdmin(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+    rpc GetRampSender (aelf.Address) returns (RampSenderInfo) { option (aelf.is_view) = true; }
+    rpc GetLatestEpoch (google.protobuf.Empty) returns (google.protobuf.Int64Value) { option (aelf.is_view) = true; }
+
+    // Request
+    rpc Send (SendInput) returns (google.protobuf.Empty) {}
+    rpc Commit (CommitInput) returns (google.protobuf.Empty) {}
+    rpc Cancel (aelf.Hash) returns (google.protobuf.Empty) {}
+}
+
+message InitializeInput {
+    aelf.Address admin = 1;
+    aelf.Address oracle = 2;
+}
+
+message Config {
+    ChainIdList chain_id_list = 1;
+}
+
+message ChainIdList {
+    repeated int64 data = 1;
+}
+
+message AddRampSenderInput {
+    aelf.Address sender_address = 1;
+}
+
+message RampSenderInfo {
+    aelf.Address sender_address = 1;
+    google.protobuf.Timestamp created = 2;
+}
+
+message CommitInput {
+    Report report = 1;
+    repeated bytes signatures = 2;
+}
+
+message Report {
+    ReportContext report_context = 1;
+    bytes message = 2;
+    ramp.TokenTransferMetadata token_amount = 3;
+}
+
+message ReportContext {
+    aelf.Hash message_id = 1;
+    int64 source_chain_id = 2;
+    int64 target_chain_id = 3;
+    bytes sender = 4;
+    bytes receiver = 5;
+}
+
+message SendInput {
+    int64 target_chain_id = 1;
+    bytes receiver = 2;
+    bytes message = 3;
+    ramp.TokenTransferMetadata token_transfer_metadata = 4;
+}
+
+message MessageInfo {
+    aelf.Hash message_id = 1;
+    int64 source_chain_id = 2;
+    int64 target_chain_id = 3;
+    bytes sender = 4;
+    bytes receiver = 5;
+    bytes message = 6;
+    ramp.TokenTransferMetadata token_transfer_metadata = 7;
+    google.protobuf.Timestamp created = 8;
+}
+
+message TokenSwapConfig {
+    TokenSwapList token_swap_list = 1;
+}
+
+message TokenSwapList {
+    repeated TokenSwapInfo token_swap_info_list = 1;
+}
+message TokenSwapInfo {
+    int64 target_chain_id = 1;
+    int64 source_chain_id = 2;
+    string receiver = 3;
+    string token_address = 4;
+    string symbol = 5;
+    bytes extra_data = 6;
+}
+
+// log event
+message ConfigSet {
+    option (aelf.is_event) = true;
+    Config config = 1;
+}
+
+message RampSenderAdded {
+    option (aelf.is_event) = true;
+    aelf.Address sender_address = 1;
+}
+
+message RampSenderRemoved {
+    option (aelf.is_event) = true;
+    aelf.Address sender_address = 1;
+}
+
+message CommitReportAccepted {
+    option (aelf.is_event) = true;
+    Report report = 1;
+}
+
+message SendRequested {
+    option (aelf.is_event) = true;
+    aelf.Hash message_id = 1;
+    int64 target_chain_id = 2;
+    int64 source_chain_id = 3;
+    bytes receiver = 4;
+    aelf.Address sender = 5;
+    bytes message = 6;
+    ramp.TokenTransferMetadata token_transfer_metadata = 7;
+    int64 epoch = 8;
+}
+
+message RequestCancelled {
+    option (aelf.is_event) = true;
+    aelf.Hash message_id = 1;
+}
+
+message AdminTransferRequested {
+    option (aelf.is_event) = true;
+    aelf.Address from = 1;
+    aelf.Address to = 2;
+}
+
+message AdminTransferred {
+    option (aelf.is_event) = true;
+    aelf.Address from = 1;
+    aelf.Address to = 2;
+}
+
+message TokenSwapConfigUpdated {
+    option (aelf.is_event) = true;
+    aelf.Address contract_address = 1;
+    TokenSwapList TokenSwapList = 2;
+}

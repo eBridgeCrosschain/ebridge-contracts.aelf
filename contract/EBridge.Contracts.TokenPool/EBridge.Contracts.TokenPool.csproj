@@ -3,6 +3,7 @@
         <TargetFramework>net6.0</TargetFramework>
         <IsContract>true</IsContract>
         <RootNamespace>EBridge.Contracts.TokenPool</RootNamespace>
+        <Version>1.0.1</Version>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
         <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
@@ -15,11 +16,14 @@
         <CommonMessage Include="..\..\protobuf\acs13.proto">
             <Link>Protobuf\Proto\acs13.proto</Link>
         </CommonMessage>
-        <CommonMessage Include="..\..\protobuf\callback_input.proto">
-            <Link>Protobuf\Proto\callback_input.proto</Link>
-        </CommonMessage>
         <CommonMessage Include="..\..\protobuf\authority_info.proto">
             <Link>Protobuf\Proto\authority_info.proto</Link>
+        </CommonMessage>
+        <CommonMessage Include="..\..\protobuf\ramp_common_message.proto">
+            <Link>Protobuf\Proto\ramp_common_message.proto</Link>
+        </CommonMessage>
+        <CommonMessage Include="..\..\protobuf\oracle_common_message.proto">
+            <Link>Protobuf\Proto\oracle_common_message.proto</Link>
         </CommonMessage>
     </ItemGroup>
 
@@ -36,11 +40,14 @@
         <ContractReference Include="..\..\protobuf\bridge_contract.proto">
             <Link>Protobuf\Proto\bridge_contract.proto</Link>
         </ContractReference>
+        <ContractReference Include="..\..\protobuf\ramp_interface.proto">
+            <Link>Protobuf\Proto\ramp_interface.proto</Link>
+        </ContractReference>
+        <ContractReference Include="..\..\protobuf\ramp_contract.proto">
+            <Link>Protobuf\Proto\ramp_contract.proto</Link>
+        </ContractReference>
         <ContractReference Include="..\..\protobuf\bridge_contract_impl.proto">
             <Link>Protobuf\Proto\reference\bridge_contract_impl.proto</Link>
-        </ContractReference>
-        <ContractReference Include="..\..\protobuf\receipt_maker.proto">
-            <Link>Protobuf\Proto\reference\receipt_maker.proto</Link>
         </ContractReference>
 
     </ItemGroup>
