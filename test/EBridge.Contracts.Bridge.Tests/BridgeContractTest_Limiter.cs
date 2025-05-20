@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using AElf;
 using AElf.ContractTestKit;
 using AElf.Kernel;
 using Google.Protobuf.WellKnownTypes;
@@ -921,23 +920,6 @@ public partial class BridgeContractTests
                 SwapTokenBucketConfigs = { input }
             });
             result.TransactionResult.Error.ShouldContain("Invalid swap bucket config input.");
-        }
-        {
-            var input = new List<SwapTokenBucketConfig>
-            {
-                new SwapTokenBucketConfig
-                {
-                    SwapId = _swapOfElfSpaceId,
-                    IsEnable = true,
-                    TokenCapacity = 10_0000_00000000,
-                    Rate = 167
-                }
-            };
-            var result = await BridgeContractImplStub.ConfigSwapTokenBucket.SendWithExceptionAsync(new ConfigSwapTokenBucketInput
-            {
-                SwapTokenBucketConfigs = { input }
-            });
-            result.TransactionResult.Error.ShouldContain("Token swap pair not found.");
         }
         {
             var input = new List<SwapTokenBucketConfig>

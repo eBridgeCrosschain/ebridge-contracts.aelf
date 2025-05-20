@@ -23,10 +23,6 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
         State.ParliamentContract.Value =
             Context.GetContractAddressByName(SmartContractConstants.ParliamentContractSystemName);
         State.IsInitialized.Value = true;
-        State.OracleContract.Value = input.OracleContractAddress;
-        State.MerkleTreeContract.Value = input.MerkleTreeContractAddress;
-        State.RegimentContract.Value = input.RegimentContractAddress;
-        State.ReportContract.Value = input.ReportContractAddress;
         State.QueryPayment.Value = QueryPayment;
 
         State.Controller.Value = input.Controller;
@@ -142,58 +138,5 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
     {
         return State.TokenPoolContract.Value;
     }
-
-    public override Empty AssetsMigrator(AssetsMigratorInput input)
-    {
-        Assert(Context.Sender == State.Admin.Value, "No permission.");
-        Assert(input != null && input.SwapId.Count > 0, "Invalid input.");
-        Assert(IsAddressValid(input.Provider), "Invalid receiver.");
-        var alreadyCompleteTransferSymbol = new HashSet<string>();
-        foreach (var swapId in input.SwapId)
-        {
-            var swapInfo = GetTokenSwapInfo(swapId);
-            var symbol = swapInfo.SwapTargetToken.Symbol;
-            var swapPairInfo = State.SwapPairInfoMap[swapInfo.SwapId][symbol];
-            Assert(swapPairInfo != null, $"Swap pair {swapInfo.SwapId}-{symbol} is not exist.");
-            var balance = 0L;
-            if (!alreadyCompleteTransferSymbol.Contains(symbol))
-            {
-                // usable liquidity
-                balance = (State.TokenContract.GetBalance.Call(new GetBalanceInput
-                {
-                    Owner = Context.Self,
-                    Symbol = symbol
-                })).Balance;
-                if (symbol == DefaultFeeSymbol)
-                {
-                    balance = balance.Sub(State.TransactionFee.Value);
-                }
-
-                alreadyCompleteTransferSymbol.Add(symbol);
-            }
-
-            if (balance > 0)
-            {
-                State.TokenContract.Approve.Send(new ApproveInput
-                {
-                    Spender = State.TokenPoolContract.Value,
-                    Symbol = symbol,
-                    Amount = balance
-                });
-            }
-
-            State.TokenPoolContract.Migrator.Send(new MigratorInput
-            {
-                Provider = input.Provider,
-                TokenSymbol = symbol,
-                DepositAmount = swapPairInfo.DepositAmount,
-                LockAmount = balance
-            });
-
-            swapPairInfo.DepositAmount = 0;
-            State.SwapPairInfoMap[swapInfo.SwapId][symbol] = swapPairInfo;
-        }
-
-        return new Empty();
-    }
+    
 }
