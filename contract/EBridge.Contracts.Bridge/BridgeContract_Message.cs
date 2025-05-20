@@ -85,4 +85,34 @@ public partial class BridgeContract
 
         return decimalValue;
     }
+    private string ParseHexToString(byte[] data)
+    {
+        var res = new List<byte>();
+        for (var i = 0; i < data.Length; i++)
+        {
+            if (data[i] <= 0) continue;
+            for (var j = i; j < data.Length; j++)
+            {
+                res.Add(data[j]);
+            }
+
+            break;
+        }
+        var hexString = res.ToArray().ToHex();
+        BigIntValue decimalValue = 0;
+        foreach (var hexChar in hexString)
+        {
+            var hexValue = hexChar switch
+            {
+                >= '0' and <= '9' => hexChar - '0',
+                >= 'A' and <= 'F' => hexChar - 'A' + 10,
+                >= 'a' and <= 'f' => hexChar - 'a' + 10,
+                _ => 0
+            };
+
+            decimalValue = decimalValue.Mul(16).Add(hexValue);
+        }
+
+        return decimalValue.Value;
+    }
 }
