@@ -62,6 +62,7 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
 
     internal BridgeContractImplContainer.BridgeContractImplStub BridgeContractImplUserStub { get; set; }
 
+    internal BridgeContractImplContainer.BridgeContractImplStub BridgeContractImplSetFeeRatioStub { get; set; }
 
     internal BridgeContractContainer.BridgeContractStub BridgeContractSetFeeRatioStub { get; set; }
 
@@ -144,6 +145,7 @@ public class BridgeContractTestBase : DAppContractTestBase<BridgeContractTestMod
             BridgeContractAddress,
             TransactionFeeRatio);
         BridgeContractSetFeeRatioStub = GetBridgeContractStub(TransactionFeeRatio);
+        BridgeContractImplSetFeeRatioStub = GetBridgeContractImplStub(TransactionFeeRatio);
         TokenContractStub = GetTokenContractStub(DefaultKeypair);
         TokenContractStub2 = GetTokenContractStub(Lockers[0].KeyPair);
         ParliamentContractStub = GetParliamentContractStub(DefaultKeypair);

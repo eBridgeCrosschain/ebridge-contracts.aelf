@@ -72,8 +72,9 @@ public partial class BridgeContract
         Assert(Context.Sender == State.RampContract.Value, "No permission.");
         ValidateCrossChainMetaData(input);
 
-        var leafHashValue = EncodeMessageAndVerification(input.Message, out var amount, out var targetAddress,
+        var leafHashValue = EncodeMessageAndVerification(input.Message, out var amountInString, out var targetAddress,
             out var receiptIndex, out var receiptIdHash);
+        Assert(decimal.TryParse(amountInString, out var amount), "Invalid amount.");
         var metadata = input.TokenTransferMetadata;
         var swapId = Hash.LoadFromByteArray(metadata.ExtraData.ToByteArray());
         ConsumeSwapAmount(swapId, amount);
@@ -106,7 +107,7 @@ public partial class BridgeContract
             "Invalid sender.");
     }
 
-    private Hash EncodeMessageAndVerification(ByteString message, out long amount, out Address targetAddress,
+    private Hash EncodeMessageAndVerification(ByteString message, out string amount, out Address targetAddress,
         out long receiptIndex, out Hash receiptIdTokenHash)
     {
         var messageByte = message.ToByteArray();
@@ -124,7 +125,7 @@ public partial class BridgeContract
         var computeHash = HashHelper.ConcatAndCompute(receiptIdHash, amountHash, targetAddressByteHash);
         Assert(leafHashValue == computeHash, "Invalid leaf hash.");
         Assert(State.ReceiptHashRecordStatus[leafHashValue] == false, "Leaf hash has been recorded.");
-        amount = ParseHexToLong(amountByte);
+        amount = ParseHexToString(amountByte);
         targetAddress = Address.FromBytes(targetAddressByte);
         receiptIndex = ParseHexToLong(receiptIndexByte);
         return leafHashValue;

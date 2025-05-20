@@ -377,7 +377,8 @@ namespace EBridge.Contracts.Bridge
 
         private long CalculateRefill(long capacity, long currentTokenAmount, long timeDiff, long rate)
         {
-            return Math.Min(capacity, currentTokenAmount.Add(rate.Mul(timeDiff)));
+            var maxWaitInSeconds = capacity.Add(rate.Sub(1)).Div(rate);
+            return timeDiff > maxWaitInSeconds ? capacity : Math.Min(capacity, currentTokenAmount.Add(rate.Mul(timeDiff)));
         }
 
         #endregion
