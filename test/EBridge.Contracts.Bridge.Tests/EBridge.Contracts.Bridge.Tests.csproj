@@ -16,8 +16,8 @@
         <PackageReference Include="AElf.EconomicSystem" Version="1.6.0" />
         <PackageReference Include="AElf.GovernmentSystem" Version="1.6.0" />
         <PackageReference Include="coverlet.collector" Version="3.1.2">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="coverlet.msbuild" Version="3.1.2">
             <PrivateAssets>all</PrivateAssets>
@@ -47,12 +47,12 @@
         <ContractMessage Include="..\..\protobuf\acs12.proto">
             <Link>Protobuf\Proto\acs12.proto</Link>
         </ContractMessage>
-        <ContractMessage Include="..\..\protobuf\oracle_common_message.proto">
-            <Link>Protobuf\Proto\oracle_common_message.proto</Link>
-        </ContractMessage>
-        <ContractMessage Include="..\..\protobuf\ramp_common_message.proto">
-            <Link>Protobuf\Proto\ramp_common_message.proto</Link>
-        </ContractMessage>
+      <ContractMessage Include="..\..\protobuf\oracle_common_message.proto">
+        <Link>Protobuf\Proto\oracle_common_message.proto</Link>
+      </ContractMessage>
+      <ContractMessage Include="..\..\protobuf\ramp_common_message.proto">
+        <Link>Protobuf\Proto\ramp_common_message.proto</Link>
+      </ContractMessage>
     </ItemGroup>
     <ItemGroup>
         <ContractStub Include="..\..\protobuf\acs13.proto">
@@ -88,16 +88,15 @@
         <ContractStub Include="..\..\protobuf\ramp_contract.proto">
             <Link>Protobuf\Proto\ramp_contract.proto</Link>
         </ContractStub>
-        <ContractBase Include="..\..\protobuf\ramp_interface.proto">
-            <Link>Protobuf\Proto\ramp_interface.proto</Link>
-        </ContractBase>
+      <ContractBase Include="..\..\protobuf\ramp_interface.proto">
+        <Link>Protobuf\Proto\ramp_interface.proto</Link>
+      </ContractBase>
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\..\contract\EBridge.Contracts.Bridge\EBridge.Contracts.Bridge.csproj" />
         <ProjectReference Include="..\..\contract\EBridge.Contracts.TokenPool\EBridge.Contracts.TokenPool.csproj" />
         <ProjectReference Include="..\..\src\AElf.Boilerplate.TestBase\AElf.Boilerplate.TestBase.csproj" />
-        <ProjectReference Include="..\EBridge.Contracts.TestContract.Ramp\EBridge.Contracts.TestContract.Ramp.csproj" />
         <ProjectReference Include="..\EBridge.Contracts.TestContract.Ramp\EBridge.Contracts.TestContract.Ramp.csproj" />
     </ItemGroup>
 

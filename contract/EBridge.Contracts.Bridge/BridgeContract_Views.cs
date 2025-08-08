@@ -39,9 +39,9 @@ public partial class BridgeContract
     {
         return State.FeeRatioController.Value;
     }
-
+    
     #endregion
-
+    
 
     #region Others to aelf
 
@@ -76,7 +76,7 @@ public partial class BridgeContract
     }
 
     #endregion
-
+    
     #region Transaction Fee
 
     public override Int64Value GetGasLimit(StringValue input)
