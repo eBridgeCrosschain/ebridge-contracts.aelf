@@ -100,14 +100,7 @@ public partial class BridgeContractState : ContractState
     /// false : not record
     /// </summary>
     public MappedState<Hash, bool> ReceiptHashRecordStatus { get; set; }
-
-
-    /// <summary>
-    /// receipt hash ->
-    /// true : already record
-    /// false : not record
-    /// </summary>
-    public MappedState<Hash, bool> ReceiptHashRecordStatus { get; set; }
+    
 
     #endregion
 

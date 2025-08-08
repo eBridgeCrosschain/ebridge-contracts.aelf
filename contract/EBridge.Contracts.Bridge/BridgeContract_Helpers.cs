@@ -15,6 +15,8 @@ namespace EBridge.Contracts.Bridge
 {
     public partial class BridgeContract
     {
+        private const string Base58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+        
         private bool IsAddressValid(Address input)
         {
             return input != null && !input.Value.IsNullOrEmpty();
