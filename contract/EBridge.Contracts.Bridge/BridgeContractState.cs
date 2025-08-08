@@ -93,6 +93,14 @@ public partial class BridgeContractState : ContractState
     /// Swap Id -> Tree index
     /// </summary>
     public MappedState<Hash, long> RecordedTreeLeafIndex { get; set; }
+    
+    /// <summary>
+    /// receipt hash ->
+    /// true : already record
+    /// false : not record
+    /// </summary>
+    public MappedState<Hash, bool> ReceiptHashRecordStatus { get; set; }
+
 
     /// <summary>
     /// receipt hash ->

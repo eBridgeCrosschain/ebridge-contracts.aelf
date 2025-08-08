@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using AElf;
 using AElf.Contracts.MultiToken;
@@ -7,7 +5,6 @@ using AElf.CSharp.Core;
 using AElf.Sdk.CSharp;
 using AElf.Types;
 using AetherLink.Contracts.Ramp;
-using EBridge.Contracts.Report;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Ramp;
@@ -187,7 +184,6 @@ public partial class BridgeContract
         {
             ChainType.Evm => ByteStringHelper.FromHexString(config.ContractAddress),
             ChainType.Tvm => ByteString.FromBase64(config.ContractAddress),
-            ChainType.Svm => ByteString.CopyFrom(DecodeSolanaAddress(config.ContractAddress)),
             _ => throw new AssertionException("Invalid chain type.")
         };
         State.RampContract.Send.Send(new SendInput

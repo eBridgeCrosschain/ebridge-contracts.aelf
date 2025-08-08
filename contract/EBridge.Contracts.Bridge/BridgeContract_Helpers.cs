@@ -15,30 +15,23 @@ namespace EBridge.Contracts.Bridge
 {
     public partial class BridgeContract
     {
-        private const string ArraySuffix = "[]";
-        private const string Bytes32 = "bytes32";
-        private const string Bytes32Array = Bytes32 + ArraySuffix;
-        private const string Uint256 = "uint256";
-        private const string Base58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-
         private bool IsAddressValid(Address input)
         {
             return input != null && !input.Value.IsNullOrEmpty();
         }
-
+        
         private TokenInfo GetTokenInfo(string symbol)
         {
             RequireTokenContractStateSet();
             return State.TokenContract.GetTokenInfo.Call(new GetTokenInfoInput { Symbol = symbol });
         }
 
-        private void TransferToken(string symbol, long amount, Address to, string fromChainId)
+        private void TransferToken(string symbol, long amount, Address to,string fromChainId)
         {
             if (amount <= 0)
             {
                 return;
             }
-
             RequireTokenContractStateSet();
             if (State.TokenPoolContract.Value == null)
             {
@@ -230,13 +223,12 @@ namespace EBridge.Contracts.Bridge
             {
                 ChainType.Evm => HashHelper.ComputeFrom(ByteArrayHelper.HexStringToByteArray(targetAddress)),
                 ChainType.Tvm => HashHelper.ComputeFrom(ByteString.FromBase64(targetAddress).ToByteArray()),
-                ChainType.Svm => HashHelper.ComputeFrom(DecodeSolanaAddress(targetAddress)),
                 _ => throw new AssertionException("Invalid chain type.")
             };
-            var amountByte = ConvertLong(amount);
-            var amountHash = HashHelper.ComputeFrom(amountByte.ToArray());
-            var receiptIndexByte = ConvertLong(receiptIndex);
-            var receiptIndexHash = HashHelper.ComputeFrom(receiptIndexByte.ToArray());
+            var amountTon = ConvertLong(amount);
+            var amountHash = HashHelper.ComputeFrom(amountTon.ToArray());
+            var receiptIndexTon = ConvertLong(receiptIndex);
+            var receiptIndexHash = HashHelper.ComputeFrom(receiptIndexTon.ToArray());
             var receiptIdHash = HashHelper.ConcatAndCompute(receiptIdToken, receiptIndexHash);
             return HashHelper.ConcatAndCompute(receiptIdHash, amountHash, addressHash);
         }
@@ -444,7 +436,8 @@ namespace EBridge.Contracts.Bridge
 
         private long CalculateRefill(long capacity, long currentTokenAmount, long timeDiff, long rate)
         {
-            return Math.Min(capacity, currentTokenAmount.Add(rate.Mul(timeDiff)));
+            var maxWaitInSeconds = capacity.Add(rate.Sub(1)).Div(rate);
+            return timeDiff > maxWaitInSeconds ? capacity : Math.Min(capacity, currentTokenAmount.Add(rate.Mul(timeDiff)));
         }
 
         #endregion

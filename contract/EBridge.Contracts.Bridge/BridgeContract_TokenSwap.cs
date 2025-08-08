@@ -1,10 +1,7 @@
-using System;
 using AElf;
-using AElf.Contracts.MultiToken;
 using AElf.CSharp.Core;
 using AElf.Sdk.CSharp;
 using AElf.Types;
-using EBridge.Contracts.MerkleTreeContract;
 using Google.Protobuf.WellKnownTypes;
 
 namespace EBridge.Contracts.Bridge;
@@ -13,8 +10,6 @@ public partial class BridgeContract
 {
     public override Hash CreateSwap(CreateSwapInput input)
     {
-        Assert(input.RegimentId != null, "Regiment id cannot be null.");
-        Assert(State.MerkleTreeContract.Value != null, "MerkleTree contract is not initialized.");
         var targetToken = input.SwapTargetToken;
         Assert(targetToken != null, "Invalid input.");
         var fromChainId = targetToken.FromChainId;
@@ -24,34 +19,13 @@ public partial class BridgeContract
             $"Swap already created. Chain id: {targetToken.FromChainId} Symbol: {targetToken.Symbol}. ");
         var swapId = HashHelper.ConcatAndCompute(Context.TransactionId, HashHelper.ComputeFrom(input));
         Assert(State.SwapInfo[swapId] == null, "Swap already created.");
-
-        var regimentAddress = State.RegimentContract.GetRegimentAddress.Call(input.RegimentId);
-        var regimentManager = State.RegimentContract.GetRegimentInfo.Call(regimentAddress).Manager;
-        Assert(Context.Sender == regimentManager, "Only regiment manager can create swap.");
-        Assert(State.RegimentContract.GetRegimentInfo.Call(regimentAddress).Admins.Contains(Context.Self),
-            $"Bridge Contract is not the admin of regiment. Regiment id: {input.RegimentId}");
-
-        //Create space to record receipt.
-        State.MerkleTreeContract.CreateSpace.Send(new CreateSpaceInput
-        {
-            Value = new SpaceInfo
-            {
-                MaxLeafCount = input.MerkleTreeLeafLimit == 0 ? DefaultMaximalLeafCount : input.MerkleTreeLeafLimit,
-                Operator = input.RegimentId
-            }
-        });
-        var spaceSalt = State.MerkleTreeContract.GetRegimentSpaceCount.Call(input.RegimentId).Value.Add(1);
-        var spaceId =
-            HashHelper.ConcatAndCompute(HashHelper.ComputeFrom(input.RegimentId), HashHelper.ComputeFrom(spaceSalt));
-        State.SwapSpaceIdMap[swapId] = spaceId;
-
+        
+        Assert(Context.Sender == State.Admin.Value, "Only contract admin can create swap.");
         AssertSwapTargetToken(targetToken.Symbol);
         Assert(ValidateSwapRatio(targetToken.SwapRatio), "Invalidate swap ratio.");
         var swapInfo = new SwapInfo
         {
             SwapId = swapId,
-            RegimentId = input.RegimentId,
-            SpaceId = spaceId,
             SwapTargetToken = new SwapTargetToken
             {
                 FromChainId = targetToken.FromChainId,
@@ -73,47 +47,6 @@ public partial class BridgeContract
             Symbol = symbol
         });
         return swapId;
-    }
-
-    public override Empty SwapToken(SwapTokenInput input)
-    {
-        Assert(!State.IsContractPause.Value, "Contract is paused.");
-        var receiverAddress = input.ReceiverAddress ?? Context.Sender;
-        ValidateSwapTokenInput(input);
-        Assert(TryGetReceiptIndex(input.ReceiptId, out var receiptIndex), "Incorrect receipt index.");
-        Assert(TryGetOriginTokenAmount(input.OriginAmount, out var amount), "Invalid amount.");
-        ConsumeSwapAmount(input.SwapId, amount);
-        var leafHash = ComputeLeafHash(amount, receiverAddress, input.ReceiptId);
-
-        var spaceId = State.SwapSpaceIdMap[input.SwapId];
-        var lastRecordedLeafIndex = State.MerkleTreeContract.GetLastLeafIndex.Call(new GetLastLeafIndexInput
-        {
-            SpaceId = spaceId
-        });
-        var maximalLeafCount = State.MerkleTreeContract.GetSpaceInfo.Call(spaceId).MaxLeafCount;
-
-        // To locate the tree of specific receipt id.
-        var firstLeafIndex = receiptIndex.Sub(1).Div(maximalLeafCount).Mul(maximalLeafCount);
-        var maxLastLeafIndex = firstLeafIndex.Add(maximalLeafCount).Sub(1);
-        var lastLeafIndex = Math.Min(maxLastLeafIndex, lastRecordedLeafIndex.Value);
-        var merklePath = State.MerkleTreeContract.GetMerklePath.Call(new GetMerklePathInput
-        {
-            ReceiptMaker = Context.Self,
-            LeafNodeIndex = receiptIndex.Sub(1),
-            SpaceId = spaceId
-        });
-
-        Assert(State.MerkleTreeContract.MerkleProof.Call(new MerkleProofInput
-        {
-            LastLeafIndex = lastLeafIndex,
-            LeafNode = leafHash,
-            MerklePath = merklePath,
-            SpaceId = spaceId
-        }).Value, "Merkle proof failed.");
-
-        //Transfer token.
-        PerformTransferToken(input.SwapId, receiverAddress, amount, input.ReceiptId);
-        return new Empty();
     }
 
     private void ConsumeSwapAmount(Hash swapId, decimal amount)
@@ -186,9 +119,7 @@ public partial class BridgeContract
     public override Empty ChangeSwapRatio(ChangeSwapRatioInput input)
     {
         var swapInfo = GetTokenSwapInfo(input.SwapId);
-        var regimentAddress = State.RegimentContract.GetRegimentAddress.Call(swapInfo.RegimentId);
-        var regimentManager = State.RegimentContract.GetRegimentInfo.Call(regimentAddress).Manager;
-        Assert(Context.Sender == regimentManager, "No permission.");
+        Assert(Context.Sender == State.Admin.Value, "No permission.");
         Assert(swapInfo.SwapTargetToken.Symbol == input.TargetTokenSymbol,
             $"Swap target token {swapInfo.SwapId}-{input.TargetTokenSymbol} is not exist. ");
         Assert(input.SwapRatio.OriginShare >= 1 && input.SwapRatio.TargetShare >= 1, "SwapRatio originShare or TargetShare is invalid");

@@ -23,10 +23,6 @@ public partial class BridgeContract : BridgeContractImplContainer.BridgeContract
         State.ParliamentContract.Value =
             Context.GetContractAddressByName(SmartContractConstants.ParliamentContractSystemName);
         State.IsInitialized.Value = true;
-        State.OracleContract.Value = input.OracleContractAddress;
-        State.MerkleTreeContract.Value = input.MerkleTreeContractAddress;
-        State.RegimentContract.Value = input.RegimentContractAddress;
-        State.ReportContract.Value = input.ReportContractAddress;
         State.QueryPayment.Value = QueryPayment;
 
         State.Controller.Value = input.Controller;

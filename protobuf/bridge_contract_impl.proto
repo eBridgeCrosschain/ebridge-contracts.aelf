@@ -2,11 +2,9 @@ syntax = "proto3";
 
 package BridgeContractImpl;
 
-//import "acs1.proto";
 import "acs12.proto";
 import "acs13.proto";
 import "bridge_contract.proto";
-import "receipt_maker.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
@@ -19,10 +17,8 @@ option csharp_namespace = "EBridge.Contracts.Bridge";
 service BridgeContractImpl {
 
   option (aelf.csharp_state) = "EBridge.Contracts.Bridge.BridgeContractState";
-  //  option (aelf.base) = "acs1.proto";
   option (aelf.base) = "acs12.proto";
   option (aelf.base) = "acs13.proto";
-  option (aelf.base) = "receipt_maker.proto";
   option (aelf.base) = "bridge_contract.proto";
   option (aelf.base) = "ramp_interface.proto";
 
@@ -69,6 +65,9 @@ service BridgeContractImpl {
     option (aelf.is_view) = true;
   }
   rpc GetCrossChainConfig(google.protobuf.StringValue) returns (CrossChainConfig) {
+    option (aelf.is_view) = true;
+  }
+  rpc GetChainIdMap(google.protobuf.Int32Value) returns (google.protobuf.StringValue) {
     option (aelf.is_view) = true;
   }
 }
@@ -184,6 +183,7 @@ message SetCrossChainConfigInput {
   int32 chain_id_number = 3;
   ChainType chain_type = 4;
   string contract_address_for_receive = 5; // bridge in
+  int64 fee = 6;
 }
 
 message CrossChainConfig {
@@ -197,20 +197,8 @@ message CrossChainConfig {
 enum ChainType {
   EVM = 0;
   TVM = 1;
-  SVM = 2;
 }
 
-
-message TestEvent {
-  option (aelf.is_event) = true;
-  string sender = 1;
-  string receiver = 2;
-  bytes message = 3;
-  aelf.Hash swapId = 4;
-  string symbol = 5;
-  string tokenAddress = 6;
-  string targetContractAddress = 7;
-}
 
 message ReceiptDailyLimitSet {
   option (aelf.is_event) = true;
