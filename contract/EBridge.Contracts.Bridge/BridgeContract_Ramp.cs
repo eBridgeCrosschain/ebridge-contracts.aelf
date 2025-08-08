@@ -101,6 +101,7 @@ public partial class BridgeContract
         {
             ChainType.Evm => input.Sender?.ToHex(true),
             ChainType.Tvm => input.Sender?.ToBase64(),
+            ChainType.Svm => input.Sender?.ToStringUtf8(),
             _ => throw new AssertionException("Invalid chain type.")
         };
         Assert(sender != null && string.Compare(sender, chainConfig.ContractAddressForReceive, true) == 0,

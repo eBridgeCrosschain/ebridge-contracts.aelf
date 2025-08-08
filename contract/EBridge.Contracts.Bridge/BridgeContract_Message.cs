@@ -44,6 +44,19 @@ public partial class BridgeContract
         return lazyData;
     }
     
+    private List<byte> GenerateSolanaMessage(Hash receiptIdToken, long amount, string targetAddress, long receiptIndex)
+    {
+        var receiptHash =
+            CalculateReceiptHash(receiptIdToken, amount, targetAddress, receiptIndex, ChainType.Svm);
+        var lazyData = new List<byte>();
+        lazyData.AddRange(FillObservationBytes(ConvertLong(receiptIndex).ToArray(), SlotByteSize));
+        lazyData.AddRange(FillObservationBytes(receiptIdToken.ToByteArray(), SlotByteSize));
+        lazyData.AddRange(FillObservationBytes(ConvertLong(amount).ToArray(), SlotByteSize));
+        lazyData.AddRange(FillObservationBytes(receiptHash.ToByteArray(), SlotByteSize));
+        lazyData.AddRange(FillObservationBytes(DecodeSolanaAddress(targetAddress), SlotByteSize));
+        return lazyData;
+    }
+    
     private List<byte> FillObservationBytes(byte[] result, int byteSize)
     {
         if (result.Length == 0)

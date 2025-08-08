@@ -197,6 +197,7 @@ message CrossChainConfig {
 enum ChainType {
   EVM = 0;
   TVM = 1;
+  SVM = 2;
 }
 
 

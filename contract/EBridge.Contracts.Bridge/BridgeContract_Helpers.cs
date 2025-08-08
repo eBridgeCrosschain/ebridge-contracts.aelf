@@ -15,6 +15,8 @@ namespace EBridge.Contracts.Bridge
 {
     public partial class BridgeContract
     {
+        private const string Base58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+        
         private bool IsAddressValid(Address input)
         {
             return input != null && !input.Value.IsNullOrEmpty();
@@ -208,6 +210,13 @@ namespace EBridge.Contracts.Bridge
             var fee = decimal.Round(((decimal)tonFee / 1000000000) * priceRatioDecimal, PriceDecimals);
             return (long)(fee * 100000000);
         }
+        
+        private long CalculateTransactionFeeForSolana(long priceRatio, long solanaFee)
+        {
+            var priceRatioDecimal = (decimal)priceRatio / 100000000;
+            var fee = decimal.Round(((decimal)solanaFee / 1000000000) * priceRatioDecimal, PriceDecimals);
+            return (long)(fee * 100000000);
+        }
 
         private Hash CalculateReceiptHash(Hash receiptIdToken, long amount, string targetAddress,
             long receiptIndex, ChainType chainType)
@@ -262,6 +271,58 @@ namespace EBridge.Contracts.Bridge
             {
                 dst[dstOffset] = src[i];
                 dstOffset++;
+            }
+        }
+
+        private byte[] DecodeSolanaAddress(string address)
+        {
+            var charToIndex = new Dictionary<char, int>();
+            for (var i = 0; i < Base58.Length; i++)
+            {
+                charToIndex[Base58[i]] = i;
+            }
+            
+            var leadingZeros = new List<byte>();
+            foreach (var c in address)
+            {
+                if (c == '1') leadingZeros.Add(0x00);
+                else break;
+            }
+
+            var buffer = new List<byte>(capacity: address.Length * 2);
+            foreach (var c in address.Substring(leadingZeros.Count))
+            {
+                if (!charToIndex.TryGetValue(c, out var value))
+                    throw new AssertionException("Invalid character.");
+
+                var carry = value;
+                for (var j = 0; j < buffer.Count; j++)
+                {
+                    carry += buffer[j] * 58;
+                    buffer[j] = (byte)(carry % 256);
+                    carry /= 256;
+                }
+
+                while (carry > 0)
+                {
+                    buffer.Add((byte)(carry % 256));
+                    carry /= 256;
+                }
+            }
+
+            ReverseByteList(buffer);
+            return buffer.ToArray();
+        }
+
+        private void ReverseByteList(List<byte> byteList)
+        {
+            var left = 0;
+            var right = byteList.Count - 1;
+            while (left < right)
+            {
+                (byteList[left], byteList[right]) = (byteList[right], byteList[left]);
+                left++;
+                right--;
             }
         }
 
