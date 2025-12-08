@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <PackageId>AetherLink.Contracts.Ramp</PackageId>
+    <RootNamespace>AetherLink.Contracts.Ramp</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ContractReference Include="..\..\protobuf\acs12.proto">
+      <Link>Protobuf\Proto\reference\acs12.proto</Link>
+    </ContractReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <CommonMessage Include="..\..\protobuf\oracle_common_message.proto">
+      <Link>Protobuf\Proto\oracle_common_message.proto</Link>
+    </CommonMessage>
+    <CommonMessage Include="..\..\protobuf\ramp_common_message.proto">
+      <Link>Protobuf\Proto\ramp_common_message.proto</Link>
+    </CommonMessage>
+    <ContractCode Include="..\..\protobuf\ramp_contract.proto">
+      <Link>Protobuf\Proto\ramp_contract.proto</Link>
+    </ContractCode>
+    <ContractBase Include="..\..\protobuf\ramp_interface.proto">
+      <Link>Protobuf\Proto\ramp_interface.proto</Link>
+    </ContractBase>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AElf.Sdk.CSharp" Version="1.6.0" />
+  </ItemGroup>
+
+</Project>

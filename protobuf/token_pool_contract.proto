@@ -1,0 +1,125 @@
+syntax = "proto3";
+
+import "aelf/core.proto";
+import "aelf/options.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+import "acs12.proto";
+
+
+option csharp_namespace = "EBridge.Contracts.TokenPool";
+
+service TokenPoolContract {
+  option (aelf.csharp_state) = "EBridge.Contracts.TokenPool.TokenPoolContractState";
+  option (aelf.base) = "acs12.proto";
+  rpc Initialize (InitializeInput) returns (google.protobuf.Empty) {}
+  rpc Lock (LockInput) returns (google.protobuf.Empty) {}
+  rpc Release (ReleaseInput) returns (google.protobuf.Empty) {}
+  rpc AddLiquidity (AddLiquidityInput) returns (google.protobuf.Empty) {}
+  rpc RemoveLiquidity (RemoveLiquidityInput) returns (google.protobuf.Empty) {}
+  rpc SetAdmin (aelf.Address) returns (google.protobuf.Empty) {}
+  rpc SetBridgeContract (aelf.Address) returns (google.protobuf.Empty) {}
+  rpc Migrator (MigratorInput) returns (google.protobuf.Empty) {}
+  
+  rpc GetTokenPoolInfo(GetTokenPoolInfoInput) returns (TokenPoolInfo) {
+    option (aelf.is_view) = true;
+  }
+  rpc GetLiquidity (GetLiquidityInput) returns (google.protobuf.Int64Value) {
+    option (aelf.is_view) = true;
+  }
+  rpc GetRemovableLiquidity (GetLiquidityInput) returns (google.protobuf.Int64Value) {
+    option (aelf.is_view) = true;
+  }
+  rpc GetAdmin (google.protobuf.Empty) returns (aelf.Address) {
+    option (aelf.is_view) = true;
+  }
+  rpc GetBridgeContract (google.protobuf.Empty) returns (aelf.Address) {
+    option (aelf.is_view) = true;
+  }
+}
+
+message InitializeInput {
+  aelf.Address bridge_contract_address = 1;
+  aelf.Address admin = 2;
+}
+
+message LockInput{
+  string target_chain_id = 1;
+  string target_token_symbol = 2;
+  int64 amount = 3;
+  aelf.Address sender = 4;
+}
+
+message ReleaseInput{
+  string from_chain_id = 1;
+  string target_token_symbol = 2;
+  int64 amount = 3;
+  aelf.Address receiver = 4;
+}
+
+message AddLiquidityInput{
+  string token_symbol = 1;
+  int64 amount = 3;
+}
+
+message RemoveLiquidityInput{
+  string token_symbol = 1;
+  int64 amount = 3;
+}
+
+message MigratorInput {
+  aelf.Address provider = 1;
+  string token_symbol = 2;
+  int64 deposit_amount = 3;
+  int64 lock_amount = 4;
+}
+
+message GetTokenPoolInfoInput {
+  string token_symbol = 1;
+}
+
+message TokenPoolInfo {
+  aelf.Address token_virtual_address = 1;
+  aelf.Hash token_virtual_hash = 2;
+  int64 liquidity = 3;
+}
+
+message GetLiquidityInput {
+  aelf.Address provider = 1;
+  string token_symbol = 2;
+}
+
+// Events
+
+message Locked {
+  option (aelf.is_event) = true;
+  string from_chain_id = 1;
+  string to_chain_id = 2;
+  string target_token_symbol = 3;
+  int64 amount = 4;
+  aelf.Address sender = 5;
+}
+
+message Released {
+  option (aelf.is_event) = true;
+  string from_chain_id = 1;
+  string to_chain_id = 2;
+  string target_token_symbol = 3;
+  int64 amount = 4;
+  aelf.Address receiver = 5;
+}
+
+message LiquidityAdded {
+  option (aelf.is_event) = true;
+  string token_symbol = 1;
+  int64 amount = 2;
+  aelf.Address provider = 3;
+}
+
+message LiquidityRemoved {
+  option (aelf.is_event) = true;
+  string token_symbol = 1;
+  int64 amount = 2;
+  aelf.Address provider = 3;
+}

@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+import "aelf/core.proto";
+import "aelf/options.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+import "acs12.proto";
+
+
+option csharp_namespace = "EBridge.Contracts.TokenPool";
+
+service TokenPoolContract {
+  option (aelf.csharp_state) = "EBridge.Contracts.TokenPool.TokenPoolContractState";
+  option (aelf.base) = "acs12.proto";
+  rpc Initialize (InitializeInput) returns (google.protobuf.Empty) {}
+  rpc Lock (LockInput) returns (google.protobuf.Empty) {}
+  rpc Release (ReleaseInput) returns (google.protobuf.Empty) {}
+  rpc AddLiquidity (AddLiquidityInput) returns (google.protobuf.Empty) {}
+  rpc RemoveLiquidity (RemoveLiquidityInput) returns (google.protobuf.Empty) {}
+}
+
+message InitializeInput {
+  aelf.Address bridge_contract_address = 1;
+  aelf.Address admin = 2;
+}
+
+message LockInput{
+  string from_chain_id = 1;
+  string to_chain_id = 2;
+  string target_token_symbol = 3;
+  int64 amount = 4;
+  aelf.Address sender = 5;
+}
+
+message ReleaseInput{
+  string from_chain_id = 1;
+  string to_chain_id = 2;
+  string target_token_symbol = 3;
+  int64 amount = 4;
+  aelf.Address receiver = 5;
+}
+
+message AddLiquidityInput{
+  string from_chain_id = 1;
+  string to_chain_id = 2;
+  string token_symbol = 3;
+  int64 amount = 4;
+}
+
+message RemoveLiquidityInput{
+  string from_chain_id = 1;
+  string to_chain_id = 2;
+  string token_symbol = 3;
+  int64 amount = 4;
+}
+
+// Events
+
+message Locked {
+  option (aelf.is_event) = true;
+  string from_chain_id = 1;
+  string to_chain_id = 2;
+  string target_token_symbol = 3;
+  int64 amount = 4;
+  aelf.Address sender = 5;
+}
+
+message Released {
+  option (aelf.is_event) = true;
+  string from_chain_id = 1;
+  string to_chain_id = 2;
+  string target_token_symbol = 3;
+  int64 amount = 4;
+  aelf.Address receiver = 5;
+}
+
+message LiquidityAdded {
+  option (aelf.is_event) = true;
+  string from_chain_id = 1;
+  string to_chain_id = 2;
+  string token_symbol = 3;
+  int64 amount = 4;
+  aelf.Address provider = 5;
+}
+
+message LiquidityRemoved {
+  option (aelf.is_event) = true;
+  string from_chain_id = 1;
+  string to_chain_id = 2;
+  string token_symbol = 3;
+  int64 amount = 4;
+  aelf.Address provider = 5;
+}
